@@ -18,3 +18,6 @@
 add_executable(cgi_example cgi_example.c)
 target_link_libraries(cgi_example mongoose m dl readline pthread)
 
+add_executable(websocket_example websocket_example.c)
+target_link_libraries(websocket_example mongoose)
+

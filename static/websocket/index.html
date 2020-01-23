@@ -29,21 +29,33 @@
 
 <script language="javascript" type="text/javascript">
 
-  var rooms = [];
-  var ws = new WebSocket('ws://' + location.host + '/ws');
-
   if (!window.console) { window.console = { log: function() {} } };
 
-  ws.onopen = function(ev)  { console.log(ev); };
-  ws.onerror = function(ev) { console.log(ev); };
-  ws.onclose = function(ev) { console.log(ev); };
-  ws.onmessage = function(ev) {
-    console.log(ev);
-    var div = document.createElement('div');
-    div.innerHTML = ev.data;
-    document.getElementById('messages').appendChild(div);
+  function appendMessage(event, msg){
+    console.log(event);
+    
+    var content = event.data || msg;
+    if(!content){
+      switch(event.type){
+        case "open": content = "connected"; break;
+        default: content = event.type;
+      }
+    }
 
-  };
+    var div = document.createElement('div');
+    div.innerHTML = content;
+    document.getElementById('messages').appendChild(div);
+  }
+
+  function messageHandler(event) { appendMessage(event); };
+
+  var rooms = [];
+  var ws = new WebSocket('ws://' + location.host + '/ws');{
+    ws.onopen = messageHandler;
+    ws.onerror = messageHandler;
+    ws.onclose = messageHandler;
+    ws.onmessage = messageHandler;
+  }
 
   window.onload = function() {
     document.getElementById('send_button').onclick = function(ev) {
