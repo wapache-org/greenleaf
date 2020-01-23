@@ -23,6 +23,7 @@ add_subdirectory(lua)
 add_subdirectory(mongoose)
 add_subdirectory(mustache)
 add_subdirectory(sqlite)
+add_subdirectory(examples)
 
 # add target
 add_executable(mongoose_lua main.c)

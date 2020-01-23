@@ -41,6 +41,7 @@ int mustache_example(char* template_path, const char* data_path);
 // /////////////////////////////////////////////////////////
 // 主函数
 
+// 参数参考`docs/vscode/launch.json`
 int main(int argc, char** argv) 
 {
     puts("进入主程序...");
