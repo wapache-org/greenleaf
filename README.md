@@ -41,6 +41,23 @@ print("")
 print("<h1>Hello World!</h1>")
 ```
 
+## examples/websocket_example
+
+运行服务端
+
+```bash
+./websocket_example static/websocket
+```
+
+打开浏览器: http://localhost:8000 就可以看到聊天窗口了
+
+## examples/websocket_client_example
+
+```bash
+./websocket_client_example ws://localhost:8000
+```
+输入内容, 回车
+
 ## 规划
 
 集成以下库

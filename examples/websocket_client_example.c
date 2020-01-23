@@ -12,6 +12,29 @@
 
 static int s_done = 0;
 static int s_is_connected = 0;
+static void ev_handler(struct mg_connection *nc, int ev, void *ev_data);
+
+int main(int argc, char **argv) 
+{
+  const char *chat_server_url = argc > 1 ? argv[1] : "ws://127.0.0.1:8000";
+
+  struct mg_mgr mgr;
+  struct mg_connection *nc;
+  mg_mgr_init(&mgr, NULL);
+  nc = mg_connect_ws(&mgr, ev_handler, chat_server_url, "ws_chat", NULL);
+  if (nc == NULL) {
+    fprintf(stderr, "Invalid address\n");
+    return 1;
+  }
+
+  while (!s_done) {
+    mg_mgr_poll(&mgr, 100);
+  }
+
+  mg_mgr_free(&mgr);
+
+  return 0;
+}
 
 static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
   (void) nc;
@@ -65,8 +88,9 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
         n = read(0, msg, sizeof(msg));
       }
 #endif
+      while (n>0 && (msg[n - 1] == '\r' || msg[n - 1] == '\n')) n--;
       if (n <= 0) break;
-      while (msg[n - 1] == '\r' || msg[n - 1] == '\n') n--;
+
       mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, msg, n);
       break;
     }
@@ -81,25 +105,4 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
       break;
     }
   }
-}
-
-int main(int argc, char **argv) {
-  struct mg_mgr mgr;
-  struct mg_connection *nc;
-  const char *chat_server_url = argc > 1 ? argv[1] : "ws://127.0.0.1:8000";
-
-  mg_mgr_init(&mgr, NULL);
-
-  nc = mg_connect_ws(&mgr, ev_handler, chat_server_url, "ws_chat", NULL);
-  if (nc == NULL) {
-    fprintf(stderr, "Invalid address\n");
-    return 1;
-  }
-
-  while (!s_done) {
-    mg_mgr_poll(&mgr, 100);
-  }
-  mg_mgr_free(&mgr);
-
-  return 0;
 }
