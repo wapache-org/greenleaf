@@ -46,7 +46,7 @@ print("<h1>Hello World!</h1>")
 运行服务端
 
 ```bash
-./websocket_example static/websocket
+build/examples/websocket_example static/websocket
 ```
 
 打开浏览器: http://localhost:8000 就可以看到聊天窗口了
@@ -54,9 +54,18 @@ print("<h1>Hello World!</h1>")
 ## examples/websocket_client_example
 
 ```bash
-./websocket_client_example ws://localhost:8000
+build/examples/websocket_client_example ws://localhost:8000
 ```
 输入内容, 回车
+
+
+## examples/sqlite_example
+
+```bash
+build/examples/sqlite_example
+```
+输入内容, 回车
+
 
 ## 规划
 
