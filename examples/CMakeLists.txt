@@ -26,3 +26,6 @@ target_link_libraries(websocket_client_example mongoose)
 
 add_executable(sqlite_example sqlite_example.c)
 target_link_libraries(sqlite_example mongoose sqlite dl pthread)
+
+add_executable(api_server_example api_server_example.c db_plugin_sqlite.c)
+target_link_libraries(api_server_example mongoose sqlite dl pthread)
