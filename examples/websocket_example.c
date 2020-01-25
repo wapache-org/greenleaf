@@ -16,6 +16,15 @@ static void event_handler(struct mg_connection *nc, int ev, void *ev_data);
 static int is_websocket(const struct mg_connection *nc);
 static void broadcast(struct mg_connection *nc, const struct mg_str msg);
 
+static 
+int get_user_htpasswd(struct mg_str username, struct mg_str auth_domain, char* out_ha1)
+{
+    // out_ha1 is char[128]
+    // username/password: admin/admin
+    strcpy(out_ha1,"609e3552947b5949c2451a072a2963e1");
+    return 1; // found
+}
+
 int main(int argc, char* argv[]) 
 {
   // 检查启动参数
@@ -36,6 +45,8 @@ int main(int argc, char* argv[])
   char* path = argv[1];
   s_http_server_opts.document_root = path;
   // s_http_server_opts.enable_directory_listing = "no";
+  s_http_server_opts.get_user_htpasswd_fn = get_user_htpasswd;
+  s_http_server_opts.auth_domain = "localhost";
   
   // 启动服务器
   struct mg_mgr mgr;
@@ -66,7 +77,33 @@ static void signal_handler(int sig_num) {
 static void event_handler(struct mg_connection *nc, int event, void *event_data) {
   switch (event) {
     case MG_EV_HTTP_REQUEST: { // 接收到HTTP请求
+
+      // 1. 在建立websocket连接前, 先通过普通的http调用通过了digest认证
+      // 真正生产中, 应该是设置一个特定的url用于digest认证, 通过之后才建立websocket连接, 而不是直接拦截所有请求
+      struct http_message *hm = (struct http_message *) event_data;
+      if(!mg_http_custom_is_authorized(
+          hm, s_http_server_opts.auth_domain, s_http_server_opts.get_user_htpasswd_fn
+      )){
+          mg_http_send_digest_auth_request(nc, s_http_server_opts.auth_domain);
+          break;
+      }
+
       mg_serve_http(nc, (struct http_message *) event_data, s_http_server_opts);
+      break;
+    }
+    case MG_EV_WEBSOCKET_HANDSHAKE_REQUEST: {
+      //https://forum.mongoose-os.com/discussion/72/digest-authentication-on-web-server
+
+      // 2. 然后再建立websocket连接前, 检查下是否已经通过认证
+      struct http_message *hm = (struct http_message *) event_data;
+      if(!mg_http_custom_is_authorized(
+          hm, s_http_server_opts.auth_domain, s_http_server_opts.get_user_htpasswd_fn
+      )){
+          // 虽然返回了401, 但是浏览器不会自动弹出认证框, 而是直接握手失败, 并关闭连接
+          // 所以一定要先用普通的http调用做了认证再连
+          // 如果客户端是自己开发的, 可能可以支持在握手过程的中间加入认证处理
+          mg_http_send_digest_auth_request(nc, s_http_server_opts.auth_domain);
+      }
       break;
     }
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE: { // WEBSOCKET握手完成, 建立连接成功
