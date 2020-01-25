@@ -11,6 +11,9 @@
 
 #include "mongoose.h"
 
+static const char *s_login_url = "/login.shtml";
+static const char *s_logout_url = "/logout";
+
 static const char *s_http_port = "8000";
 static struct mg_serve_http_opts s_http_server_opts;
 
@@ -63,8 +66,9 @@ static struct session *get_session(struct http_message *hm) {
   struct session *ret = NULL;
   struct mg_str *cookie_header = mg_get_http_header(hm, "cookie");
   if (cookie_header == NULL) goto clean;
-  if (!mg_http_parse_header2(cookie_header, SESSION_COOKIE_NAME, &ssid,
-                             sizeof(ssid_buf))) {
+  if (!mg_http_parse_header2(
+    cookie_header, SESSION_COOKIE_NAME, &ssid, sizeof(ssid_buf)
+  )) {
     goto clean;
   }
   uint64_t sid = strtoull(ssid, NULL, 16);
@@ -135,33 +139,36 @@ static struct session *create_session(const char *user,
  * If requested via POST (form submission), checks password and logs user in.
  */
 static void login_handler(struct mg_connection *nc, int ev, void *p) {
-  struct http_message *hm = (struct http_message *) p;
-  if (mg_vcmp(&hm->method, "POST") != 0) {
-    /* Serve login.html */
-    mg_serve_http(nc, (struct http_message *) p, s_http_server_opts);
-  } else {
-    /* Perform password check. */
-    char user[50], pass[50];
-    int ul = mg_get_http_var(&hm->body, "user", user, sizeof(user));
-    int pl = mg_get_http_var(&hm->body, "pass", pass, sizeof(pass));
-    if (ul > 0 && pl > 0) {
-      if (check_pass(user, pass)) {
-        struct session *s = create_session(user, hm);
-        char shead[100];
-        snprintf(shead, sizeof(shead),
-                 "Set-Cookie: %s=%" INT64_X_FMT "; path=/", SESSION_COOKIE_NAME,
-                 s->id);
-        mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(shead));
-        fprintf(stderr, "%s logged in, sid %" INT64_X_FMT "\n", s->user, s->id);
+  switch (ev) {
+    case MG_EV_HTTP_REQUEST: {
+      struct http_message *hm = (struct http_message *) p;
+      if (mg_vcmp(&hm->method, "POST") != 0) {
+        /* Serve login.html */
+        mg_serve_http(nc, (struct http_message *) p, s_http_server_opts);
       } else {
-        mg_printf(nc, "HTTP/1.0 403 Unauthorized\r\n\r\nWrong password.\r\n");
+        /* Perform password check. */
+        char user[50], pass[50];
+        int ul = mg_get_http_var(&hm->body, "user", user, sizeof(user));
+        int pl = mg_get_http_var(&hm->body, "pass", pass, sizeof(pass));
+        if (ul > 0 && pl > 0) {
+          if (check_pass(user, pass)) {
+            struct session *s = create_session(user, hm);
+            char shead[100];
+            snprintf(shead, sizeof(shead),
+                    "Set-Cookie: %s=%" INT64_X_FMT "; path=/", SESSION_COOKIE_NAME,
+                    s->id);
+            mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(shead));
+            fprintf(stderr, "%s logged in, sid %" INT64_X_FMT "\n", s->user, s->id);
+          } else {
+            mg_printf(nc, "HTTP/1.0 403 Unauthorized\r\n\r\nWrong password.\r\n");
+          }
+        } else {
+          mg_printf(nc, "HTTP/1.0 400 Bad Request\r\n\r\nuser, pass required.\r\n");
+        }
+        nc->flags |= MG_F_SEND_AND_CLOSE;
       }
-    } else {
-      mg_printf(nc, "HTTP/1.0 400 Bad Request\r\n\r\nuser, pass required.\r\n");
     }
-    nc->flags |= MG_F_SEND_AND_CLOSE;
   }
-  (void) ev;
 }
 
 /*
@@ -169,18 +176,21 @@ static void login_handler(struct mg_connection *nc, int ev, void *p) {
  * Removes cookie and any associated session state.
  */
 static void logout_handler(struct mg_connection *nc, int ev, void *p) {
-  struct http_message *hm = (struct http_message *) p;
-  char shead[100];
-  snprintf(shead, sizeof(shead), "Set-Cookie: %s=", SESSION_COOKIE_NAME);
-  mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(shead));
-  struct session *s = get_session(hm);
-  if (s != NULL) {
-    fprintf(stderr, "%s logged out, session %" INT64_X_FMT " destroyed\n",
-            s->user, s->id);
-    destroy_session(s);
+  switch (ev) {
+    case MG_EV_HTTP_REQUEST: {
+      struct http_message *hm = (struct http_message *) p;
+      char shead[100];
+      snprintf(shead, sizeof(shead), "Set-Cookie: %s=", SESSION_COOKIE_NAME);
+      mg_http_send_redirect(nc, 302, mg_mk_str("/"), mg_mk_str(shead));
+      struct session *s = get_session(hm);
+      if (s != NULL) {
+        fprintf(stderr, "%s logged out, session %" INT64_X_FMT " destroyed\n",
+                s->user, s->id);
+        destroy_session(s);
+      }
+      nc->flags |= MG_F_SEND_AND_CLOSE;
+    }
   }
-  nc->flags |= MG_F_SEND_AND_CLOSE;
-  (void) ev;
 }
 
 /* Cleans up sessions that have been idle for too long. */
@@ -205,7 +215,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
       struct session *s = get_session(hm);
       /* Ask the user to log in if they did not present a valid cookie. */
       if (s == NULL) {
-        mg_http_send_redirect(nc, 302, mg_mk_str("/login.html"),
+        mg_http_send_redirect(nc, 302, mg_mk_str(s_login_url),
                               mg_mk_str(NULL));
         nc->flags |= MG_F_SEND_AND_CLOSE;
         break;
@@ -224,10 +234,12 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
       /* Expand variables in a page by using session data. */
       const char *var = (const char *) p;
       const struct session *s = (const struct session *) nc->user_data;
-      if (strcmp(var, "user") == 0) {
-        mg_printf_html_escape(nc, "%s", s->user);
-      } else if (strcmp(var, "lucky_number") == 0) {
-        mg_printf_html_escape(nc, "%d", s->lucky_number);
+      if(s!=NULL){
+        if (strcmp(var, "user") == 0) {
+          mg_printf_html_escape(nc, "%s", s->user);
+        } else if (strcmp(var, "lucky_number") == 0) {
+          mg_printf_html_escape(nc, "%d", s->lucky_number);
+        }
       }
       break;
     }
@@ -240,7 +252,10 @@ static void ev_handler(struct mg_connection *nc, int ev, void *p) {
   }
 }
 
-int main(void) {
+int main(int argc, char* argv[]) {
+  
+  s_http_server_opts.document_root = argc>1? argv[1]:".";
+
   struct mg_mgr mgr;
   struct mg_connection *nc;
   srand(mg_time());
@@ -249,9 +264,8 @@ int main(void) {
   nc = mg_bind(&mgr, s_http_port, ev_handler);
 
   mg_set_protocol_http_websocket(nc);
-  s_http_server_opts.document_root = ".";
-  mg_register_http_endpoint(nc, "/login.html", login_handler);
-  mg_register_http_endpoint(nc, "/logout", logout_handler);
+  mg_register_http_endpoint(nc, s_login_url, login_handler);
+  mg_register_http_endpoint(nc, s_logout_url, logout_handler);
   mg_set_timer(nc, mg_time() + SESSION_CHECK_INTERVAL);
 
   printf("Starting web server on port %s\n", s_http_port);

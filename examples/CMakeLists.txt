@@ -29,3 +29,6 @@ target_link_libraries(sqlite_example mongoose sqlite dl pthread)
 
 add_executable(api_server_example api_server_example.c db_plugin_sqlite.c)
 target_link_libraries(api_server_example mongoose sqlite dl pthread)
+
+add_executable(auth_cookie_example auth_cookie_example.c)
+target_link_libraries(auth_cookie_example mongoose)
