@@ -5130,6 +5130,13 @@ int mg_http_is_authorized(struct http_message *hm, struct mg_str path,
                           const char *domain, const char *passwords_file,
                           int flags);
 
+// input username and auth_domain , output ha1
+// return 1: found, 0 not found
+typedef int (*mg_auth_get_user_htpasswd_fn)(struct mg_str username, struct mg_str auth_domain, char* out_ha1);
+
+int mg_http_custom_is_authorized(struct http_message *hm, const char *domain, 
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn);
+
 /*
  * Sends 401 Unauthorized response.
  */
@@ -5287,6 +5294,7 @@ int mg_get_http_var(const struct mg_str *buf, const char *name, char *dst,
                     size_t dst_len);
 
 #if MG_ENABLE_FILESYSTEM
+
 /*
  * This structure defines how `mg_serve_http()` works.
  * Best practice is to set only required settings, and leave the rest as NULL.
@@ -5445,6 +5453,26 @@ struct mg_serve_http_opts {
    * Example: to enable CORS, set this to "Access-Control-Allow-Origin: *".
    */
   const char *extra_headers;
+
+  /**
+   * use custom function to get the digest ha1 instead of lookup auth file.
+   * 
+   * Example code snippet:
+   *
+   * ```c
+   * static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
+   *   if(!mg_http_custom_is_authorized(
+   *       hm, s_http_server_opts.auth_domain, s_http_server_opts.get_user_htpasswd_fn
+   *   )){
+   *       mg_http_send_digest_auth_request(nc, s_http_server_opts.auth_domain);
+   *       return;
+   *   }
+   *   ... ...
+   * }
+   * ```
+   */
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn;
+
 };
 
 /*
@@ -5598,6 +5626,21 @@ int mg_check_digest_auth(struct mg_str method, struct mg_str uri,
                          struct mg_str response, struct mg_str qop,
                          struct mg_str nc, struct mg_str nonce,
                          struct mg_str auth_domain, FILE *fp);
+
+int mg_http_custom_check_digest_auth(
+  struct http_message *hm, 
+  const char *auth_domain,
+  mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+);
+
+int mg_custom_check_digest_auth(
+    struct mg_str method, struct mg_str uri,
+    struct mg_str username, struct mg_str cnonce,
+    struct mg_str response, struct mg_str qop,
+    struct mg_str nc, struct mg_str nonce,
+    struct mg_str auth_domain, 
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+);
 
 /*
  * Sends buffer `buf` of size `len` to the client using chunked HTTP encoding.

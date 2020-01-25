@@ -7850,6 +7850,88 @@ int mg_http_is_authorized(struct http_message *hm, struct mg_str path,
                  passwords_file ? passwords_file : "", flags, authorized));
   return authorized;
 }
+
+int mg_http_custom_check_digest_auth(struct http_message *hm, const char *auth_domain,
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+) {
+  int ret = 0;
+  struct mg_str *hdr;
+  char username_buf[50], cnonce_buf[64], response_buf[40], uri_buf[200],
+      qop_buf[20], nc_buf[20], nonce_buf[16];
+
+  char *username = username_buf, *cnonce = cnonce_buf, *response = response_buf,
+       *uri = uri_buf, *qop = qop_buf, *nc = nc_buf, *nonce = nonce_buf;
+
+  /* Parse "Authorization:" header, fail fast on parse error */
+  if (hm == NULL || mg_auth_get_user_htpasswd == NULL ||
+      (hdr = mg_get_http_header(hm, "Authorization")) == NULL ||
+      mg_http_parse_header2(hdr, "username", &username, sizeof(username_buf)) ==
+          0 ||
+      mg_http_parse_header2(hdr, "cnonce", &cnonce, sizeof(cnonce_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "response", &response, sizeof(response_buf)) ==
+          0 ||
+      mg_http_parse_header2(hdr, "uri", &uri, sizeof(uri_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "qop", &qop, sizeof(qop_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "nc", &nc, sizeof(nc_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "nonce", &nonce, sizeof(nonce_buf)) == 0 ||
+      mg_check_nonce(nonce) == 0) {
+    ret = 0;
+    goto clean;
+  }
+
+  /* NOTE(lsm): due to a bug in MSIE, we do not compare URIs */
+
+  ret = mg_custom_check_digest_auth(
+      hm->method,
+      mg_mk_str_n(
+          hm->uri.p,
+          hm->uri.len + (hm->query_string.len ? hm->query_string.len + 1 : 0)),
+      mg_mk_str(username), mg_mk_str(cnonce), mg_mk_str(response),
+      mg_mk_str(qop), mg_mk_str(nc), mg_mk_str(nonce), mg_mk_str(auth_domain),
+      mg_auth_get_user_htpasswd);
+
+clean:
+  if (username != username_buf) MG_FREE(username);
+  if (cnonce != cnonce_buf) MG_FREE(cnonce);
+  if (response != response_buf) MG_FREE(response);
+  if (uri != uri_buf) MG_FREE(uri);
+  if (qop != qop_buf) MG_FREE(qop);
+  if (nc != nc_buf) MG_FREE(nc);
+  if (nonce != nonce_buf) MG_FREE(nonce);
+
+  return ret;
+}
+
+int mg_custom_check_digest_auth(
+    struct mg_str method, struct mg_str uri,
+    struct mg_str username, struct mg_str cnonce,
+    struct mg_str response, struct mg_str qop,
+    struct mg_str nc, struct mg_str nonce,
+    struct mg_str auth_domain, 
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+) {
+  char f_ha1[128];
+  char exp_resp[33];
+
+  if (mg_auth_get_user_htpasswd(username, auth_domain, f_ha1)) {
+      /* Username and domain matched, check the password */
+      mg_mkmd5resp(method.p, method.len, uri.p, uri.len, f_ha1, strlen(f_ha1),
+                   nonce.p, nonce.len, nc.p, nc.len, cnonce.p, cnonce.len,
+                   qop.p, qop.len, exp_resp);
+      LOG(LL_DEBUG, ("%.*s %s %.*s %s", (int) username.len, username.p,
+                     auth_domain, (int) response.len, response.p, exp_resp));
+      return mg_ncasecmp(response.p, exp_resp, strlen(exp_resp)) == 0;
+  }
+
+  /* None of the entries matched - return failure */
+  return 0;
+}
+int mg_http_custom_is_authorized(
+  struct http_message *hm, const char *domain, 
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn
+){
+  return mg_http_custom_check_digest_auth(hm, domain, get_user_htpasswd_fn);
+}
 #else
 int mg_http_is_authorized(struct http_message *hm, const struct mg_str path,
                           const char *domain, const char *passwords_file,
@@ -7859,6 +7941,14 @@ int mg_http_is_authorized(struct http_message *hm, const struct mg_str path,
   (void) domain;
   (void) passwords_file;
   (void) flags;
+  return 1;
+}
+
+int mg_http_custom_is_authorized(struct http_message *hm, const char *domain, 
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn){
+  (void) hm;
+  (void) domain;
+  (void) get_user_htpasswd_fn;
   return 1;
 }
 #endif
@@ -8464,16 +8554,27 @@ MG_INTERNAL void mg_send_http_file(struct mg_connection *nc, char *path,
 
   if (is_dav && opts->dav_document_root == NULL) {
     mg_http_send_error(nc, 501, NULL);
-  } else if (!mg_http_is_authorized(
+  } else if ( 
+            //   (opts->get_user_htpasswd_fn !=NULL 
+            //   && !mg_http_custom_check_digest_auth(hm, opts->auth_domain, opts->get_user_htpasswd_fn)
+            //   )
+            // || 
+              (opts->global_auth_file !=NULL 
+              && !mg_http_is_authorized(
                  hm, mg_mk_str(path), opts->auth_domain, opts->global_auth_file,
                  ((is_directory ? MG_AUTH_FLAG_IS_DIRECTORY : 0) |
                   MG_AUTH_FLAG_IS_GLOBAL_PASS_FILE |
-                  MG_AUTH_FLAG_ALLOW_MISSING_FILE)) ||
-             !mg_http_is_authorized(
+                  MG_AUTH_FLAG_ALLOW_MISSING_FILE)) 
+              )
+            ||
+              (opts->per_directory_auth_file !=NULL 
+              && !mg_http_is_authorized(
                  hm, mg_mk_str(path), opts->auth_domain,
                  opts->per_directory_auth_file,
                  ((is_directory ? MG_AUTH_FLAG_IS_DIRECTORY : 0) |
-                  MG_AUTH_FLAG_ALLOW_MISSING_FILE))) {
+                  MG_AUTH_FLAG_ALLOW_MISSING_FILE))
+              )
+            ) {
     mg_http_send_digest_auth_request(nc, opts->auth_domain);
   } else if (is_cgi) {
 #if MG_ENABLE_HTTP_CGI
