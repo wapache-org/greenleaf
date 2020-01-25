@@ -17,3 +17,13 @@ mongoose -A /path/to/.htdigest mydomain.com joe joes_password
 
 
  */
+#include "mongoose.h"
+
+int main(int argc, char* argv[])
+{
+    // there are two way to du the digest auth:
+    // 1. use auth file, just set the http options and add .htpasswd to the dir.
+    // 2. use custom callback function, the example code see api_server_example.c
+
+    return 0;
+}

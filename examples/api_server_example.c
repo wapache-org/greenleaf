@@ -22,9 +22,18 @@ static const char *s_db_path = "api_server_example.db";
 static void signal_handler(int sig_num);
 static void event_handler(struct mg_connection *nc, int ev, void *ev_data);
 
+static void handle_api_request(struct mg_connection *nc, struct http_message *hm);
 static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
 static int is_equal(const struct mg_str *s1, const struct mg_str *s2);
 
+static 
+int get_user_htpasswd(struct mg_str username, struct mg_str auth_domain, char* out_ha1)
+{
+    // out_ha1 is char[128]
+    // username/password: admin/admin
+    strcpy(out_ha1,"609e3552947b5949c2451a072a2963e1");
+    return 1; // found
+}
 
 int main(int argc, char *argv[]) {
 
@@ -61,6 +70,9 @@ int main(int argc, char *argv[]) {
     }
 
     s_http_server_opts.document_root = document_root;
+    s_http_server_opts.get_user_htpasswd_fn = get_user_htpasswd;
+    s_http_server_opts.auth_domain = "localhost";
+
     struct mg_connection *nc = mg_bind(&mgr, s_http_port, event_handler);
     mg_set_protocol_http_websocket(nc);
 
@@ -84,36 +96,48 @@ static void signal_handler(int sig_num) {
     s_sig_num = sig_num;
 }
 
+static const struct mg_str api_prefix = MG_MK_STR("/api/v1/");
 static void event_handler(struct mg_connection *nc, int ev, void *ev_data) 
 {
-    static const struct mg_str api_prefix = MG_MK_STR("/api/v1/");
     struct http_message *hm = (struct http_message *) ev_data;
-    struct mg_str key;
 
     switch (ev) {
     case MG_EV_HTTP_REQUEST:
         if (has_prefix(&hm->uri, &api_prefix)) 
         {
-            key.p   = hm->uri.p   + api_prefix.len;
-            key.len = hm->uri.len - api_prefix.len;
-
-            if (is_equal(&hm->method, &s_get_method)) {
-                db_op(nc, hm, &key, s_db_handle, API_OP_GET);
-            } else if (is_equal(&hm->method, &s_put_method)) {
-                db_op(nc, hm, &key, s_db_handle, API_OP_SET);
-            } else if (is_equal(&hm->method, &s_delele_method)) {
-                db_op(nc, hm, &key, s_db_handle, API_OP_DEL);
-            } else {
-                mg_printf(nc, "%s",
-                        "HTTP/1.0 501 Not Implemented\r\n"
-                        "Content-Length: 0\r\n\r\n"
-                );
+            if(!mg_http_custom_is_authorized(
+                hm, s_http_server_opts.auth_domain, s_http_server_opts.get_user_htpasswd_fn
+            )){
+                mg_http_send_digest_auth_request(nc, s_http_server_opts.auth_domain);
+                break;
             }
+            handle_api_request(nc, hm);
         } else {
             mg_serve_http(nc, hm, s_http_server_opts); /* Serve static content */
         }
         break;
     }
+}
+
+static void handle_api_request(struct mg_connection *nc, struct http_message *hm)
+{
+    struct mg_str key;
+    key.p   = hm->uri.p   + api_prefix.len;
+    key.len = hm->uri.len - api_prefix.len;
+
+    if (is_equal(&hm->method, &s_get_method)) {
+        db_op(nc, hm, &key, s_db_handle, API_OP_GET);
+    } else if (is_equal(&hm->method, &s_put_method)) {
+        db_op(nc, hm, &key, s_db_handle, API_OP_SET);
+    } else if (is_equal(&hm->method, &s_delele_method)) {
+        db_op(nc, hm, &key, s_db_handle, API_OP_DEL);
+    } else {
+        mg_printf(nc, "%s",
+                "HTTP/1.0 501 Not Implemented\r\n"
+                "Content-Length: 0\r\n\r\n"
+        );
+    }
+
 }
 
 static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix) {
