@@ -2505,9 +2505,9 @@ void mbuf_trim(struct mbuf *);
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef CS_COMMON_CS_BASE64_H_
 #define CS_COMMON_CS_BASE64_H_
+#define CS_COMMON_BASE64_H_
 
 #ifndef DISABLE_BASE64
 #define DISABLE_BASE64 0

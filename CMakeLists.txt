@@ -16,10 +16,11 @@ add_compile_options(-Wl,-E)
 aux_source_directory(. DIR_SRCS)
 
 # add header file include directories
-include_directories(./ ./lua ./mongoose ./mustache ./sqlite)
+include_directories(./ ./mongoose ./lua ./v7js ./mustache ./sqlite)
 
 # add block directories
 add_subdirectory(lua)
+add_subdirectory(v7js)
 add_subdirectory(mongoose)
 add_subdirectory(mustache)
 add_subdirectory(sqlite)

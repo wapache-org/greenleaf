@@ -66,7 +66,7 @@ static void usage(int argc, char* argv[])
   printf("Options:\n");
   printf("    [-%s, --%s]     %s\n", "h","help","print this message");
   printf("    [-%s, --%s]     %s\n", "p","poot","web server bingding port, default is 8000.");
-  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is current work directory.");
+  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `html`.");
   printf("    [-%s, --%s]     %s\n", "l","enable-directory-listing","if cannot find index file, list directory files, default is no.");
 }
 // 解析选项
@@ -74,6 +74,7 @@ void parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[])
 {
 
   // 先设置默认值
+  opts->document_root = "html";
   opts->enable_directory_listing = "no";
 
   // 如果只有短选项, 用getopt就够了
