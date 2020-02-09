@@ -40,7 +40,12 @@ add_definitions(-DCS_ENABLE_UTF8)
 add_executable(v7js_example v7js_example.c)
 target_link_libraries(v7js_example v7js m mongoose)
 
-link_directories("/usr/local/lib/quickjs")
+link_directories("/usr/local/lib/quickjs" "/opt/pgsql-12/lib")
 add_executable(qjs_example qjs_example.c)
 target_link_libraries(qjs_example quickjs m dl)
 
+add_executable(postgres_example postgres_example.c)
+target_link_libraries(postgres_example m dl pq)
+
+add_executable(qjs_postgres_example qjs_postgres_example.c)
+target_link_libraries(qjs_postgres_example quickjs pq m dl)

@@ -16,7 +16,7 @@ add_compile_options(-Wl,-E)
 aux_source_directory(. DIR_SRCS)
 
 # add header file include directories
-include_directories(./ ./mongoose ./lua ./v7js ./mustache ./sqlite)
+include_directories(./ ./mongoose ./lua ./v7js ./mustache ./sqlite "/opt/pgsql-12/include")
 
 # add block directories
 add_subdirectory(lua)
