@@ -49,3 +49,21 @@ target_link_libraries(postgres_example m dl pq)
 
 add_executable(qjs_postgres_example qjs_postgres_example.c)
 target_link_libraries(qjs_postgres_example quickjs pq m dl)
+
+add_executable(qjs_mongoose_example qjs_mongoose_example.c)
+target_link_libraries(qjs_mongoose_example mongoose quickjs pq m dl)
+add_custom_command(
+    TARGET qjs_mongoose_example
+    POST_BUILD 
+    COMMAND echo "copy qjs_mongoose_template_engine.js"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/qjs_mongoose_template_engine.js ${CMAKE_CURRENT_BINARY_DIR}/qjs_mongoose_template_engine.js
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/qjs_mongoose_template_engine.js
+)
+add_custom_command(
+    TARGET qjs_mongoose_example
+    POST_BUILD 
+    COMMAND echo "copy qjs_mongoose_handler.js"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/qjs_mongoose_handler.js ${CMAKE_CURRENT_BINARY_DIR}/qjs_mongoose_handler.js
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/qjs_mongoose_handler.js
+)
+
