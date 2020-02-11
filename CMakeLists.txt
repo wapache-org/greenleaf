@@ -18,6 +18,9 @@ aux_source_directory(. DIR_SRCS)
 # add header file include directories
 include_directories(./ ./mongoose ./lua ./v7js ./mustache ./sqlite "/opt/pgsql-12/include")
 
+# add lib directories
+link_directories("/usr/local/lib/quickjs" "/opt/pgsql-12/lib")
+
 # add block directories
 add_subdirectory(lua)
 add_subdirectory(v7js)
@@ -28,16 +31,23 @@ add_subdirectory(examples)
 
 # add target
 add_executable(mongoose_lua main.c)
-target_link_libraries(mongoose_lua mongoose lua mustache json-c m dl readline)
+add_dependencies(mongoose_lua copy_files)
+target_link_libraries(mongoose_lua mongoose lua quickjs pq sqlite json-c m dl readline)
 
-# add_executable(api_server api_server.c db_plugin_sqlite.c)
-# target_link_libraries(api_server mongoose sqlite lua mustache json-c m dl readline pthread)
-
-
-# add_executable(restful_server restful_server.c)
-# target_link_libraries(restful_server mongoose pthread)
-
-# add_executable(restful_client restful_client.c)
-# target_link_libraries(restful_client mongoose pthread)
-
-
+# add file copy target
+FILE(GLOB QUICKJS_MODULE_FILES CONFIGURE_DEPENDS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/quickjs_modules/*.js
+)
+FILE(GLOB LUA_MODULE_FILES CONFIGURE_DEPENDS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/lua_modules/*.lua
+)
+add_custom_target(copy_files ALL 
+  VERBATIM 
+  COMMAND_EXPAND_LISTS 
+  COMMAND ${CMAKE_COMMAND} -E make_directory 
+    "${CMAKE_CURRENT_BINARY_DIR}/quickjs_modules" 
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+    "${QUICKJS_MODULE_FILES}" 
+    "${LUA_MODULE_FILES}"
+    "${CMAKE_CURRENT_BINARY_DIR}/quickjs_modules/" 
+)
