@@ -40,7 +40,6 @@ add_definitions(-DCS_ENABLE_UTF8)
 add_executable(v7js_example v7js_example.c)
 target_link_libraries(v7js_example v7js m mongoose)
 
-link_directories("/usr/local/lib/quickjs" "/opt/pgsql-12/lib")
 add_executable(qjs_example qjs_example.c)
 target_link_libraries(qjs_example quickjs m dl)
 
@@ -67,3 +66,5 @@ add_custom_command(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/qjs_mongoose_handler.js
 )
 
+add_executable(qjs_module_example qjs_module_example.c)
+target_link_libraries(qjs_module_example quickjs m dl)
