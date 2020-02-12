@@ -5,6 +5,7 @@ export default function handle_api_request(request, response){
     console.log(JSON.stringify(request));
 
     try{
+        console.log('parameter','a', '=', getParameter(request.query_string, 'a'));
 
         render_template(request, response);
 
@@ -24,6 +25,11 @@ export default function handle_api_request(request, response){
         }));
     }
 };
+
+function getParameter(query_string, name) {
+    var r = query_string.match(new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"));
+    return r == null ? null : unescape(r[2]);
+}
 
 function render_template(request, response){
     var template = '{{ d.name }}';

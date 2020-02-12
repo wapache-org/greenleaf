@@ -440,10 +440,19 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
         memset( query_string, 0, sizeof(query_string));
         memcpy(query_string, hm->query_string.p, hm->query_string.len);
 
+        // hm->body
+        char body[hm->body.len+1];
+        memset(body, 0, sizeof(body));
+        memcpy(body, hm->body.p, hm->body.len);
+
         JS_SetPropertyStr(context, request, "method", JS_NewString(context, method));
         JS_SetPropertyStr(context, request, "uri", JS_NewString(context, uri));
         JS_SetPropertyStr(context, request, "path", JS_NewString(context, path));
         JS_SetPropertyStr(context, request, "query_string", JS_NewString(context, query_string));
+        JS_SetPropertyStr(context, request, "body", JS_NewString(context, body));
+        
+        // mg_get_http_header
+        // mg_get_http_var
 
     }
 
