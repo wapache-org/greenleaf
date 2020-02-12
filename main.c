@@ -12,7 +12,6 @@
 #include <libpq-fe.h>
 
 // header for quickjs
-#include <quickjs/quickjs.h>
 #include <quickjs/quickjs-libc.h>
 
 // header for mongoose
@@ -45,6 +44,7 @@ static void handle_api_request(struct mg_connection *nc, struct http_message *hm
 static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
 static int is_equal(const struct mg_str *s1, const struct mg_str *s2);
 
+static char* s_api_request_handler_func = "handle_api_request";
 static char* s_api_request_handle_file = "quickjs_modules/api_request_handler.js";
 static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm);
 
@@ -68,13 +68,25 @@ static JSValue grobal;
 static int qjs_runtime_init();
 static int qjs_runtime_free();
 
-static JSValue js_loadScript(JSContext *ctx, const char *filename);
+static int eval_buf(
+    JSContext *ctx,
+    const void *buf,
+    int buf_len,
+    const char *filename, // 给buf一个文件名, 方便出错打印信息
+    int eval_flags        // eval的一些选项和标记, JS_EVAL_TYPE_GLOBAL: 全局方式, JS_EVAL_TYPE_MODULE: js module方式
+);
+static int eval_file(
+    JSContext *ctx,
+    const char *filename,
+    int module // 小于零则通过文件后缀和文件内容来猜测是不是一个js module, ==0: 不是, >0: 是
+);
 static uint8_t *load_file(JSContext *ctx, size_t *pbuf_len, const char *filename);
+
 static void print_exception(JSContext *ctx, JSValue e);
 static void print_exception_free(JSContext *ctx, JSValue e);
 static int is_exception_free(JSContext *ctx, JSValue e);
 static int if_is_exception_then_free(JSContext *ctx, JSValue e);
-static void print_value(JSContext *ctx, JSValue e);
+static void print_value(JSContext *ctx, JSValue e, const char* prefix);
 static void print_property(JSContext *ctx, JSValue this_obj, const char* property_name);
 
 // #endregion quickjs declare area
@@ -445,7 +457,7 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
 
     // handle request
     {
-        JSAtom fn_name = JS_NewAtom(context, "handle_api_request");
+        JSAtom fn_name = JS_NewAtom(context, s_api_request_handler_func);
         JSValue argv2[] = { request, response };
         JSValue rs = JS_Invoke(context, grobal, fn_name, 2, argv2);
         JS_FreeAtom(context, fn_name);
@@ -697,12 +709,43 @@ static int qjs_runtime_init()
 {
 
   runtime = JS_NewRuntime();
+  if (!runtime) {
+      fprintf(stderr, "qjs: cannot allocate JS runtime\n");
+      exit(2);
+  }
   context = JS_NewContext(runtime);
+  if (!context) {
+      fprintf(stderr, "qjs: cannot allocate JS context\n");
+      exit(2);
+  }
   grobal = JS_GetGlobalObject(context);
 
-  js_std_add_helpers(context, 0, NULL);
+  /* loader for ES6 modules */
+  JS_SetModuleLoaderFunc(runtime, NULL, js_module_loader, NULL);
 
-  js_loadScript(context, s_api_request_handle_file);
+  // build in functions and modules
+  js_std_add_helpers(context, 0, NULL);
+  js_init_module_std(context, "std");
+  js_init_module_os(context, "os");
+
+
+  /* make 'std' and 'os' visible to non module code */
+  const char *str = "import * as std from 'std';\n"
+      "import * as os from 'os';\n"
+      "globalThis.std = std;\n"
+      "globalThis.os = os;\n";
+  eval_buf(context, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+
+  if (eval_file(context, s_api_request_handle_file, 1)){
+    qjs_runtime_free();
+    exit(EXIT_FAILURE);
+  }
+  /* make 'std' and 'os' visible to non module code */
+  const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
+  char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_api_request_handle_file)+ (strlen(s_api_request_handler_func)*4 ));
+  sprintf(str3, str2, s_api_request_handler_func, s_api_request_handle_file, s_api_request_handler_func, s_api_request_handler_func);
+  eval_buf(context, str3, strlen(str3), "<input>", JS_EVAL_TYPE_MODULE);
+  free(str3);
 
   JS_SetPropertyStr(context, grobal, "pg_connect_db", JS_NewCFunction(context, js_PQconnectdb, NULL, 0));
 
@@ -713,93 +756,124 @@ static int qjs_runtime_init()
 static int qjs_runtime_free() 
 {
   JS_FreeValue(context, grobal);
+  js_std_free_handlers(runtime);
   JS_FreeContext(context);
   JS_FreeRuntime(runtime);
   return 0;
 }
 
 
-/* load and evaluate a file */
-static JSValue js_loadScript(JSContext *ctx, const char *filename)
+#ifndef countof
+#define countof(x) (sizeof(x) / sizeof((x)[0]))
+#endif
+
+typedef int BOOL;
+
+#ifndef FALSE
+enum {
+    FALSE = 0,
+    TRUE = 1,
+};
+#endif
+
+
+extern int has_suffix(const char *str, const char *suffix);
+
+/** 从buf[buf_len]中读取js代码, 相当于 eval(buf); */
+static int eval_buf(
+    JSContext *ctx,
+    const void *buf,
+    int buf_len,
+    const char *filename, // 给buf一个文件名, 方便出错打印信息
+    int eval_flags        // eval的一些选项和标记, JS_EVAL_TYPE_GLOBAL: 全局方式, JS_EVAL_TYPE_MODULE: js module方式
+)
+{
+    JSValue val;
+    int ret;
+
+    if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE) { // 以ES6 module方式eval
+        /* for the modules, we compile then run to be able to set import.meta */
+        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+        if (!JS_IsException(val)) {
+            js_module_set_import_meta(ctx, val, TRUE, TRUE);
+            val = JS_EvalFunction(ctx, val);
+        }
+    } else {
+        val = JS_Eval(ctx, buf, buf_len, filename, eval_flags);
+    }
+
+    if (JS_IsException(val)) {
+        js_std_dump_error(ctx);
+        ret = -1;
+    } else {
+        ret = 0;
+    }
+
+    JS_FreeValue(ctx, val);
+    return ret;
+}
+
+// 读取文件的内容并且eval
+static int eval_file(
+    JSContext *ctx,
+    const char *filename,
+    int module // 小于零则通过文件后缀和文件内容来猜测是不是一个js module, ==0: 不是, >0: 是
+)
 {
     uint8_t *buf;
-    JSValue ret;
+    int ret, eval_flags;
     size_t buf_len;
-    
-    if (!filename)
-        return JS_EXCEPTION;
-    buf = load_file(ctx, &buf_len, filename);
+
+    buf = js_load_file(ctx, &buf_len, filename);
     if (!buf) {
-        JS_ThrowReferenceError(ctx, "could not load '%s'", filename);
-        return JS_EXCEPTION;
+        perror(filename);
+        exit(1);
     }
-    ret = JS_Eval(ctx, (char *)buf, buf_len, filename, JS_EVAL_TYPE_GLOBAL);
+
+    if (module < 0) {
+        module = (has_suffix(filename, ".mjs") ||
+                  JS_DetectModule((const char *)buf, buf_len));
+    }
+    if (module)
+        eval_flags = JS_EVAL_TYPE_MODULE;
+    else
+        eval_flags = JS_EVAL_TYPE_GLOBAL;
+    ret = eval_buf(ctx, buf, buf_len, filename, eval_flags);
     js_free(ctx, buf);
     return ret;
 }
 
-static uint8_t *load_file(JSContext *ctx, size_t *pbuf_len, const char *filename)
-{
-    FILE *f;
-    uint8_t *buf;
-    size_t buf_len;
-    long lret;
-    
-    // 获取文件句柄
-    f = fopen(filename, "rb");
-    if (!f)
-        return NULL;
+static void JS_DumpErrorObject(JSContext *ctx, JSValue ex, const char* prefix) {
 
-    // 获取文件长度
-    if (fseek(f, 0, SEEK_END) < 0)
-        goto fail;
-    lret = ftell(f);
-    if (lret < 0)
-        goto fail;
-    /* XXX: on Linux, ftell() return LONG_MAX for directories */
-    if (lret == LONG_MAX) {
-        errno = EISDIR;
-        goto fail;
-    }
-    buf_len = lret;
-    if (fseek(f, 0, SEEK_SET) < 0)
-        goto fail;
+  JSValue message = JS_GetPropertyStr(context, ex, "message");
+  print_value(context, message, "ERROR: ");
+  JS_FreeValue(context, message);
 
-    // 申请内存
-    if (ctx)
-        buf = js_malloc(ctx, buf_len + 1);
-    else
-        buf = malloc(buf_len + 1);
-    if (!buf)
-        goto fail;
-    
-    // 读取文件
-    if (fread(buf, 1, buf_len, f) != buf_len) {
-        errno = EIO;
-        if (ctx)
-            js_free(ctx, buf);
-        else
-            free(buf);
-    fail:
-        fclose(f);
-        return NULL;
-    }
-    buf[buf_len] = '\0';
+  JSValue stack = JS_GetPropertyStr(context, ex, "stack");
+  print_value(context, stack, "STACK: \n");
+  JS_FreeValue(context, stack);
 
-    // 关闭文件
-    fclose(f);
-
-    // 返回
-    *pbuf_len = buf_len;
-    return buf;
+  // JSValue json = JS_JSONStringify(context, ex, JS_UNDEFINED, JS_UNDEFINED);
+  // print_value(context, json, prefix);
+  // JS_FreeValue(context, json);
 }
 
 static void print_exception(JSContext *ctx, JSValue e)
 {
   assert(JS_IsException(e));
-  const char* msg = JS_ToCString(ctx, e);
-  printf("ERROR: %s\n", msg);
-  JS_FreeCString(ctx, msg);
+
+  // const char* msg = JS_ToCString(ctx, e);
+  // printf("ERROR: %s\n", msg);
+  // JS_FreeCString(ctx, msg);
+  
+  // Error { message: 1"expecting '('", fileName: 1"quickjs_modules/api_request_handler.js", lineNumber: 2, stack: 1"    at quickjs_modules/api_request_handler.js:2\n" }
+  JSValue ex = JS_GetException(context);
+  if(JS_IsError(context, ex)){
+    JS_DumpErrorObject(context, ex, "ERROR: ");
+  }else{
+    print_value(context, ex, "ERROR: ");
+  }
+  JS_FreeValue(context, ex);
 }
 
 static void print_exception_free(JSContext *ctx, JSValue e)
@@ -808,10 +882,10 @@ static void print_exception_free(JSContext *ctx, JSValue e)
   JS_FreeValue(ctx, e);
 }
 
-static void print_value(JSContext *ctx, JSValue e)
+static void print_value(JSContext *ctx, JSValue e, const char* prefix)
 {
   const char* msg = JS_ToCString(ctx, e);
-  printf("DUMP: %s\n", msg);
+  printf("%s%s\n", prefix, msg);
   JS_FreeCString(ctx, msg);
 }
 
@@ -822,7 +896,7 @@ static void print_property(JSContext *ctx, JSValue this_obj, const char* propert
   JS_FreeAtom(ctx, property_atom);
 
   if(if_is_exception_then_free(ctx, property_value)) return;
-  print_value(ctx, property_value);
+  print_value(ctx, property_value, "DUMP: ");
   JS_FreeValue(ctx, property_value);
 }
 

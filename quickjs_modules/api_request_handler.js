@@ -1,7 +1,65 @@
-function handle_api_request(request, response){
+import engine from './template_engine.js';
+
+export default function handle_api_request(request, response){
 
     console.log(JSON.stringify(request));
 
+    try{
+
+        render_template(request, response);
+
+    }catch(err){
+        response.status = 500;
+        response.status_text = "Internal Server Error";
+        response.body = JSON.stringify(err);
+    }finally{
+        console.log(JSON.stringify({
+            request:{
+                method: request.method,
+                uri: request.uri
+            },
+            response:{
+                status: response.status
+            }
+        }));
+    }
+};
+
+function render_template(request, response){
+    var template = '{{ d.name }}';
+    var data = {
+        name: 'abc'
+    };
+    var result = engine.template(template).render(data);
+
+    response.status = 200;
+    response.status_text = "OK";
+    response.body = JSON.stringify({
+        template: template,
+        data: data,
+        result : result
+    });
+}
+
+// function render_template(request, response){
+
+//     try{
+//         var result = engine.template('{{ d.name }}').render({
+//             name: 'abc'
+//         });
+        
+//         response.status = 200;
+//         response.status_text = "OK";
+//         response.body = JSON.stringify(data);
+
+//     }catch(err){
+//         response.status = 400;
+//         response.status_text = "Bad Request";
+//         response.body = JSON.stringify(err);
+//     }
+// }
+
+function pg_get_settings(request, response){
     try{
         var conn = pg_connect_db('');
 
@@ -37,6 +95,4 @@ function handle_api_request(request, response){
         response.status_text = "Bad Request";
         response.body = JSON.stringify(err);
     }
-
-    console.log(JSON.stringify(response));
 }
