@@ -1,0 +1,30 @@
+
+@baseUrl = http://localhost:8000/api
+@username = admin
+@password = admin
+
+###
+GET {{baseUrl}}/1
+Authorization: Digest {{username}} {{password}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/2
+Authorization: Digest {{username}} {{password}}
+Accept: application/json
+
+{"did":1}
+
+###
+POST {{baseUrl}}/3
+Authorization: Digest {{username}} {{password}}
+Accept: application/json
+
+{}
+
+###
+POST {{baseUrl}}/4
+Authorization: Digest {{username}} {{password}}
+Accept: application/json
+
+{}
