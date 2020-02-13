@@ -1,6 +1,8 @@
 /**
  * usage: see template_engine_test.js
  */
+
+import * as std from 'std';
 var 
   Template = function(options){
     this.options = options;
@@ -172,6 +174,14 @@ var engine = {
         callback(result);
       return result;
     }
+  },
+  load: function(path){
+    var file = std.open(path,'r');
+    var content = file.readAsString();
+    return content;
+  },
+  download: function(url, options){
+    return std.urlGet(url, options);
   }
 };
 

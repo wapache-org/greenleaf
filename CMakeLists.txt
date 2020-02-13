@@ -31,7 +31,7 @@ add_subdirectory(examples)
 
 # add target
 add_executable(mongoose_lua main.c)
-add_dependencies(mongoose_lua copy_files)
+# add_dependencies(mongoose_lua copy_files)
 target_link_libraries(mongoose_lua mongoose lua quickjs pq sqlite json-c m dl readline)
 
 # add file copy target
@@ -44,6 +44,13 @@ FILE(GLOB LUA_MODULE_FILES CONFIGURE_DEPENDS
 add_custom_target(copy_files ALL 
   VERBATIM 
   COMMAND_EXPAND_LISTS 
+
+  COMMAND ${CMAKE_COMMAND} -E make_directory 
+    "${CMAKE_CURRENT_BINARY_DIR}/templates" 
+  COMMAND ${CMAKE_COMMAND} -E copy_directory 
+    "${CMAKE_CURRENT_SOURCE_DIR}/templates" 
+    "${CMAKE_CURRENT_BINARY_DIR}/templates" 
+
   COMMAND ${CMAKE_COMMAND} -E make_directory 
     "${CMAKE_CURRENT_BINARY_DIR}/quickjs_modules" 
   COMMAND ${CMAKE_COMMAND} -E copy_if_different  

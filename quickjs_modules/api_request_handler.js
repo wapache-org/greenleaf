@@ -1,3 +1,5 @@
+// import * as std from 'std';
+// import * as os from 'os';
 import engine from './template_engine.js';
 
 export default function handle_api_request(request, response){
@@ -5,16 +7,31 @@ export default function handle_api_request(request, response){
     console.log(JSON.stringify(request));
 
     try{
-        console.log('parameter','a', '=', getParameter(request.query_string, 'a'));
 
-        render_template(request, response);
+        switch(request.path){
+        case '/1':
+            console.log('parameter','a', '=', getParameter(request.query_string, 'a'));
+            render_template(request, response);
+            break;
+        case '/2':
+            pg_get_activity(request, response);
+            break;
+        case '/3':
+            pg_get_settings(request, response);
+            break;
+        default:
+
+        }
+
+
+
 
     }catch(err){
         response.status = 500;
         response.status_text = "Internal Server Error";
-        response.body = JSON.stringify(err);
+        fill_error_message(response, err);
     }finally{
-        console.log(JSON.stringify({
+        console.log(get_current_time(), "[REQ_DONE]", JSON.stringify({
             request:{
                 method: request.method,
                 uri: request.uri
@@ -26,10 +43,33 @@ export default function handle_api_request(request, response){
     }
 };
 
+function get_current_time(){
+    var d = new Date(), ms = d.getMilliseconds();
+    return d.getHours()
+    +":"+d.getMinutes()
+    +":"+d.getSeconds()
+    +"."+(ms>99?"":ms>9?"0":"00")+ms;
+}
+
 function getParameter(query_string, name) {
     var r = query_string.match(new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"));
     return r == null ? null : unescape(r[2]);
 }
+
+function fill_error_message(response,err){
+    if(err.stack){
+        response.body = JSON.stringify({
+            message: err.message,
+            stack: err.stack.split('\n')
+        });
+    }else{
+        response.body = JSON.stringify({
+            message: err
+        });
+    }
+}
+
+
 
 function render_template(request, response){
     var template = '{{ d.name }}';
@@ -66,29 +106,86 @@ function render_template(request, response){
 // }
 
 function pg_get_settings(request, response){
+    var template_file_path = 'templates/dashboard/sql/default/config.sql',
+        template_content = engine.load(template_file_path)
+    ;
+
+    console.log("template_content", template_content);
+
+    var tempalte = engine.template({
+        //name: template_file_path,
+        template: template_content,
+    });
+    var data = JSON.parse(request.body) || {};
+    var sql = tempalte.render(data);
+    console.log("sql", sql);
+
+    query_postgresql(request, response, sql);
+}
+
+
+function pg_get_activity(request, response){
+    var template_file_path = 'templates/dashboard/sql/default/activity.sql',
+        template_content = engine.load(template_file_path)
+    ;
+
+    console.log("template_content", template_content);
+
+    var tempalte = engine.template({
+        //name: template_file_path,
+        template: template_content,
+    });
+    var data = JSON.parse(request.body) || {};
+    var sql = tempalte.render(data);
+    console.log("sql", sql);
+
+    query_postgresql(request, response, sql);
+}
+
+
+function query_postgresql(request, response, sql){
     try{
         var conn = pg_connect_db('');
 
         try{
-            var rs = conn.query('select * from pg_settings');
+            var rs = conn.query(sql);
             // rs.print();
 
             var rows = rs.getRowCount();
             var cols = rs.getColumnCount();
-            console.log('rows='+rows+', cols='+cols+'\n\n');
+            //console.log('rows='+rows+', cols='+cols+'\n\n');
+
+            var head = [];
+            for(let col=0;col<cols;col++){
+                head.push(rs.getColumnName(col));
+            }
+
             var data = [];
-            for(row=0;row<rows;row++){
-                var r = {};
-                for(col=0;col<cols;col++){
-                    r[rs.getColumnName(col)]=rs.getValue(row, col);
+            // for(let row=0;row<rows;row++){
+            //     var r = {};
+            //     for(let col=0;col<cols;col++){
+            //         r[rs.getColumnName(col)]=rs.getValue(row, col);
+            //     }
+            //     data.push(r);
+            // }
+            for(let row=0;row<rows;row++){
+                var r = [];
+                for(let col=0;col<cols;col++){
+                    r.push(rs.getValue(row, col));
                 }
                 data.push(r);
             }
+
             rs.close();
 
             response.status = 200;
             response.status_text = "OK";
-            response.body = JSON.stringify(data);
+            response.body = JSON.stringify({
+                rows: rows,
+                cols: cols,
+                head: head,
+                data: data
+            });
 
         }catch(err){
             throw err;
@@ -99,6 +196,6 @@ function pg_get_settings(request, response){
     }catch(err){
         response.status = 400;
         response.status_text = "Bad Request";
-        response.body = JSON.stringify(err);
+        fill_error_message(response, err);
     }
 }

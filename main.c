@@ -738,17 +738,18 @@ static int qjs_runtime_init()
   js_init_module_os(context, "os");
 
 
-  /* make 'std' and 'os' visible to non module code */
-  const char *str = "import * as std from 'std';\n"
-      "import * as os from 'os';\n"
-      "globalThis.std = std;\n"
-      "globalThis.os = os;\n";
-  eval_buf(context, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
-
-  if (eval_file(context, s_api_request_handle_file, 1)){
-    qjs_runtime_free();
-    exit(EXIT_FAILURE);
-  }
+  // /* make 'std' and 'os' visible to non module code */
+  // const char *str = "import * as std from 'std';\n"
+  //     "import * as os from 'os';\n"
+  //     "globalThis.std = std;\n"
+  //     "globalThis.os = os;\n";
+  // eval_buf(context, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
+  // 
+  // if (eval_file(context, s_api_request_handle_file, 1)){
+  //   qjs_runtime_free();
+  //   exit(EXIT_FAILURE);
+  // }
+  
   /* make 'std' and 'os' visible to non module code */
   const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
   char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_api_request_handle_file)+ (strlen(s_api_request_handler_func)*4 ));
