@@ -10,6 +10,7 @@ SELECT
     CASE WHEN waiting THEN '{{ _('yes') }}' ELSE '{{ _('no') }}' END AS waiting
 FROM
     pg_stat_activity
-{% if did %}WHERE
-    datid = {{ did }} {% endif %}
+{{# if (d.did) { }}WHERE
+    datid = {{ d.did }} {{# } }}
 ORDER BY pid
+;

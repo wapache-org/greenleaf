@@ -18,7 +18,8 @@ SELECT
 FROM
     pg_locks l
     LEFT OUTER JOIN pg_database d ON (l.database = d.oid)
-{% if did %}WHERE
-    datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}
+{{# if (d.did) { }}WHERE
+    datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}){{# } }}
 ORDER BY
     pid, locktype
+;

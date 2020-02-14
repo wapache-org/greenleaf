@@ -1,57 +1,58 @@
 /*pga4dash*/
-{% set add_union = false %}
-{% if 'session_stats' in chart_names %}
-{% set add_union = true %}
+{{# let add_union = false; }}
+{{# if (d.chart_names.includes('session_stats')) { }}
+{{# add_union = true; }}
 SELECT 'session_stats' AS chart_name, row_to_json(t) AS chart_data
 FROM (SELECT
-   (SELECT count(*) FROM pg_stat_activity{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Total') }}",
-   (SELECT count(*) FROM pg_stat_activity WHERE state = 'active'{% if did %} AND datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %})  AS "{{ _('Active') }}",
-   (SELECT count(*) FROM pg_stat_activity WHERE state = 'idle'{% if did %} AND datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %})  AS "{{ _('Idle') }}"
+   (SELECT count(*) FROM pg_stat_activity{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Total') }}",
+   (SELECT count(*) FROM pg_stat_activity WHERE state = 'active'{{# if (d.did) { }} AND datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }})  AS "{{ _('Active') }}",
+   (SELECT count(*) FROM pg_stat_activity WHERE state = 'idle'{{# if (d.did) { }} AND datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }})  AS "{{ _('Idle') }}"
 ) t
-{% endif %} /* end 'session_stats' */
-{% if add_union and 'tps_stats' in chart_names %}
+{{# } }} /* end 'session_stats' */
+{{# if (add_union && d.chart_names.includes('tps_stats')) { }}
 UNION ALL
-{% endif %}
-{% if 'tps_stats' in chart_names %}
-{% set add_union = true %}
+{{# } }}
+{{# if (d.chart_names.includes('tps_stats')) { }}
+{{# add_union = true; }}
 SELECT 'tps_stats' AS chart_name, row_to_json(t) AS chart_data
 FROM (SELECT
-   (SELECT sum(xact_commit) + sum(xact_rollback) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Transactions') }}",
-   (SELECT sum(xact_commit) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Commits') }}",
-   (SELECT sum(xact_rollback) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Rollbacks') }}"
+   (SELECT sum(xact_commit) + sum(xact_rollback) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Transactions') }}",
+   (SELECT sum(xact_commit) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Commits') }}",
+   (SELECT sum(xact_rollback) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Rollbacks') }}"
 ) t
-{% endif %} /* end 'tps_stats' */
-{% if add_union and 'ti_stats' in chart_names %}
+{{# } }} /* end 'tps_stats' */
+{{# if (add_union && d.chart_names.includes('ti_stats')) { }}
 UNION ALL
-{% endif %}
-{% if 'ti_stats' in chart_names %}
-{% set add_union = true %}
+{{# } }}
+{{# if (d.chart_names.includes('ti_stats')) { }}
+{{# add_union = true; }}
 SELECT 'ti_stats' AS chart_name, row_to_json(t) AS chart_data
 FROM (SELECT
-   (SELECT sum(tup_inserted) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Inserts') }}",
-   (SELECT sum(tup_updated) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Updates') }}",
-   (SELECT sum(tup_deleted) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Deletes') }}"
+   (SELECT sum(tup_inserted) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Inserts') }}",
+   (SELECT sum(tup_updated) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Updates') }}",
+   (SELECT sum(tup_deleted) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Deletes') }}"
 ) t
-{% endif %} /* end 'ti_stats' */
-{% if add_union and 'to_stats' in chart_names %}
+{{# } }} /* end 'ti_stats' */
+{{# if (add_union && d.chart_names.includes('to_stats')) { }}
 UNION ALL
-{% endif %}
-{% if 'to_stats' in chart_names %}
-{% set add_union = true %}
+{{# } }}
+{{# if (d.chart_names.includes('to_stats')) { }}
+{{# add_union = true; }}
 SELECT 'to_stats' AS chart_name, row_to_json(t) AS chart_data
 FROM (SELECT
-   (SELECT sum(tup_fetched) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Fetched') }}",
-   (SELECT sum(tup_returned) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Returned') }}"
+   (SELECT sum(tup_fetched) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Fetched') }}",
+   (SELECT sum(tup_returned) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Returned') }}"
 ) t
-{% endif %} /* end 'to_stats' */
-{% if add_union and 'bio_stats' in chart_names %}
+{{# } }} /* end 'to_stats' */
+{{# if (add_union && d.chart_names.includes('bio_stats')) { }}
 UNION ALL
-{% endif %}
-{% if 'bio_stats' in chart_names %}
-{% set add_union = true %}
+{{# } }}
+{{# if (d.chart_names.includes('bio_stats')) { }}
+{{# add_union = true; }}
 SELECT 'bio_stats' AS chart_name, row_to_json(t) AS chart_data
 FROM (SELECT
-   (SELECT sum(blks_read) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Reads') }}",
-   (SELECT sum(blks_hit) FROM pg_stat_database{% if did %} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ did }}){% endif %}) AS "{{ _('Hits') }}"
+   (SELECT sum(blks_read) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Reads') }}",
+   (SELECT sum(blks_hit) FROM pg_stat_database{{# if (d.did) { }} WHERE datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }}) {{# } }}) AS "{{ _('Hits') }}"
 ) t
-{% endif %} /* end 'bio_stats' */
+{{# } }} /* end 'bio_stats' */
+;

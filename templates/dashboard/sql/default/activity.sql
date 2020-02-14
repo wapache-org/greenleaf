@@ -15,3 +15,4 @@ FROM
 {{# if(d.did) { }}WHERE
     datname = (SELECT datname FROM pg_database WHERE oid = {{ d.did }})
 {{# } }}ORDER BY pid
+;

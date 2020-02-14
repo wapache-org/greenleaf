@@ -9,3 +9,4 @@ FROM
     pg_settings
 ORDER BY
     category
+;
