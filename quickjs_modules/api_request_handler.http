@@ -27,4 +27,13 @@ POST {{baseUrl}}/4
 Authorization: Digest {{username}} {{password}}
 Accept: application/json
 
-{}
+{
+    "did":12677,
+    "chart_names":[
+        "session_stats",
+        "tps_stats",
+        "ti_stats",
+        "to_stats",
+        "bio_stats"
+    ]
+}

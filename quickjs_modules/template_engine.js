@@ -18,7 +18,8 @@ Template.prototype = {
       code = (this.options.template || this.options.tpl || ''), 
       open = this.options.open, 
       close = this.options.close,
-      keepFormat = this.options.keepFormat
+      keepFormat = this.options.keepFormat,
+      debug = this.options.debug
     ;
 
     var 
@@ -40,10 +41,14 @@ Template.prototype = {
       jsse = exp(close+'$', '')
     ;
 
+    var n_escape2 = '__@@n@@_';
+
+    var n_escape = '__~~n~~_';
+    var t_escape = '__~~t~~_';
     if(keepFormat){
       code = code
-      .replace(/\n/g, '__~~n~~_')
-      .replace(/\t/g, '__~~t~~_')
+      .replace(/\n/g, n_escape)
+      .replace(/\t/g, t_escape)
       ;
     }
 
@@ -64,14 +69,20 @@ Template.prototype = {
     })
     
     //匹配JS规则内容
-    .replace(/(?="|')/g, '\\')
+    .replace(/(?=")/g, '\\') // .replace(/(?="|')/g, '\\')
     .replace(query(), function(str){
       str = str
       .replace(jss, '')
       .replace(jsse, '')
       .replace(/\\/g, '')
       ;
-      return '";' + str+ ';view+="';
+      if(debug){
+        return '";' + n_escape2 + str + n_escape2 + ' view+="';
+      }else{
+        return '";' + str+ ' view+="';
+        // return '";' + str+ ';view+="';
+      }
+
     })
     
     //匹配普通字段
@@ -91,13 +102,19 @@ Template.prototype = {
 
     if(keepFormat){
       code = code
-      .replace(/__~~n~~_/g, '\\n')
-      .replace(/__~~t~~_/g, '\\t')
+      .replace(exp(n_escape), '\\n')
+      .replace(exp(t_escape), '\\t')
       ;
     }
     
-    code = '"use strict";var view = "' + code + '";return view;';
-    //console.log(code);
+    if(debug){
+      code = code.replace(exp(n_escape2), '\n');
+      code = '"use strict";\nvar view = "' + code + '";\nreturn view;';
+    }else{
+      code = '"use strict";var view = "' + code + '";return view;';
+    }
+
+    if(debug) console.log(code);
   
     this.renderFunc = new Function('d, _escape_, _', code);
 
@@ -113,7 +130,7 @@ Template.prototype = {
         return result;
       }
     } catch(e){
-      return this.options.error(e, tplog);
+      return this.options.error(e);
     }
   }
 };
@@ -139,7 +156,13 @@ var engine = {
     },
     error: function(e, tplog){
       var error = 'Template Error：';
-      typeof console === 'object' && console.error && console.error(error + e + '\n'+ (tplog || ''));
+      typeof console === 'object' && console.error 
+      && console.error(error + e + '\n'+ (tplog || ''));
+      
+      if(engine.debug && e && e.stack) {
+        console.log(e.stack.replace(/'\\n'/,'\n'));
+      }
+
       return error + e;
     }
   },
