@@ -2,8 +2,6 @@
 # specially true in old embedded systems (OpenWRT and friends) where CMake isn't necessarily upgraded.
 # cmake_minimum_required(VERSION 2.8)
 
-set(JSON_C_LIB_NAME, "json-c")
-
 if(POLICY CMP0048)
 	cmake_policy(SET CMP0048 NEW)
 endif()
@@ -304,19 +302,24 @@ set(JSON_C_SOURCES
 # XXX how to build both shared and static libraries.
 # Probably leverage that to build a local VALGRIND=1 library for testing too.
 
-add_library(${JSON_C_LIB_NAME} SHARED
+#不直到为什么这句没起作用, 不能用这个变量了, 只能写死
+set(JSON_C_LIB_NAME, "json-c")
+
+add_library(json-c_shared SHARED
     ${JSON_C_SOURCES}
     ${JSON_C_HEADERS}
 )
-set_target_properties(${JSON_C_LIB_NAME} PROPERTIES
+SET_TARGET_PROPERTIES(json-c_shared PROPERTIES OUTPUT_NAME "json-c")
+set_target_properties(json-c_shared PROPERTIES
     VERSION 4.0.0
     SOVERSION 4)
 
-add_library(${JSON_C_LIB_NAME}_static STATIC
+add_library(json-c_static STATIC
     ${JSON_C_SOURCES}
     ${JSON_C_HEADERS}
 )
-set_target_properties(${JSON_C_LIB_NAME}_static PROPERTIES
+SET_TARGET_PROPERTIES(json-c_static PROPERTIES OUTPUT_NAME "json-c")
+set_target_properties(json-c_static PROPERTIES
     VERSION 4.0.0
     SOVERSION 4)
 
