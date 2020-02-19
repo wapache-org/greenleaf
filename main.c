@@ -45,7 +45,7 @@ static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
 static int is_equal(const struct mg_str *s1, const struct mg_str *s2);
 
 static char* s_api_request_handler_func = "handle_api_request";
-static char* s_api_request_handle_file = "quickjs_modules/api_request_handler.js";
+static char* s_api_request_handle_file = "qjs_modules/api_request_handler.js";
 static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm);
 
 // #endregion API declare area
@@ -88,6 +88,8 @@ static int is_exception_free(JSContext *ctx, JSValue e);
 static int if_is_exception_then_free(JSContext *ctx, JSValue e);
 static void print_value(JSContext *ctx, JSValue e, const char* prefix);
 static void print_property(JSContext *ctx, JSValue this_obj, const char* property_name);
+
+static int js_execute_script(const char* script_file);
 
 // #endregion quickjs declare area
 // ////////////////////////////////////////////////////////
@@ -214,7 +216,7 @@ void check_sessions(void);
 // misc declare area
 
 static void usage(int argc, char* argv[]);
-static void parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[]);
+static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[]);
 
 static void signal_handler(int sig_num);
 
@@ -225,7 +227,7 @@ static void signal_handler(int sig_num);
 
 // 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
 // 建议按字母顺序编写
-static char* short_opts = "a:d:hlp:q:r:";
+static char* short_opts = "a:d:e:hlp:q:r:";
 // 长选项字符串, 
 // {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
 // 建议按长选项字母顺序编写
@@ -233,6 +235,7 @@ static const struct option long_options[] = {
 		{"auth-domain",1,NULL,'a'},
 		{"database",1,NULL,'d'},
 		{"enable-directory-listing",0,NULL,'l'},
+		{"execute",1,NULL,'e'},
 		{"help",0,NULL,'h'},
 		{"port",1,NULL,'p'},
 		{"root",1,NULL,'r'},
@@ -242,14 +245,15 @@ static const struct option long_options[] = {
 static void usage(int argc, char* argv[])
 {
   printf("Usages: \n");
-  printf("    %s -p 8080 -r html\n", argv[0]);
+  printf("    %s -p 8080 -r static\n", argv[0]);
   printf("Options:\n");
   printf("    [-%s, --%s]     %s\n", "h","help","print this message");
   printf("    [-%s, --%s]     %s\n", "a","auth-domain","the domain parameter of http digest");
   printf("    [-%s, --%s]     %s\n", "d","database","the database file path");
+  printf("    [-%s, --%s]     %s\n", "e","execute","execute script");
   printf("    [-%s, --%s]     %s\n", "p","poot","web server bingding port, default is 8000.");
-  printf("    [-%s, --%s]     %s\n", "q","qjs-api-router","web server api request route file, default is `quickjs_modules/api_request_handler.js`.");
-  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `html`.");
+  printf("    [-%s, --%s]     %s\n", "q","qjs-api-router","web server api request route file, default is `qjs_modules/api_request_handler.js`.");
+  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `static`.");
   printf("    [-%s, --%s]     %s\n", "l","enable-directory-listing","if cannot find index file, list directory files, default is no.");
 }
 
@@ -259,7 +263,9 @@ static void usage(int argc, char* argv[])
 int main(int argc, char *argv[]) 
 {
 
-    parse_options(&s_http_server_opts, argc,argv);
+    if(0 != parse_options(&s_http_server_opts, argc,argv)){
+      exit(EXIT_FAILURE);
+    }
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
@@ -301,7 +307,7 @@ int main(int argc, char *argv[])
 }
 
 // 解析选项
-static void parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[])
+static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[])
 {
   // 先设置默认值
   opts->document_root = "html";
@@ -327,6 +333,8 @@ static void parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[
     case 'd':
       s_db_path = optarg;
       break;
+    case 'e':
+      return js_execute_script(optarg);
     case 'r':
       opts->document_root = optarg;
       break;
@@ -345,6 +353,7 @@ static void parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[
       exit(EXIT_FAILURE);
       break;
     }
+    return 0;
   }
 }
 
@@ -1147,6 +1156,45 @@ static JSValue js_PQgetvalue(JSContext *ctx, JSValueConst this_val, int argc, JS
     return JS_NewString(ctx, val);
 }
 
+static int js_execute_script(const char* script_file){
+
+    JSRuntime *rt;
+    JSContext *ctx;
+
+    rt = JS_NewRuntime();
+    if (!rt) {
+        fprintf(stderr, "qjs: cannot allocate JS runtime\n");
+        return 3;
+    }
+
+    ctx = JS_NewContext(rt);
+    if (!ctx) {
+        fprintf(stderr, "qjs: cannot allocate JS context\n");
+        return 3;
+    }
+
+    /* loader for ES6 modules */
+    JS_SetModuleLoaderFunc(rt, NULL, js_module_loader, NULL);
+
+    js_std_add_helpers(ctx, 0, NULL);
+
+    js_init_module_std(ctx, "std");
+    js_init_module_os(ctx, "os");
+
+    if (eval_file(ctx, script_file, -1))
+        goto fail;
+
+    js_std_free_handlers(rt);
+    JS_FreeContext(ctx);
+    JS_FreeRuntime(rt);
+
+    return 1;
+ fail:
+    js_std_free_handlers(rt);
+    JS_FreeContext(ctx);
+    JS_FreeRuntime(rt);
+    return 2;
+}
 // #endregion quickjs-postgres implement area
 // ////////////////////////////////////////////////////////
 // #region misc implement area
