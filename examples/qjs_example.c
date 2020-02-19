@@ -17,7 +17,7 @@ enum {
 };
 #endif
 
-static int qjs_example(char* path);
+static int qjs_template_example(char* path);
 
 static JSValue js_loadScript(JSContext *ctx, const char *filename);
 
@@ -43,7 +43,10 @@ int
 main(int argc, char* argv[])
 {
     char* path = argc>1 ? argv[1] : "template_engine.js";
-    return qjs_example(path);
+    
+    qjs_template_example(path);
+
+    return 0;
 }
 
 static JSValue sql_example(JSContext *context, const char* path, const char* json_data){
@@ -121,7 +124,7 @@ static int eval_buf(JSContext *ctx, const void *buf, int buf_len,
     return ret;
 }
 
-static int qjs_example(char* path) {
+static int qjs_template_example(char* path) {
   // var tpl = "...";
   const char* tpl = "the name is {{ d.name }}.";
 
