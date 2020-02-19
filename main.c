@@ -9,7 +9,7 @@
 #include <getopt.h>
 
 // header for postgresql
-#include <libpq-fe.h>
+#include "libpq/libpq-fe.h"
 
 // header for quickjs
 #include <quickjs/quickjs-libc.h>
@@ -1180,6 +1180,10 @@ static int js_execute_script(const char* script_file){
 
     js_init_module_std(ctx, "std");
     js_init_module_os(ctx, "os");
+
+    JSValue g = JS_GetGlobalObject(ctx);
+    JS_SetPropertyStr(ctx, g, "pg_connect_db", JS_NewCFunction(ctx, js_PQconnectdb, NULL, 0));
+    JS_FreeValue(ctx, g);
 
     if (eval_file(ctx, script_file, -1))
         goto fail;
