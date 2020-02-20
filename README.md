@@ -1,8 +1,17 @@
 # 简介
 
-**Greenleaf**的目标是成为**Greenplum**的部署,监控,维护以及开发的辅助工具.
-目前已经实现了最核心的几个底层功能, 包括web server, cgi , javascript engine等, 
-项目人员可以通过编写js脚本和cgi程序不断扩充新功能, 从而满足自身需求.
+**Greenleaf**诞生于2020年春节, 也就是新冠病毒肆虐中国的时期, 
+从1月22日开始历时30天于2月20日上传github正式开源, 
+其目标是成为**Greenplum**的一个辅助管理工具. 囊括部署,监控,维护以及开发等等辅助功能.
+
+本项目目前还处在起步阶段, 
+目前只实现了最核心的几个底层功能, 包括web server, cgi , javascript engine等, 
+但已经初步具备实用价值, 项目人员可以通过编写js脚本和cgi程序不断扩充新功能, 从而满足自身需求.
+
+随着各省疫情的消退, 各地陆陆续续已经开始复工, 正式上班后此项目会投入到公司内部的项目运维中试运行, 
+接受实践的检验, 期望其能早日长大, 成为一个对社会有贡献的项目!
+
+虽然目前还达不到产品级, 不过作为学习mongoose和quickjs的一个例子也是很不错的^_^
 
 # 组件
 
@@ -52,7 +61,9 @@
 ```
 git clone https://github.com/wapache-org/greenleaf.git
 cd greenleaf
-cmake
+mkdir build
+cd  build
+cmake ..
 ```
 
 # 文档
@@ -168,4 +179,9 @@ build/examples/sqlite_example
 6. cgi: python/perl/php
 7. database: sqlite/postgresql
 
+# 后记
 
+病疫无情，人间有爱。
+
+感谢广大医务工作者在中国最困难的时期, 为我们负重前行, 
+让我们向白衣天使们致敬，共同祝愿他们春暖花开日、平安归来时！
