@@ -2,18 +2,27 @@
 // import * as os from 'os';
 import engine from '../template_engine.js';
 
-engine.options.debug = true;
-engine.options.keepFormat = true;
+engine.options.debug = false;
+engine.options.keepFormat = false;
 
 var Client = function(options){
     this.options = options;
 };
 Client.prototype = {
     conn: null,
-    sversion: 80400,
+    dbversion: 51700,
+    dbtype: 'greenplum',
+    basedon:{
+        dbversion: 80323,
+        dbtype: 'postgresql',
+    },
     connect: function(){
         if(this.conn) return;
         this.conn = pg_connect_db(this.options.url || '');
+        var v = this.get_version();
+
+        this.dbversion = v.greenplum_num;
+        this.basedon.dbversion = v.postgresql_num;
     },
     close: function(){
         if(this.conn){
@@ -61,15 +70,60 @@ Client.prototype = {
             data: data
         };
     },
+    get_version: function(){
+        var res = this.query(gp.sqls.select_version);
+        var version = res.data[0][0];
+
+        var reg = /PostgreSQL\s+(\d+\.\d+(?:\.\d+)?)\s+\(Greenplum\s+Database\s+(\d+\.\d+(?:\.\d+)?)/;
+        var ver = reg.exec(version);
+
+        var pg_ver = ver[1].trim();
+        var gp_ver = ver[2].trim();
+
+        var pg_vers = pg_ver.split('.');
+        var gp_vers = gp_ver.split('.');
+        var pg_ver_num = 0;
+        var gp_ver_num = 0;
+        for(let i=0;i<2;i++){
+            pg_ver_num += parseInt(pg_vers[i] || 0) * (i===0?10000:i===1?100:1);
+            gp_ver_num += parseInt(gp_vers[i] || 0) * (i===0?10000:i===1?100:1);
+        }
+
+        return {
+            version: version,
+            postgresql: pg_ver,
+            greenplum : gp_ver,
+            postgresql_num: pg_ver_num,
+            greenplum_num : gp_ver_num
+        };
+    },
+    get_pset: function(){
+        return {
+            sversion: this.basedon.dbversion,
+            dbversion: this.dbversion,
+            dbtype: this.dbtype
+        };
+    },
     list_database: function(pattern, verbose){
         var data = {
             verbose: verbose,
             pattern: pattern,
-            pset: {
-                sversion: this.sversion
-            }
-        }
-        ,sql = gp.get_list_database_sql(data)
+            pset: this.get_pset()
+        };
+        // console.log(JSON.stringify((data)));
+        var sql = gp.render(gp.templates.list_database, data)
+        ,res = this.query(sql);
+        ;
+        return res;
+    },
+    list_role: function(pattern, verbose){
+        var data = {
+            verbose: verbose,
+            pattern: pattern,
+            pset: this.get_pset()
+        };
+        // console.log(JSON.stringify((data)));
+        var sql = gp.render(gp.templates.list_role, data)
         ,res = this.query(sql);
         ;
         return res;
@@ -79,7 +133,14 @@ Client.prototype = {
 var gp = {
     options: {
         url: '',
-        cache_template: true,
+        cache_template: true
+    },
+    sqls: {
+        select_version: 'select version();'
+    },
+    templates: {
+        ccc: 'templates/psql/list_database.sql',
+        list_role: 'templates/psql/list_role.sql'
     },
     connect: function(options){
         var opt = {};
@@ -93,11 +154,6 @@ var gp = {
         client.connect();
         return client;
     },
-    get_list_database_sql: function(data){
-        var template_file_path = 'templates/psql/list_database.sql'
-        ;
-        return this.render(template_file_path, data);
-    },
     render: function (template_file_path, data){
         let template_content = engine.load(template_file_path)
         ;
@@ -107,7 +163,7 @@ var gp = {
             template: template_content,
         });
         let sql = tempalte.render(data || {});
-        console.log("sql", sql);
+        //console.log("sql", sql);
         return sql;
     }
 
