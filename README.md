@@ -8,13 +8,18 @@
 
 ```
 +-----------------------------------------+
-|     RESTful API  |  WebSocket API       | <---- remote host/greenplum/postgresql/greenleaf
+|   Other Systemm    |      Browser       | 
++-----------------------------------------+
+                     | 
+                     V  
++-----------------------------------------+
+|     RESTful API    |  WebSocket API     | <---- remote host/greenplum/postgresql/greenleaf
 +-----------------------------------------+
 |               Web Server                |
 +-----------------------------------------+
 |  cgi engine | lua engine | js engine    | 
 +-----------------------------------------+
-|   local storage     |       ssh         | -----> (remote or local) host/greenplum/postgresql/greenleaf
+|   local storage    |        ssh         | -----> (remote or local) host/greenplum/postgresql/greenleaf
 +-----------------------------------------+
 ```
 
@@ -30,16 +35,17 @@
 5. json-c: 是一个C语言实现的`JSON`库.
 6. lua: 是一个轻量级可嵌入的脚本引擎.
 
-通过`mongoose`实现`Web Server`组件
-通过`quickjs`实现`javascript engine`组件
-通过`lua`实现`lua engine`组件
-通过`mongoose`等实现`cgi engine`组件
+
+* 通过`mongoose`实现`Web Server`组件
+* 通过`quickjs`实现`javascript engine`组件
+* 通过`lua`实现`lua engine`组件
+* 通过`mongoose`等实现`cgi engine`组件
 
 有了`cgi/lua/js`三个引擎的支撑, 就可以通过编写`php,perl,python,lua,js`等脚本来不断增强整套系统的功能.
 
 # 构建
 
-`Greenleaf`是核心是一个纯C的工程, 使用`CMake`管理项目的构建, 推荐使用`Visual Studio Code`作为开发工具.
+`Greenleaf`的核心是一个纯C的工程, 使用`CMake`管理项目的构建, 推荐使用`Visual Studio Code`作为开发工具.
 
 源码编译步骤
 
@@ -59,14 +65,14 @@ cmake
 在`examples`目录下有`mongoose`自带的例子和改造或新写的一些其他例子.
 如果你使用的开发工具是`vscode`, 可以参考`docs/vscode/launch.json`运行和调试各个例子.
 
-## main
+## `main.c`
 
 这是`Greenleaf`的主程序, 目前已经具备以下功能:
 
 1. 支持静态网页
 2. 支持调用CGI程序
-3. 支持集成JS脚本, 目前已经具备标准C函数和操作系统相关函数的调用封装, 以及初步做好了`libpq`的调用封装.
-1. 支持给予cookie/http digest的安全认证机制
+3. 支持调用JS脚本, 目前已经具备标准C函数和操作系统相关函数的调用封装, 以及初步做好了`libpq`的调用封装.
+1. 支持基于cookie/http digest的安全认证机制
 
 命令帮助:
 
@@ -86,9 +92,9 @@ Options:
     [-l, --enable-directory-listing]     if cannot find index file, list directory files, default is no.
 ```
 
-`-r, --root`指定WEB Server的根目录, 存放html, js, css, image等静态资源文件.
-`-e, --execute`直接执行一个脚本文件, 可以理解为`QuickJS`自带的`qjs`命令的简化版, 主要用于调试和测试脚本.
-`-q, --qjs-api-router` 指定RESTful API请求的处理脚本, 所有`/api/`开头的请求都会转发到此脚本中进行处理.
+* `-r, --root`指定WEB Server的根目录, 存放html, js, css, image等静态资源文件.
+* `-e, --execute`直接执行一个脚本文件, 可以理解为`QuickJS`自带的`qjs`命令的简化版, 主要用于调试和测试脚本.
+* `-q, --qjs-api-router` 指定RESTful API请求的处理脚本, 所有`/api/`开头的请求都会转发到此脚本中进行处理.
 
 其他选项暂时不做说明.
 

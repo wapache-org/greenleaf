@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(mongoose_lua LANGUAGES C VERSION 0.1.0)
+project(greenleaf LANGUAGES C VERSION 0.1.0)
 
 include(CTest)
 enable_testing()
@@ -47,9 +47,9 @@ add_subdirectory(json-c)
 
 # add target
 
-add_executable(mongoose_lua main.c)
-# add_dependencies(mongoose_lua copy_files)
-target_link_libraries(mongoose_lua mongoose lua quickjs sqlite m dl
+add_executable(greenleaf main.c)
+# add_dependencies(greenleaf copy_files)
+target_link_libraries(greenleaf mongoose lua quickjs sqlite m dl
   pq
   ${CMAKE_CURRENT_BINARY_DIR}/json-c/libjson-c.a
 )
@@ -65,7 +65,7 @@ FILE(GLOB LUA_MODULE_FILES CONFIGURE_DEPENDS
 SET(GPMON_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/gpmon)
 add_custom_target(
   build_gpmon ALL 
-  DEPENDS mongoose_lua
+  DEPENDS greenleaf
   VERBATIM 
   COMMAND_EXPAND_LISTS
 
@@ -75,7 +75,7 @@ add_custom_target(
     ${GPMON_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/build/mongoose_lua
+    ${CMAKE_CURRENT_SOURCE_DIR}/build/greenleaf
     ${GPMON_DIR}/gpmon
 
   #COMMAND ${CMAKE_COMMAND} -E make_directory ${GPMON_DIR}/templates
