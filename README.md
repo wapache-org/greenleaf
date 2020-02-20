@@ -50,7 +50,7 @@
 源码编译步骤
 
 ```
-git clone xxx
+git clone https://github.com/wapache-org/greenleaf.git
 cd greenleaf
 cmake
 ```
