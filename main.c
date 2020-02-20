@@ -245,6 +245,7 @@ static const struct option long_options[] = {
 static void usage(int argc, char* argv[])
 {
   printf("Usages: \n");
+  printf("    %s -e qjs-modules/hello.js\n", argv[0]);
   printf("    %s -p 8080 -r static\n", argv[0]);
   printf("Options:\n");
   printf("    [-%s, --%s]     %s\n", "h","help","print this message");
