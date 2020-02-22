@@ -22,7 +22,6 @@ include_directories(
   ./lua 
   ./mustache 
   ./json-c
-  ./v7js
   ./sqlite
   ./libraries/libpq/include
   ./libraries/quickjs/include
@@ -36,7 +35,6 @@ link_directories(
 
 # add block directories
 add_subdirectory(lua)
-add_subdirectory(v7js)
 add_subdirectory(mongoose)
 add_subdirectory(mustache)
 add_subdirectory(sqlite)

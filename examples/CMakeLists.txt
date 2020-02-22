@@ -36,10 +36,6 @@ target_link_libraries(api_server_example mongoose sqlite dl pthread)
 add_executable(auth_cookie_example auth_cookie_example.c)
 target_link_libraries(auth_cookie_example mongoose)
 
-add_definitions(-DCS_ENABLE_UTF8)
-add_executable(v7js_example v7js_example.c)
-target_link_libraries(v7js_example v7js m mongoose)
-
 add_executable(qjs_example qjs_example.c)
 target_link_libraries(qjs_example quickjs m dl)
 
