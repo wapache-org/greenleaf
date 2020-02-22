@@ -46,6 +46,9 @@ target_link_libraries(qjs_example quickjs m dl)
 add_executable(postgres_example postgres_example.c)
 target_link_libraries(postgres_example m dl pq)
 
+add_executable(postgres_static_example postgres_example.c)
+target_link_libraries(postgres_static_example pq.a pgport.a pgcommon.a pthread)
+
 add_executable(qjs_postgres_example qjs_postgres_example.c)
 target_link_libraries(qjs_postgres_example quickjs pq m dl)
 

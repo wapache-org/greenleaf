@@ -9,7 +9,7 @@
 #include <getopt.h>
 
 // header for postgresql
-#include "libpq/libpq-fe.h"
+#include "libpq-fe.h"
 
 // header for quickjs
 #include <quickjs/quickjs-libc.h>

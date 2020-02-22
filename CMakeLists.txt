@@ -24,13 +24,14 @@ include_directories(
   ./json-c
   ./v7js
   ./sqlite
-  ./lib/include
+  ./libraries/libpq/include
+  ./libraries/quickjs/include
 )
 
 # add lib directories
 link_directories(
-  "/usr/local/lib/quickjs" 
-  lib/libpq
+  libraries/quickjs/lib/quickjs
+  libraries/libpq/lib
 )
 
 # add block directories
@@ -49,9 +50,12 @@ add_subdirectory(json-c)
 
 add_executable(greenleaf main.c)
 # add_dependencies(greenleaf copy_files)
-target_link_libraries(greenleaf mongoose lua quickjs sqlite m dl
-  pq
-  ${CMAKE_CURRENT_BINARY_DIR}/json-c/libjson-c.a
+target_link_libraries(greenleaf 
+  mongoose json-c
+  lua quickjs.a
+  sqlite
+  pq.a pgport.a pgcommon.a 
+  m dl pthread
 )
 
 # add file copy target
@@ -89,9 +93,9 @@ add_custom_target(
     ${GPMON_DIR}/qjs_modules
 
   #COMMAND ${CMAKE_COMMAND} -E make_directory ${GPMON_DIR}/lib
-  COMMAND ${CMAKE_COMMAND} -E copy  
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpq/libpq.so.5
-    ${GPMON_DIR}/lib/libpq.so.5
+  # COMMAND ${CMAKE_COMMAND} -E copy  
+  #   ${CMAKE_CURRENT_SOURCE_DIR}/lib/libpq/libpq.so.5
+  #   ${GPMON_DIR}/lib/libpq.so.5
 )
 
 # install

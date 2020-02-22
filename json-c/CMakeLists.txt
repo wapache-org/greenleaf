@@ -305,21 +305,21 @@ set(JSON_C_SOURCES
 #不直到为什么这句没起作用, 不能用这个变量了, 只能写死
 set(JSON_C_LIB_NAME, "json-c")
 
-add_library(json-c_shared SHARED
-    ${JSON_C_SOURCES}
-    ${JSON_C_HEADERS}
-)
-SET_TARGET_PROPERTIES(json-c_shared PROPERTIES OUTPUT_NAME "json-c")
-set_target_properties(json-c_shared PROPERTIES
-    VERSION 4.0.0
-    SOVERSION 4)
+# add_library(json-c_shared SHARED
+#     ${JSON_C_SOURCES}
+#     ${JSON_C_HEADERS}
+# )
+# SET_TARGET_PROPERTIES(json-c_shared PROPERTIES OUTPUT_NAME "json-c")
+# set_target_properties(json-c_shared PROPERTIES
+#     VERSION 4.0.0
+#     SOVERSION 4)
 
-add_library(json-c_static STATIC
+add_library(json-c STATIC
     ${JSON_C_SOURCES}
     ${JSON_C_HEADERS}
 )
-SET_TARGET_PROPERTIES(json-c_static PROPERTIES OUTPUT_NAME "json-c")
-set_target_properties(json-c_static PROPERTIES
+# SET_TARGET_PROPERTIES(json-c PROPERTIES OUTPUT_NAME "json-c")
+set_target_properties(json-c PROPERTIES
     VERSION 4.0.0
     SOVERSION 4)
 
