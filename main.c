@@ -3,6 +3,9 @@
  * All rights reserved
  */
 
+// ////////////////////////////////////////////////////////////////////////////
+// #region include area
+
 //header for getopt
 #include <unistd.h>
 //header for getopt_long
@@ -22,51 +25,264 @@
 #include "mongoose.h"
 #include "ssh/ssh_common.h"
 
-#include <termios.h>
-
-#include <pty.h>
-
-
+// #endregion include area
 // ////////////////////////////////////////////////////////////////////////////
 // #region declare area
 
 // ////////////////////////////////////////////////////////
-// #region mongoose declare area
+// #region main declare area
 
-static const char *s_http_port = "8000";
+// 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
+// 建议按字母顺序编写
+static char* short_opts = "a:d:e:hlp:q:r:";
+// 长选项字符串, 
+// {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
+// 建议按长选项字母顺序编写
+static const struct option long_options[] = {
+		{"auth-domain",1,NULL,'a'},
+		{"database",1,NULL,'d'},
+		{"enable-directory-listing",0,NULL,'l'},
+		{"execute",1,NULL,'e'},
+		{"help",0,NULL,'h'},
+		{"port",1,NULL,'p'},
+		{"root",1,NULL,'r'},
+		{"qjs-api-router",1,NULL,'q'}
+};
+// 打印选项说明
+static void usage(int argc, char* argv[])
+{
+  printf("Usages: \n");
+  printf("    %s -e qjs-modules/hello.js\n", argv[0]);
+  printf("    %s -p 8080 -r static\n", argv[0]);
+  printf("Options:\n");
+  printf("    [-%s, --%s]     %s\n", "h","help","print this message");
+  printf("    [-%s, --%s]     %s\n", "a","auth-domain","the domain parameter of http digest");
+  printf("    [-%s, --%s]     %s\n", "d","database","the database file path");
+  printf("    [-%s, --%s]     %s\n", "e","execute","execute script");
+  printf("    [-%s, --%s]     %s\n", "p","poot","web server bingding port, default is 8000.");
+  printf("    [-%s, --%s]     %s\n", "q","qjs-api-router","web server api request route file, default is `qjs_modules/api_request_handler.js`.");
+  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `static`.");
+  printf("    [-%s, --%s]     %s\n", "l","enable-directory-listing","if cannot find index file, list directory files, default is no.");
+}
+
+// 解析选项
+static void parse_options(int argc, char* argv[]);
+
+// 
+static void signal_handler(int sig_num);
+
+// #endregion main declare area
+// ////////////////////////////////////////////////////////
+// #region mongoose declare area
 
 static const struct mg_str s_get_method = MG_MK_STR("GET");
 static const struct mg_str s_put_method = MG_MK_STR("PUT");
 static const struct mg_str s_delele_method = MG_MK_STR("DELETE");
 
-static int s_sig_num = 0;
-static struct mg_serve_http_opts s_http_server_opts;
-
 static void event_handler(struct mg_connection *nc, int ev, void *ev_data);
+
+static int mg_str_has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
+static int mg_str_is_equal(const struct mg_str *s1, const struct mg_str *s2);
 
 // #endregion mongoose declare area
 // ////////////////////////////////////////////////////////
-// #region API declare area
+// #region mongoose-websocket declare area
+
+static int is_websocket(const struct mg_connection *nc) ;
+
+// #endregion mongoose-websocket declare area
+// ////////////////////////////////////////////////////////
+// #region mongoose-session declare area
+
+/* This is the name of the cookie carrying the session ID. */
+#define SESSION_COOKIE_NAME "GL"
+
+/* In our example sessions are destroyed after 30 seconds of inactivity. */
+// TODO 需要改成从配置文件或数据库读取
+#define SESSION_TTL 30.0
+#define SESSION_CHECK_INTERVAL 5.0
+
+/* Session information structure. */
+struct session {
+  /* Session ID. Must be unique and hard to guess. */
+  uint64_t id;
+  /*
+   * Time when the session was created and time of last activity.
+   * Used to clean up stale sessions.
+   */
+  double created;
+  double last_used; /* Time when the session was last active. */
+
+  /* User name this session is associated with. */
+  char *user;
+  /* Some state associated with user's session. */
+  int lucky_number;
+};
+
+/*
+ * This example uses a simple in-memory storage for just 10 sessions.
+ * A real-world implementation would use persistent storage of some sort.
+ */
+// TODO 需要改为保存到数据库或文件, 无大小限制
+#define NUM_SESSIONS 10
+struct session s_sessions[NUM_SESSIONS];
+
+
+/*
+ * Creates a new session for the user.
+ */
+static struct session *create_session(const char *user, const struct http_message *hm);
+
+/*
+ * Destroys the session state.
+ */
+static void destroy_session(struct session *s);
+
+/*
+ * Parses the session cookie and returns a pointer to the session struct or NULL if not found.
+ */
+static struct session *get_session(struct http_message *hm);
+
+
+static int get_session_id(struct http_message *hm, char *ssid, size_t len);
+
+
+/* Cleans up sessions that have been idle for too long. */
+void check_sessions(void);
+
+
+// #endregion mongoose-session declare area
+// ////////////////////////////////////////////////////////
+// #region mongoose-security declare area
+
+static const char *s_login_url = "/api/user/login.json";
+static const char *s_logout_url = "/api/user/logout.json";
+static const char *s_login_user = "username";
+static const char *s_login_pass = "password";
+
+// 检查是否已认证
+static int check_authentication(struct mg_connection *nc, struct http_message *hm);
+
+// 发送"给予cookie的表单登录"要求给客户端
+static int send_cookie_auth_request(struct mg_connection *nc, char* message);
+
+/*
+ * If requested via GET, serves the login page.
+ * If requested via POST (form submission), checks password and logs user in.
+ */
+static void login_handler(struct mg_connection *nc, int ev, void *p);
+
+/*
+ * Logs the user out.
+ * Removes cookie and any associated session state.
+ */
+static void logout_handler(struct mg_connection *nc, int ev, void *p);
+
+/*
+ * Password check function.
+ * In our example all users have password "password".
+ */
+static int check_pass(const char *user, const char *pass);
+
+// 根据用户名获取用户密码, 返回的密码有可能是明文或密文
+static int get_user_htpasswd(struct mg_str username, struct mg_str auth_domain, char* out_password);
+
+// #endregion mongoose-security declare area
+// ////////////////////////////////////////////////////////
+// #region mongoose-api declare area
 
 static const struct mg_str api_prefix = MG_MK_STR("/api/");
-
 static void handle_api_request(struct mg_connection *nc, struct http_message *hm);
-static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
-static int is_equal(const struct mg_str *s1, const struct mg_str *s2);
 
-static char* s_api_request_handler_func = "handle_api_request";
-static char* s_api_request_handle_file = "qjs_modules/api_request_handler.js";
 static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm);
 
-// #endregion API declare area
+// #endregion-api declare area
 // ////////////////////////////////////////////////////////
-// #region sqlite declare area
+// #region websocket~ssh declare area
+#define WS_SSH_READ_BUF_SIZE 1024
+
+// This info is passed by the worker thread to mg_broadcast
+struct ws_ssh_context 
+{
+  struct mg_connection *nc;
+  int status; // 0: inited, 1: ssh connected, -1: ssh disconnected
+
+  char host[64];
+  char port[6];
+  char user[32];
+  char password[64];
+
+  ssh_session session;
+  ssh_channel channel;
+
+  void* ws_read_buf;
+  int ws_read_buf_len;
+  int ws_read_buf_size;
+
+  void* ssh_read_buf;
+  int ssh_read_buf_len;
+  int ssh_read_buf_size;
+};
+
+static struct ws_ssh_context* new_ws_ssh_context(struct mg_connection *nc)
+{
+  // printf("invoke new_ws_ssh_context\n");
+  struct ws_ssh_context* context = malloc(sizeof(struct ws_ssh_context));
+  memset(context, 0, sizeof(struct ws_ssh_context));
+
+  context->nc = nc;
+  
+  context->status = 0;
+  memset(context->host, 0, sizeof(context->host));
+  memset(context->port, 0, sizeof(context->port));
+  memset(context->user, 0, sizeof(context->user));
+  memset(context->password, 0, sizeof(context->password));
+  context->session = ssh_new();
+  context->channel = NULL;
+
+  context->ws_read_buf_size = WS_SSH_READ_BUF_SIZE;
+  context->ws_read_buf = malloc(context->ws_read_buf_size);
+  context->ws_read_buf_len = 0;
+
+  context->ssh_read_buf_size = WS_SSH_READ_BUF_SIZE*100;
+  context->ssh_read_buf = malloc(context->ssh_read_buf_size);
+  context->ssh_read_buf_len = 0;
+    
+  return context;
+}
+
+static void free_ws_ssh_context(struct ws_ssh_context *context)
+{
+  printf("invoke free_ws_ssh_context\r\n");
+  if(context==NULL) return;
+
+  context->status = 2;
+
+  if(context->channel!=NULL && ssh_channel_is_open(context->channel)){
+    ssh_channel_close(context->channel);
+    context->channel = NULL;
+  }
+
+  if(context->session!=NULL){
+    ssh_disconnect(context->session);
+    ssh_free(context->session);
+    context->session = NULL;
+  }
+
+  free(context->ws_read_buf);
+  free(context->ssh_read_buf);
+
+  free(context);
+}
 
 
-static void *s_db_handle = NULL;
-static const char *s_db_path = "sqlite.db";
+static int ws_ssh_connect(struct ws_ssh_context *context);
+static int ssh_authenticate(ssh_session session, char* password);
 
-// #endregion sqlite declare area
+extern void ssh_print_supported_auth_methods(int method_mark);
+extern void ssh_print_error(ssh_session session);
+
+// #endregion postgres declare area
 // ////////////////////////////////////////////////////////
 // #region quickjs declare area
 
@@ -121,300 +337,87 @@ static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 
 // #endregion quickjs-postgres declare area
 // ////////////////////////////////////////////////////////
-// #region mongoose-security declare area
+// #region sqlite declare area
 
-static const char *s_login_url = "/api/user/login.json";
-static const char *s_logout_url = "/api/user/logout.json";
-static const char *s_login_user = "username";
-static const char *s_login_pass = "password";
+static void *s_db_handle = NULL;
+static const char *s_db_path = "sqlite.db";
 
-static int send_cookie_auth_request(struct mg_connection *nc, char* message);
-
-/*
- * If requested via GET, serves the login page.
- * If requested via POST (form submission), checks password and logs user in.
- */
-static void login_handler(struct mg_connection *nc, int ev, void *p);
-
-
-/*
- * Logs the user out.
- * Removes cookie and any associated session state.
- */
-static void logout_handler(struct mg_connection *nc, int ev, void *p);
-
-/*
- * Password check function.
- * In our example all users have password "password".
- */
-static int check_pass(const char *user, const char *pass);
-
-
-static int get_user_htpasswd(struct mg_str username, struct mg_str auth_domain, char* out_ha1);
-
-
-// #endregion mongoose-security declare area
-// ////////////////////////////////////////////////////////
-// #region mongoose-session declare area
-
-/* This is the name of the cookie carrying the session ID. */
-#define SESSION_COOKIE_NAME "mgs"
-/* In our example sessions are destroyed after 30 seconds of inactivity. */
-#define SESSION_TTL 30.0
-#define SESSION_CHECK_INTERVAL 5.0
-
-/* Session information structure. */
-struct session {
-  /* Session ID. Must be unique and hard to guess. */
-  uint64_t id;
-  /*
-   * Time when the session was created and time of last activity.
-   * Used to clean up stale sessions.
-   */
-  double created;
-  double last_used; /* Time when the session was last active. */
-
-  /* User name this session is associated with. */
-  char *user;
-  /* Some state associated with user's session. */
-  int lucky_number;
-};
-
-/*
- * This example uses a simple in-memory storage for just 10 sessions.
- * A real-world implementation would use persistent storage of some sort.
- */
-#define NUM_SESSIONS 10
-struct session s_sessions[NUM_SESSIONS];
-
-
-/*
- * Creates a new session for the user.
- */
-static struct session *create_session(const char *user, const struct http_message *hm);
-
-/*
- * Destroys the session state.
- */
-static void destroy_session(struct session *s);
-
-/*
- * Parses the session cookie and returns a pointer to the session struct or NULL if not found.
- */
-static struct session *get_session(struct http_message *hm);
-
-
-static int get_session_id(struct http_message *hm, char *ssid, size_t len);
-
-
-/* Cleans up sessions that have been idle for too long. */
-void check_sessions(void);
-
-
-// #endregion mongoose-session declare area
-// ////////////////////////////////////////////////////////
-// #region websocket~ssh declare area
-
-// This info is passed by the worker thread to mg_broadcast
-struct ws_context 
-{
-  struct mg_connection *nc;
-  int websocket_closed;
-
-  char* host;
-  char* user;
-  char* password;
-  ssh_session session;
-
-  ssh_channel channel;
-
-  // 两个管道组成一个全双工管道, 0: read,1:write
-  int ws_write_ssh_read[2];  // browser -> websocket -> fda[1] -> fda[0] <- ssh
-  int ssh_write_ws_read[2]; // ssh -> fdb[1] -> fdb[0] <- thread -> websocket -> browser
-
-  void* ws_read_buf;
-  int ws_read_buf_len;
-  int ws_read_buf_size;
-
-  void* ssh_read_buf;
-  int ssh_read_buf_len;
-  int ssh_read_buf_size;
-};
-
-static struct ws_context* new_ws_context(struct mg_connection *nc)
-{
-      struct ws_context* rs = malloc(sizeof(struct ws_context));
-      rs->nc = nc;
-      
-      rs->ws_read_buf_size = 1024;
-      rs->ssh_read_buf_size = 1024;
-      
-      rs->ws_read_buf = malloc(rs->ws_read_buf_size);
-      rs->ssh_read_buf = malloc(rs->ssh_read_buf_size);
-      
-      if (pipe(rs->ws_write_ssh_read) < 0) {
-          printf("pipe error");
-      }
-      
-      if (pipe(rs->ssh_write_ws_read) < 0) {
-          printf("pipe error");
-      }
-
-      rs->host = "localhost";
-      rs->user = "root";
-      rs->password = "root";
-      rs->session = ssh_new();
-      ssh_set_callbacks(rs->session,&cb);
-      
-      return rs;
-}
-
-static void free_ws_context(struct ws_context *context)
-{
-  if(context==NULL) return;
-
-  if(context->session!=NULL){
-    ssh_disconnect(context->session);
-    ssh_free(context->session);
-  }
-
-  if(context->ws_write_ssh_read[0]){
-    close(context->ws_write_ssh_read[0]);
-    close(context->ws_write_ssh_read[1]);
-  }
-
-  if (context->ssh_write_ws_read[0]){
-    close(context->ssh_write_ws_read[0]);
-    close(context->ssh_write_ws_read[1]);
-  }
-
-  free(context->ws_read_buf);
-  free(context->ssh_read_buf);
-
-  free(context);
-}
-
-static int auth_callback(
-    const char *prompt, char *buf, size_t len,
-    int echo, int verify, void *userdata
-){
-    (void) verify;
-    (void) userdata;
-
-    return ssh_getpass(prompt, buf, len, echo, verify);
-}
-
-struct ssh_callbacks_struct cb = {
-    .auth_function = auth_callback,
-    .userdata = NULL
-};
-
-// #endregion postgres declare area
+// #endregion sqlite declare area
 // ////////////////////////////////////////////////////////
 // #region postgres declare area
 
-
 // #endregion postgres declare area
 // ////////////////////////////////////////////////////////
-// misc declare area
+// #region debug area
 
-static void usage(int argc, char* argv[]);
-static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[]);
+#include <stdio.h>
+#include <execinfo.h>
 
-static void signal_handler(int sig_num);
+enum Constexpr { MAX_SIZE = 1024 };
 
+char** get_call_stack() {
+    void *array[MAX_SIZE];
+    size_t size = backtrace(array, MAX_SIZE);
+    char ** strings = backtrace_symbols(array, size);
+    return strings;
+}
 
+void print_call_stack(void) {
+    char **strings;
+    size_t i, size;
+    enum Constexpr { MAX_SIZE = 1024 };
+    void *array[MAX_SIZE];
+    size = backtrace(array, MAX_SIZE);
+    strings = backtrace_symbols(array, size);
+    for (i = 0; i < size; i++)
+        printf("%s\r\n", strings[i]);
+    puts("");
+    free(strings);
+}
+
+// #endregion debug area
+// ////////////////////////////////////////////////////////
+// #region misc declare area
+// #endregion misc declare area
+// ////////////////////////////////////////////////////////
 // #endregion declare area
 // ////////////////////////////////////////////////////////////////////////////
 // #region implement area
+// ////////////////////////////////////////////////////////
+// #region options implement area
+struct main_options {
 
-// 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
-// 建议按字母顺序编写
-static char* short_opts = "a:d:e:hlp:q:r:";
-// 长选项字符串, 
-// {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
-// 建议按长选项字母顺序编写
-static const struct option long_options[] = {
-		{"auth-domain",1,NULL,'a'},
-		{"database",1,NULL,'d'},
-		{"enable-directory-listing",0,NULL,'l'},
-		{"execute",1,NULL,'e'},
-		{"help",0,NULL,'h'},
-		{"port",1,NULL,'p'},
-		{"root",1,NULL,'r'},
-		{"qjs-api-router",1,NULL,'q'}
+  struct mg_mgr mg_manager;
+  struct mg_serve_http_opts mg_options;
+  char * mg_http_port;
+
+  struct mg_connection* mg_acceptor;
+  
+  char * sqlite_path;
+  void * sqlite_handle;
+
+  char * api_handle_file_path;
+  char * api_handle_function;
+
+  char * execute_script_path;
+
+  int signal;
+
 };
-// 打印选项说明
-static void usage(int argc, char* argv[])
+
+static struct main_options s_options;
+
+static void parse_options(int argc, char* argv[])
 {
-  printf("Usages: \n");
-  printf("    %s -e qjs-modules/hello.js\n", argv[0]);
-  printf("    %s -p 8080 -r static\n", argv[0]);
-  printf("Options:\n");
-  printf("    [-%s, --%s]     %s\n", "h","help","print this message");
-  printf("    [-%s, --%s]     %s\n", "a","auth-domain","the domain parameter of http digest");
-  printf("    [-%s, --%s]     %s\n", "d","database","the database file path");
-  printf("    [-%s, --%s]     %s\n", "e","execute","execute script");
-  printf("    [-%s, --%s]     %s\n", "p","poot","web server bingding port, default is 8000.");
-  printf("    [-%s, --%s]     %s\n", "q","qjs-api-router","web server api request route file, default is `qjs_modules/api_request_handler.js`.");
-  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `static`.");
-  printf("    [-%s, --%s]     %s\n", "l","enable-directory-listing","if cannot find index file, list directory files, default is no.");
-}
+  s_options.mg_http_port = "8000";
+  s_options.sqlite_path = "greenleaf.db";
+  s_options.api_handle_file_path = "qjs_modules/api_request_handler.js";
+  s_options.api_handle_function = "handle_api_request";
 
-/**
- * 
- */
-int main(int argc, char *argv[]) 
-{
+  s_options.execute_script_path = NULL;
 
-    if(0 != parse_options(&s_http_server_opts, argc,argv)){
-      exit(EXIT_FAILURE);
-    }
+  struct mg_serve_http_opts* opts = &s_options.mg_options;
 
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
-
-    /* Open database */
-    // if ((s_db_handle = db_open(s_db_path)) == NULL) {
-    //     fprintf(stderr, "Cannot open DB [%s]\n", s_db_path);
-    //     exit(EXIT_FAILURE);
-    // }
-
-    /* Open listening socket */
-    struct mg_mgr mgr;
-    mg_mgr_init(&mgr, NULL);
-
-    struct mg_connection *nc = mg_bind(&mgr, s_http_port, event_handler);
-    mg_set_protocol_http_websocket(nc);
-    mg_register_http_endpoint(nc, s_login_url, login_handler);
-    mg_register_http_endpoint(nc, s_logout_url, logout_handler);
-    mg_set_timer(nc, mg_time() + SESSION_CHECK_INTERVAL);
-
-    // 初始化js runtime
-    qjs_runtime_init();
-    
-    /* Run event loop until signal is received */
-    printf("Starting server on port %s\n", s_http_port);
-    while (s_sig_num == 0) {
-        mg_mgr_poll(&mgr, 1000);
-    }
-
-    /* Cleanup */
-    mg_mgr_free(&mgr);
-    // db_close(&s_db_handle);
-
-    qjs_runtime_free();
-
-    ssh_finalize();
-
-    printf("Exiting on signal %d\n", s_sig_num);
-
-    return 0;
-}
-
-// 解析选项
-static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[])
-{
   // 先设置默认值
   opts->document_root = "static";
   opts->enable_directory_listing = "no";
@@ -437,18 +440,21 @@ static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[]
       opts->auth_domain = optarg;
       break;
     case 'd':
-      s_db_path = optarg;
+      s_options.sqlite_path = optarg;
       break;
     case 'e':
-      return js_execute_script(optarg);
+      s_options.execute_script_path = optarg;
+      break;
     case 'r':
       opts->document_root = optarg;
+      printf("document_root=%s\r\n", opts->document_root);
       break;
     case 'p':
-      s_http_port = optarg;
+      s_options.mg_http_port = optarg;
       break;
     case 'q':
-      s_api_request_handle_file = optarg;
+      s_options.api_handle_file_path = optarg;
+      printf("api_handle_file_path=%s\r\n", s_options.api_handle_file_path);
       break;
     case 'l':
       opts->enable_directory_listing = "yes";
@@ -459,183 +465,262 @@ static int parse_options(struct mg_serve_http_opts* opts, int argc, char* argv[]
       exit(EXIT_FAILURE);
       break;
     }
-    return 0;
   }
+
+  /* Open database */
+  // if ((s_options.sqlite_handle = db_open(s_db_path)) == NULL) {
+  //     fprintf(stderr, "Cannot open DB [%s]\n", s_db_path);
+  //     exit(EXIT_FAILURE);
+  // }
+
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
 }
 
 static void signal_handler(int sig_num) 
 {
     signal(sig_num, signal_handler);
-    s_sig_num = sig_num;
+    s_options.signal = sig_num;
 }
+
+// #endregion options implement area
+// ////////////////////////////////////////////////////////
+// #region main function implement area
+
+/**
+ * 
+ */
+int main(int argc, char *argv[]) 
+{
+    // 解析命令行参数
+    parse_options(argc,argv);
+
+    // 如果是执行脚本, 执行并退出
+    if (s_options.execute_script_path!=NULL)
+      return js_execute_script(s_options.execute_script_path);
+
+    // 初始化 mongoose web server
+    mg_mgr_init(&s_options.mg_manager, NULL);
+    s_options.mg_acceptor = mg_bind(&s_options.mg_manager, s_options.mg_http_port, event_handler);
+    // {
+      mg_set_protocol_http_websocket(s_options.mg_acceptor);
+      mg_set_timer(s_options.mg_acceptor, mg_time() + SESSION_CHECK_INTERVAL);
+
+      mg_register_http_endpoint(s_options.mg_acceptor, s_login_url, login_handler);
+      mg_register_http_endpoint(s_options.mg_acceptor, s_logout_url, logout_handler);
+    // }
+    
+    // 初始化libssh运行环境
+    ssh_init();
+
+    // 初始化quickjs运行环境
+    qjs_runtime_init();
+    
+    printf("Starting server on port %s\r\n", s_options.mg_http_port);
+
+    /* 进入主事件循环, Run event loop until signal is received */
+    while (s_options.signal == 0) {
+      // 因为mg的poll不包含ssh的socket, 所以就算ssh有数据, mg也是不知道
+      // 只有当有输入或者超时事件到, 才会触发,, 所以需要设置得小一点, 同时ssh的接收缓冲区设置得大一点
+      mg_mgr_poll(&s_options.mg_manager, 100);
+    }
+
+    printf("Exiting on signal %d\r\n", s_options.signal);
+
+    /* Cleanup */
+    mg_mgr_free(&s_options.mg_manager);
+
+    // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
+
+    // 释放quickjs运行环境资源
+    qjs_runtime_free();
+
+    // 释放libssh运行环境资源
+    ssh_finalize();
+
+    return 0;
+}
+
+// #endregion postgres declare area
+// ////////////////////////////////////////////////////////
+struct mg_str auth_mode_cookie = MG_MK_STR("cookie");
+struct mg_str auth_mode_digest = MG_MK_STR("digest");
+struct mg_str auth_mode_basic = MG_MK_STR("basic");
+struct mg_str auth_mode_jwt = MG_MK_STR("jwt");
+
+// 
+
+char * clear_screen = "\x1B[2J";
 
 static void event_handler(struct mg_connection *nc, int ev, void *ev_data) 
 {
-
     switch (ev) {
-    case MG_EV_HTTP_REQUEST:{ 
+    case MG_EV_HTTP_REQUEST:{ // 接收到http请求
         struct http_message *hm = (struct http_message *) ev_data;
-        if (has_prefix(&hm->uri, &api_prefix)) 
+        if (mg_str_has_prefix(&hm->uri, &api_prefix)) // 如果是API请求
         {
-            struct mg_str api_menu = MG_MK_STR("/api/menu.json");
-            if(is_equal(&hm->uri, &api_menu)){
-                mg_serve_http(nc, hm, s_http_server_opts); /* Serve static content */
-                break;
-            }
-
-            int len;
-            char ssid[32];
-            if(len=get_session_id(hm, ssid, sizeof(ssid))){
-                // len == strlen(ssid);
-                struct session *s = get_session(hm);
-                if(s == NULL){
-                    send_cookie_auth_request(nc, "session expired.");
-                    break;
-                }
-            }else if(!mg_http_custom_is_authorized(
-                hm, s_http_server_opts.auth_domain, s_http_server_opts.get_user_htpasswd_fn
-            )){
-                mg_http_send_digest_auth_request(nc, s_http_server_opts.auth_domain);
-                break;
-            }
-
+          if(check_authentication(nc, hm)==1){
             handle_api_request(nc, hm);
+          }
         } else {
-            mg_serve_http(nc, hm, s_http_server_opts); /* Serve static content */
+            mg_serve_http(nc, hm, s_options.mg_options); /* Serve static content */
         }
         break;
     }
+    case MG_EV_WEBSOCKET_HANDSHAKE_REQUEST:{
+      struct http_message *hm = (struct http_message *) ev_data;
+      // TODO 
+      // if(check_authentication(nc, hm)==1){
+        
+      // }
+      struct ws_ssh_context* context = new_ws_ssh_context(nc);
+      nc->user_data = context;
+      
+      int len = 0;
+      len = mg_get_http_var(&hm->query_string, "host", context->host, sizeof(context->host));
+      if(len==0){
+        mg_get_http_var(&hm->query_string, "h", context->host, sizeof(context->host));
+      }
+      len = mg_get_http_var(&hm->query_string, "port", context->port, sizeof(context->port));
+      if(len==0){
+        mg_get_http_var(&hm->query_string, "p", context->port, sizeof(context->port));
+      }
+      len = mg_get_http_var(&hm->query_string, "user", context->user, sizeof(context->user));
+      if(len==0){
+        mg_get_http_var(&hm->query_string, "u", context->user, sizeof(context->user));
+      }
+      len = mg_get_http_var(&hm->query_string, "password", context->password, sizeof(context->password));
+      if(len==0){
+        mg_get_http_var(&hm->query_string, "w", context->password, sizeof(context->password));
+      }
+
+      break;
+    }
     case MG_EV_WEBSOCKET_HANDSHAKE_DONE: { // WEBSOCKET握手完成, 建立连接成功
+      struct ws_ssh_context* rs = nc->user_data;
 
-    // 监视管道数据, 转发数据
-      char * buf = "Hello from \x1B[1;3;31mxterm.js\x1B[0m $ \nConnecting...";
+      // 监视管道数据, 转发数据
+      // please input connect target, format: [user[:password]@]hostname[:port]:
+      // 支持的command:
+      // help
+      // list [pattern]
+      // ssh [user[:password]@]hostname[:port]
+
+      char * buf = "Connecting\x1B[1;3;31...\x1B[0m$\r\n";
       mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, strlen(buf));
-
-      // 独立线程, 从ssh端拉取数据写入websocket
-      // libssh会将输出写到管道
-      struct ws_context* rs = new_ws_context(nc);
-      nc->user_data = rs;
-    // 建立后台的ssh连接, 绑定输入和输出到管道, 成功后返回提示信息
-      mg_start_thread(ws_ssh_pipe_thread_func, (void*)rs);
-      mg_start_thread(ws_mg_broadcast_thread_proc, (void*)rs);
+      
+      // TODO 需要改成异步建立连接
+      int rc = ws_ssh_connect(rs);
+      if(rc!=0){
+        buf = "Connect failed!\r\n";
+        mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, strlen(buf));
+        mg_send_websocket_frame(nc, WEBSOCKET_OP_CLOSE, NULL, 0);
+        free_ws_ssh_context(rs);
+        nc->user_data = NULL;
+      }else{
+        // connected!!!
+      }
 
       break;
     }
     case MG_EV_WEBSOCKET_FRAME: { // 接收到客户端发过来的消息, echo 回去
+      struct ws_ssh_context* rs = nc->user_data;
       struct websocket_message *wm = (struct websocket_message *) ev_data;
+
+
+      // 检查当前连接状态, 如果还没有建立后台ssh连接, 则解析命令
+      // 因为是一个字母一个字母传过来的, 所以需要有缓冲区
+      // 可以参考readline怎么写的
+      // 直到遇到回车, 开始解析命令
+      if(rs==NULL || rs->status!=1){
+        
+        printf("MG_EV_WEBSOCKET_FRAME>> %d\n", rs==NULL ? -1: rs->status);
+
+        char * buf = "Error...Connection Closed! \r\n";
+        mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, buf, strlen(buf));
+        // mg_send_websocket_frame(nc, WEBSOCKET_OP_CLOSE, NULL,0);
+      }else{
+        ssh_channel_write(rs->channel, (void *) wm->data, wm->size);
+      }
+
       // mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, (char *) wm->data, wm->size);
       // 转发数据到管道, libssh会从管道读取到数据
-      struct ws_context* rs = nc->user_data;
-      write(rs->ws_write_ssh_read[1], (char *) wm->data, wm->size);
+      // write(rs->ws_write_ssh_read[1], (char *) wm->data, wm->size);
 
+      break;
+    }
+    case MG_EV_POLL: {
+      if(is_websocket(nc)){
+        struct ws_ssh_context* rs = nc->user_data;
+        if(rs!=NULL && rs->status==1){
+          if(ssh_channel_is_open(rs->channel) && ssh_channel_is_eof(rs->channel)==0){
+            // 读取ssh的数据
+            rs->ssh_read_buf_len = ssh_channel_read_nonblocking(rs->channel, rs->ssh_read_buf, rs->ssh_read_buf_size, true);
+            if(rs->ssh_read_buf_len>0){
+              mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, rs->ssh_read_buf, rs->ssh_read_buf_len);
+            }else if(rs->ssh_read_buf_len == SSH_ERROR ){
+              mg_send_websocket_frame(nc, WEBSOCKET_OP_CLOSE, NULL,0);
+            }
+            rs->ssh_read_buf_len = ssh_channel_read_nonblocking(rs->channel, rs->ssh_read_buf, rs->ssh_read_buf_size, false);
+            if(rs->ssh_read_buf_len>0){
+              mg_send_websocket_frame(nc, WEBSOCKET_OP_TEXT, rs->ssh_read_buf, rs->ssh_read_buf_len);
+            }else if(rs->ssh_read_buf_len == SSH_ERROR ){
+              mg_send_websocket_frame(nc, WEBSOCKET_OP_CLOSE, NULL,0);
+            }
+          }
+        }
+      }
       break;
     }
     case MG_EV_CLOSE: {
       if(is_websocket(nc)){
-        struct ws_context* rs = nc->user_data;
-        rs->websocket_closed = 1;
+        struct ws_ssh_context* rs = nc->user_data;
+        free_ws_ssh_context(rs);
+        rs = NULL;
+        nc->user_data = NULL;
       }
     }
-    }
+  }
 }
 
+// 1: 验证通过, 0: 不通过, -1: 不支持的认证方式
+static int check_authentication(struct mg_connection *nc, struct http_message *hm){
+  int rc = -1;
 
-static ssh_channel chan;
-static int signal_delayed = 0;
+  struct mg_str* auth_mode = mg_get_http_header(hm, "Authentication-Mode");
 
-static void sigwindowchanged(int i)
-{
-    (void) i;
-    signal_delayed = 1;
-}
-
-static void setsignal(void)
-{
-    signal(SIGWINCH, sigwindowchanged);
-    signal_delayed = 0;
-}
-
-static void sizechanged(void)
-{
-    struct winsize win = {
-        .ws_row = 0,
-    };
-
-    ioctl(1, TIOCGWINSZ, &win);
-    ssh_channel_change_pty_size(chan,win.ws_col, win.ws_row);
-    setsignal();
-}
-
-static void select_loop(struct ws_context* context)
-{
-  ssh_session session = context->session;
-  ssh_channel channel = context->channel;
-
-    ssh_connector connector_in, connector_out, connector_err;
-    int rc;
-
-    ssh_event event = ssh_event_new();
-
-    /* stdin */
-    connector_in = ssh_connector_new(session);
-    ssh_connector_set_out_channel(connector_in, channel, SSH_CONNECTOR_STDINOUT);
-    ssh_connector_set_in_fd(connector_in, context->ws_write_ssh_read[0]);
-    ssh_event_add_connector(event, connector_in);
-
-    /* stdout */
-    connector_out = ssh_connector_new(session);
-    ssh_connector_set_out_fd(connector_out, context->ssh_write_ws_read[1]);
-    ssh_connector_set_in_channel(connector_out, channel, SSH_CONNECTOR_STDINOUT);
-    ssh_event_add_connector(event, connector_out);
-
-    /* stderr */
-    connector_err = ssh_connector_new(session);
-    ssh_connector_set_out_fd(connector_err, context->ssh_write_ws_read[1]);
-    ssh_connector_set_in_channel(connector_err, channel, SSH_CONNECTOR_STDERR);
-    ssh_event_add_connector(event, connector_err);
-
-    while (ssh_channel_is_open(channel) && context->websocket_closed==0) {
-        if (signal_delayed) {
-            sizechanged();
+  if(auth_mode==NULL || mg_str_is_equal(auth_mode, &auth_mode_cookie)){
+    char ssid[32];
+    int len = get_session_id(hm, ssid, sizeof(ssid));
+    if(len){
+        struct session *s = get_session(hm);
+        if(s == NULL){
+          send_cookie_auth_request(nc, "session expired.");
+          rc = 0;
+        }else{
+          rc = 1;
         }
-        rc = ssh_event_dopoll(event, 60000);
-        if (rc == SSH_ERROR) {
-            fprintf(stderr, "Error in ssh_event_dopoll()\n");
-            break;
-        }
+    }else{
+      send_cookie_auth_request(nc, "please login.");
+      rc = 0;
     }
-    ssh_event_remove_connector(event, connector_in);
-    ssh_event_remove_connector(event, connector_out);
-    ssh_event_remove_connector(event, connector_err);
+  } else if(mg_str_is_equal(auth_mode, &auth_mode_digest)){
+    if(mg_http_custom_is_authorized(
+        hm, 
+        s_options.mg_options.auth_domain, 
+        s_options.mg_options.get_user_htpasswd_fn
+    )){
+      rc = 1;
+    }else{
+        mg_http_send_digest_auth_request(nc, s_options.mg_options.auth_domain);
+        rc = 0;
+    }
+  }
 
-    ssh_connector_free(connector_in);
-    ssh_connector_free(connector_out);
-    ssh_connector_free(connector_err);
-
-    ssh_event_free(event);
+  return rc;
 }
 
-static struct termios terminal;
-
-
-static void do_exit(int i)
-{
-    /* unused variable */
-    (void) i;
-
-    do_cleanup(0);
-    exit(0);
-}
-
-static void do_cleanup(int i)
-{
-  /* unused variable */
-  (void) i;
-
-  tcsetattr(0, TCSANOW, &terminal);
-}
-
-static int ws_ssh_pipe(struct ws_context *context)
+static int ws_ssh_connect(struct ws_ssh_context *context)
 {
     int auth = 0;
     char *banner;
@@ -644,150 +729,117 @@ static int ws_ssh_pipe(struct ws_context *context)
     ssh_session session = context->session;
 
     if (ssh_options_set(session, SSH_OPTIONS_USER, context->user) < 0) {
+        fprintf(stderr, "Connection to [%s@%s:%s] failed: set user failed: %s\r\n", context->user, context->host, context->port, ssh_get_error(session));
         return -1;
     }
-    if (ssh_options_set(session, SSH_OPTIONS_PASSWORD_AUTH, context->password) < 0) {
-        return -1;
-    }
-    
     if (ssh_options_set(session, SSH_OPTIONS_HOST, context->host) < 0) {
+        fprintf(stderr, "Connection to [%s@%s:%s] failed : set host failed: %s\r\n", context->user, context->host, context->port, ssh_get_error(session));
+        return -1;
+    }
+    if (strlen(context->port)>0 && ssh_options_set(session, SSH_OPTIONS_PORT_STR, context->port) < 0) {
+        fprintf(stderr, "Connection to [%s@%s:%s] failed : set port failed: %s\r\n", context->user, context->host, context->port, ssh_get_error(session));
         return -1;
     }
     
     if (ssh_connect(session)) {
-        fprintf(stderr, "Connection failed : %s\n", ssh_get_error(session));
+        fprintf(stderr, "Connection to [%s@%s:%s] failed : %s\r\n", context->user, context->host, context->port, ssh_get_error(session));
         return -1;
     }
 
     state = verify_knownhost(session);
     if (state != 0) {
+        fprintf(stderr, "Connection to [%s@%s:%s] failed : verify_knownhost state=%d, error=%s\r\n", context->user, context->host, context->port, state, ssh_get_error(session));
         return -1;
     }
-
-    if(display_banner(session) != SSH_AUTH_SUCCESS){
-      fprintf(stderr, "get banner failed: %s\n", ssh_get_error(session));
+    
+    if (ssh_authenticate(session, context->password) != SSH_AUTH_SUCCESS)
+    {
+      fprintf(stderr, "Authentication failed: %s\r\n", ssh_get_error(session));
       return -1;
     }
-    
-    if (ssh_userauth_password(session, context->user, context->password) != SSH_AUTH_SUCCESS)
-    {
-      fprintf(stderr, "Authentication failed: %s\n", ssh_get_error(session));
-          return -1;
-    }
 
-
-    ssh_channel channel;
-    struct termios terminal_local;
-    int interactive=1;//isatty(0);
-
-    channel = ssh_channel_new(session);
+    ssh_channel channel = ssh_channel_new(session);
     if (channel == NULL) {
-        return;
+        printf("Error new channel : %s\r\n", ssh_get_error(session));
+        return -2;
     }
 
-    if (interactive) {
-        tcgetattr(0, &terminal_local);
-        memcpy(&terminal, &terminal_local, sizeof(struct termios));
-    }
-
-    if (ssh_channel_open_session(channel)) {
-        printf("Error opening channel : %s\n", ssh_get_error(session));
+    int rc = 0;
+    rc = ssh_channel_open_session(channel);
+    if(rc != SSH_OK){
+        printf("Error opening channel : code=%d, error=%s\r\n", rc, ssh_get_error(session));
         ssh_channel_free(channel);
-        return;
+        return -2;
     }
-    chan = channel;
-    if (interactive) {
-        ssh_channel_request_pty(channel);
-        sizechanged();
-    }
-
-    if (ssh_channel_request_shell(channel)) {
-        printf("Requesting shell : %s\n", ssh_get_error(session));
+    rc = ssh_channel_request_pty(channel);
+    if(rc != SSH_OK){
+        printf("Error request pty : code=%d, error=%s\r\n", rc, ssh_get_error(session));
+        ssh_channel_close(channel);
         ssh_channel_free(channel);
-        return;
+        return -2;
+    }
+    rc = ssh_channel_request_shell(channel);
+    if(rc != SSH_OK){
+        printf("Requesting shell : code=%d, error=%s\r\n", rc, ssh_get_error(session));
+        ssh_channel_close(channel);
+        ssh_channel_free(channel);
+        return -2;
     }
 
-    if (interactive) {
-        cfmakeraw(&terminal_local);
-        tcsetattr(0, TCSANOW, &terminal_local);
-        setsignal();
-    }
-    // signal(SIGTERM, do_cleanup);
-    select_loop(context);
-    if (interactive) {
-        do_cleanup(0);
-    }
-    ssh_channel_free(channel);
+    context->channel = channel;
+    context->status = 1;
 
     return 0;
 }
 
-void* ws_ssh_pipe_thread_func(void *param) {
-  struct ws_context *rs = param;
-  ws_ssh_pipe(rs->session);
-  return NULL;
-}
-
-int display_banner(ssh_session session)
+static int ssh_authenticate(ssh_session session, char *password)
 {
-  int rc;
-  char *banner;
- 
-/*
-   * Does not work without calling ssh_userauth_none() first ***
-   * That will be fixed ***
-*/
-  rc = ssh_userauth_none(session, NULL);
-  if (rc == SSH_AUTH_ERROR)
+    int rc;
+    int method;
+    char *banner;
+
+    // Try to authenticate
+    rc = ssh_userauth_none(session, NULL);
+    if (rc == SSH_AUTH_ERROR) {
+        ssh_print_error(session);
+        return rc;
+    }
+
+    method = ssh_userauth_list(session, NULL);
+    ssh_print_supported_auth_methods(method);
+
+    // Try to authenticate with password
+    if (method & SSH_AUTH_METHOD_PASSWORD && password!=NULL) {
+        rc = ssh_userauth_password(session, NULL, password);
+        if (rc == SSH_AUTH_ERROR) {
+            ssh_print_error(session);
+            return rc;
+        }
+    }else if (method & SSH_AUTH_METHOD_GSSAPI_MIC){
+        rc = ssh_userauth_gssapi(session);
+        if(rc == SSH_AUTH_ERROR) {
+            ssh_print_error(session);
+            return rc;
+        }
+    } else if (method & SSH_AUTH_METHOD_PUBLICKEY) {
+        rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+        if (rc == SSH_AUTH_ERROR) {
+            ssh_print_error(session);
+            return rc;
+        }
+    }
+
+    if (rc != SSH_AUTH_SUCCESS) {
+        return rc;
+    }
+
+    banner = ssh_get_issue_banner(session);
+    if (banner) {
+        printf("%s\r\n",banner);
+        SSH_STRING_FREE_CHAR(banner);
+    }
+
     return rc;
- 
-  banner = ssh_get_issue_banner(session);
-  if (banner)
-  {
-    printf("%s\n", banner);
-    free(banner);
-  }
- 
-  return rc;
-}
-
-
-int authenticate_password(ssh_session session)
-{
-  char *password;
-  int rc;
- 
-  password = getpass("Enter your password: ");
-  rc = ssh_userauth_password(session, NULL, password);
-  if (rc == SSH_AUTH_ERROR)
-  {
-     fprintf(stderr, "Authentication failed: %s\n",
-       ssh_get_error(session));
-     return SSH_AUTH_ERROR;
-  }
- 
-  return rc;
-}
-
-
-void *ws_mg_broadcast_thread_proc(void *param) {
-  struct ws_context *rs = param;
-  while (s_sig_num == 0 && rs->websocket_closed == 0) { // todo websocket关闭时, 需要停止对应的线程
-      if( (rs->ws_read_buf_len = read(rs->ssh_write_ws_read[0],rs->ws_read_buf,rs->ws_read_buf_size))>0 ){
-        mg_broadcast(rs->nc->mgr, on_work_complete, (void *)rs, sizeof(rs));
-      }
-  }
-  return NULL;
-}
-
-
-// 工作线程通过`mg_broadcast`触发事件, 由主(IO)线程发送数据
-static void on_work_complete(struct mg_connection *nc, int ev, void *ev_data) {
-  (void) ev;
-  struct ws_context* rs = ev_data;
-  if(nc==rs->nc){
-    mg_send_websocket_frame(nc, WEBSOCKET_OP_BINARY, rs->ws_read_buf, rs->ws_read_buf_len);
-  }
 }
 
 // 判断连接是否是websocket连接
@@ -814,7 +866,7 @@ static void handle_api_request(struct mg_connection *nc, struct http_message *hm
     // }
     
 
-    // mg_serve_http(nc, hm, s_http_server_opts);
+    // mg_serve_http(nc, hm, s_options.mg_options);
 }
 
 static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm)
@@ -868,7 +920,7 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
 
     // handle request
     {
-        JSAtom fn_name = JS_NewAtom(context, s_api_request_handler_func);
+        JSAtom fn_name = JS_NewAtom(context, s_options.api_handle_function);
         JSValue argv2[] = { request, response };
         JSValue rs = JS_Invoke(context, grobal, fn_name, 2, argv2);
         JS_FreeAtom(context, fn_name);
@@ -913,11 +965,11 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
     
 }
 
-static int has_prefix(const struct mg_str *uri, const struct mg_str *prefix) {
+static int mg_str_has_prefix(const struct mg_str *uri, const struct mg_str *prefix) {
     return uri->len > prefix->len && memcmp(uri->p, prefix->p, prefix->len) == 0;
 }
 
-static int is_equal(const struct mg_str *s1, const struct mg_str *s2) {
+static int mg_str_is_equal(const struct mg_str *s1, const struct mg_str *s2) {
     return s1->len == s2->len && memcmp(s1->p, s2->p, s2->len) == 0;
 }
 
@@ -999,7 +1051,7 @@ static int check_pass(const char *user, const char *pass)
       return 1;
   }else{
     char ha1[128]; 
-    if(get_user_htpasswd(mg_mk_str(user), mg_mk_str(s_http_server_opts.auth_domain), ha1) && (strcmp(pass, ha1) == 0)){
+    if(get_user_htpasswd(mg_mk_str(user), mg_mk_str(s_options.mg_options.auth_domain), ha1) && (strcmp(pass, ha1) == 0)){
         return 1;
     }
   }
@@ -1035,7 +1087,7 @@ static struct session *create_session(const char *user, const struct http_messag
   }
   if (s == NULL) {
     destroy_session(oldest_s);
-    printf("Evicted %" INT64_X_FMT "/%s\n", oldest_s->id, oldest_s->user);
+    printf("Evicted %" INT64_X_FMT "/%s\r\n", oldest_s->id, oldest_s->user);
     s = oldest_s;
   }
   /* Initialize new session. */
@@ -1147,15 +1199,15 @@ static int qjs_runtime_init()
   //     "globalThis.os = os;\n";
   // eval_buf(context, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
   // 
-  // if (eval_file(context, s_api_request_handle_file, 1)){
+  // if (eval_file(context, s_options.api_handle_file_path, 1)){
   //   qjs_runtime_free();
   //   exit(EXIT_FAILURE);
   // }
   
   /* make 'std' and 'os' visible to non module code */
   const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
-  char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_api_request_handle_file)+ (strlen(s_api_request_handler_func)*4 ));
-  sprintf(str3, str2, s_api_request_handler_func, s_api_request_handle_file, s_api_request_handler_func, s_api_request_handler_func);
+  char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_options.api_handle_file_path)+ (strlen(s_options.api_handle_function)*4 ));
+  sprintf(str3, str2, s_options.api_handle_function, s_options.api_handle_file_path, s_options.api_handle_function, s_options.api_handle_function);
   eval_buf(context, str3, strlen(str3), "<input>", JS_EVAL_TYPE_MODULE);
   free(str3);
 
@@ -1275,7 +1327,7 @@ static void print_exception(JSContext *ctx, JSValue e)
   assert(JS_IsException(e));
 
   // const char* msg = JS_ToCString(ctx, e);
-  // printf("ERROR: %s\n", msg);
+  // printf("ERROR: %s\r\n", msg);
   // JS_FreeCString(ctx, msg);
   
   // Error { message: 1"expecting '('", fileName: 1"quickjs_modules/api_request_handler.js", lineNumber: 2, stack: 1"    at quickjs_modules/api_request_handler.js:2\n" }
@@ -1297,7 +1349,7 @@ static void print_exception_free(JSContext *ctx, JSValue e)
 static void print_value(JSContext *ctx, JSValue e, const char* prefix)
 {
   const char* msg = JS_ToCString(ctx, e);
-  printf("%s%s\n", prefix, msg);
+  printf("%s%s\r\n", prefix, msg);
   JS_FreeCString(ctx, msg);
 }
 

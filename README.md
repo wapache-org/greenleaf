@@ -43,7 +43,8 @@
 3. mustach: 是一个C语言实现的`mustache`模板引擎.
 5. json-c: 是一个C语言实现的`JSON`库.
 6. lua: 是一个轻量级可嵌入的脚本引擎.
-
+7. libssh : 封装libssh使得lua/js等脚本能够直接ssh到其他远程服务器.
+8. xterm.js: 结合libssh实现通过浏览器访问其他远程主机, 提供堡垒机功能
 
 * 通过`mongoose`实现`Web Server`组件
 * 通过`quickjs`实现`javascript engine`组件
@@ -84,6 +85,7 @@ cmake ..
 2. 支持调用CGI程序
 3. 支持调用JS脚本, 目前已经具备标准C函数和操作系统相关函数的调用封装, 以及初步做好了`libpq`的调用封装.
 1. 支持基于cookie/http digest的安全认证机制
+1. 支持基于xterm.js+websocket+libssh实现的webssh
 
 命令帮助:
 
@@ -108,6 +110,12 @@ Options:
 * `-q, --qjs-api-router` 指定RESTful API请求的处理脚本, 所有`/api/`开头的请求都会转发到此脚本中进行处理.
 
 其他选项暂时不做说明.
+
+webssh体验:
+1. 修改`static/xterm/index.html`文件中的连接主机,端口,用户名和密码
+2. `build/greenleaf -q quickjs_modules/api_request_handler.js`启动服务器
+3. 浏览器访问`http://localhost:8000/xterm/index.html`
+4. 稍等片刻即可通过网页访问后端的ssh
 
 ## examples/cgi_example
 
@@ -160,14 +168,13 @@ build/examples/sqlite_example
 
 集成以下库
 
-1. libssh : 封装libssh使得lua/js等脚本能够直接ssh到其他远程服务器.
 1. libcurl : 封装libcurl使得lua/js等脚本能够直接调用其他WEB服务.
-1. xterm.js: 结合libssh实现通过浏览器访问其他远程主机, 提供堡垒机功能
 1. libuv: 提升mongoose性能
 3. lua-jit: 提升lua脚本性能
 4. raft: 用于实现Greenleaf集群
 6. djv: 用于js脚本引擎的API参数校验, 基于json schema.
 5. ncurses: 提供基于文本的图形界面
+1. https://github.com/kristapsdz/kcgi
 
 完善web服务器, 支持
 
@@ -185,3 +192,5 @@ build/examples/sqlite_example
 
 感谢广大医务工作者在中国最困难的时期, 为我们负重前行, 
 让我们向白衣天使们致敬，共同祝愿他们春暖花开日、平安归来时！
+
+2020-03-08 01:11:11 截止至今日, 国内的疫情已经基本控制住了, 但是国外又蔓延了, 心塞!
