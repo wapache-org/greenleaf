@@ -29,3 +29,37 @@ make
 make install
 make clean
 ```
+
+## libssh
+
+下载libssh的源码, 编译安装:
+
+安装动态库:
+
+```
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=${GREENLEAF_PROJECT_DIR}/libraries/libssh -DCMAKE_BUILD_TYPE=Debug ..
+make install
+
+```
+
+安装静态库:
+```
+rm -rf * # build dir
+
+vi ../DefineOptions.cmake
+# set BUILD_SHARED_LIBS to off
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
+cmake -DCMAKE_INSTALL_PREFIX=${GREENLEAF_PROJECT_DIR}/libraries/libssh -DCMAKE_BUILD_TYPE=Debug ..
+make install
+
+
+```
+
+另外还需要复制build目录下的config.h, 一些例子需要用到
+
+```
+cp config.h ${GREENLEAF_PROJECT_DIR}/libraries/libssh/include/libssh
+```

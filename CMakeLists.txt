@@ -25,12 +25,14 @@ include_directories(
   ./sqlite
   ./libraries/libpq/include
   ./libraries/quickjs/include
+  ./libraries/libssh/include
 )
 
 # add lib directories
 link_directories(
   libraries/quickjs/lib/quickjs
   libraries/libpq/lib
+  libraries/libssh/lib
 )
 
 # add block directories
@@ -40,13 +42,19 @@ add_subdirectory(mustache)
 add_subdirectory(sqlite)
 add_subdirectory(examples)
 add_subdirectory(json-c)
+add_subdirectory(ssh)
 
 # add grobal libs
 # link_libraries(mongoose lua quickjs pq sqlite m dl readline)
 
 # add target
+set(ssh_SRCS1
+  ssh/authentication.c
+  ssh/knownhosts.c
+  ssh/connect_ssh.c
+)
 
-add_executable(greenleaf main.c)
+add_executable(greenleaf main.c ${ssh_SRCS1})
 # add_dependencies(greenleaf copy_files)
 target_link_libraries(greenleaf 
   mongoose json-c
@@ -54,6 +62,7 @@ target_link_libraries(greenleaf
   sqlite
   pq.a pgport.a pgcommon.a 
   m dl pthread
+  ssh
 )
 
 # add file copy target
