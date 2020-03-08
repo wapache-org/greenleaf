@@ -63,3 +63,21 @@ make install
 ```
 cp config.h ${GREENLEAF_PROJECT_DIR}/libraries/libssh/include/libssh
 ```
+
+
+## libyaml
+
+
+安装静态库:
+```
+git clone https://github.com/yaml/libyaml.git
+cd libyaml ; mkdir build ; cd build
+cmake -DCMAKE_INSTALL_PREFIX=${GREENLEAF_PROJECT_DIR}/libraries/libyaml -DCMAKE_BUILD_TYPE=Debug ..
+make -j8
+make install
+
+```
+
+
+
+
