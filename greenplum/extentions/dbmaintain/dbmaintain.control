@@ -1,0 +1,5 @@
+comment = 'database maintain extension'
+directory = 'extension'
+default_version = '0.0.1'
+relocatable = true
+encoding = 'UTF8'
