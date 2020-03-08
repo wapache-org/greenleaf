@@ -21,3 +21,6 @@
 
 
 // pidstat
+
+
+// lshw -class disk -short
