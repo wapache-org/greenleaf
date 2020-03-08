@@ -59,12 +59,13 @@
 
 源码编译步骤
 
+开始编译前, 需要参照`libraries/README.md`的说明, 将依赖的库安装好
+
 ```
 git clone https://github.com/wapache-org/greenleaf.git
-cd greenleaf
-mkdir build
-cd  build
+cd greenleaf ; mkdir build ; cd  build
 cmake ..
+make
 ```
 
 # 文档
