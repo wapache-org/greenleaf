@@ -174,7 +174,17 @@ MG将数据存入发送缓冲区, 数据发送完毕后MG会自动清理掉缓�
 
 
 
+# 为什么不用epoll?
 
+作者的回复:
+
+I am not really convinced that using select() is the problem.
+select() is slow when many file descriptors are checked for data. 
+Usually listening sockets and all connected sockets are passed to select/epoll, and it could be many of those, if many clients are connected. 
+Mongoose however is using select() for checking listening sockets only. 
+Usually, there are few of them, and most of the time, only one (this is  set by -listening_ports parameter). 
+If there are thousands listening sockets made, then yes, switching to epoll() would make sense, but I don't think anybody is doing this.
+To make real performance boost on static content, Mongoose should use sendfile(2).
 
 
 
