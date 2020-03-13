@@ -53,7 +53,7 @@ function get_cpu_proc_cupinfo() {
 }
 
 function get_cpu_proc_stat() {
-    var stat = utils.execute_cmd_to_table("cat /proc/stat | grep cpu 2>/dev/null", column_split_regexp, false);
+    var stat = utils.execute_cmd_to_table("cat /proc/stat 2>/dev/null | grep cpu ", column_split_regexp, false);
     stat.head = [
         'name',      // cpu名称
         'user',      // 用户态时间, 一般/高优先级，仅统计 nice <= 0 的进程
@@ -90,6 +90,15 @@ function get_cpu_dmidecode() {
     return utils.execute_cmd_to_map2("dmidecode -q --type processor 2>/dev/null" , null, null, '\t', key_value_split_regexp);
 }
 
+
+function get_cpu_total_used_rate() {
+    return utils.execute_cmd("cat /proc/stat 2>/dev/null | egrep \"^cpu \" | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'");
+}
+
+function get_cpu_used_rates() {
+    return utils.execute_cmd_to_map("cat /proc/stat 2>/dev/null | grep cpu | awk '{print $1\": \"(100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11)))}'", key_value_split_regexp);
+}
+
 export default {
 
     get_cpu_info,
@@ -98,6 +107,17 @@ export default {
     get_cpu_proc_cupinfo,
     get_cpu_proc_stat,
     get_cpu_lscpu,
-    get_cpu_dmidecode
+    get_cpu_dmidecode,
+
+    get_cpu_total_used_rate,
+    get_cpu_used_rates
 
 }
+
+// cpu使用率:
+
+// 各个核心的使用率
+// cat /proc/stat 2>/dev/null | grep cpu | awk '{print $1": "(100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11)))"%"}'
+
+// 总使用率
+// cat /proc/stat 2>/dev/null | egrep "^cpu " | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'

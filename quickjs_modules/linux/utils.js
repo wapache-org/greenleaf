@@ -1,6 +1,26 @@
 import * as std from 'std';
 
 /**
+ * 执行一条命令,并返回命令输出.
+ * 
+ * @param {string} cmd 命令
+ * @returns {string} 命令输出
+ */
+function execute_cmd(cmd) {
+
+    var info = [],
+        line
+    ;
+    let pipe = std.popen(cmd, "r");
+    while ((line = pipe.getline()) != null) {
+        info.push(line);
+    }
+    pipe.close();
+
+    return info.join('\n');
+}
+
+/**
  * 
  * @param {string} cmd 
  * @param {RegExp} key_value_spliter_re 
@@ -214,6 +234,7 @@ function execute_cmd_to_table(cmd, re, with_header) {
 }
 
 export default { 
+    execute_cmd,
     execute_cmd_to_map, 
     execute_cmd_to_map_array,
     execute_cmd_to_map2, 
