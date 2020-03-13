@@ -1,5 +1,11 @@
 import * as std from 'std';
 
+/**
+ * 
+ * @param {string} cmd 
+ * @param {RegExp} key_value_spliter_re 
+ * @returns {object} {partN:valueN}
+ */
 function execute_cmd_to_map(cmd, key_value_spliter_re) {
 
     var info = {};
@@ -13,7 +19,7 @@ function execute_cmd_to_map(cmd, key_value_spliter_re) {
             continue;
         }
         let part = line.split(key_value_spliter_re);
-        info[part[0]] = part[1];
+        info[part[0].trim()] = part[1];
     }
     pipe.close();
 
@@ -21,8 +27,48 @@ function execute_cmd_to_map(cmd, key_value_spliter_re) {
 
 }
 
-// 用于解析类似 `dmidecode -q` 命令的输出格式
-function execute_cmd_to_map2(cmd, start_line_re, skip_line_re, indent, re) {
+/**
+ * 
+ * @param {string} cmd 
+ * @param {RegExp} key_value_spliter_re 
+ * @returns {object} {partN:[value1,...,valueN]}
+ */
+function execute_cmd_to_map_array(cmd, key_value_spliter_re) {
+
+    var info = {};
+
+    let line
+    ;
+    let pipe = std.popen(cmd, "r");
+    while ((line = pipe.getline()) != null) {
+        // console.log('line', line);
+        if(line.length==0){
+            continue;
+        }
+        let part = line.split(key_value_spliter_re);
+        if(info[part[0]] === undefined){
+            info[part[0]] = [];
+        }
+        info[part[0]].push(part[1]);
+    }
+    pipe.close();
+
+    return info;
+
+}
+
+/**
+ * 用于解析类似 `dmidecode -q` 命令的输出格式.
+ * 输出是有层次的
+ * 
+ * @param {*} cmd 
+ * @param {RegExp} start_line_re 
+ * @param {RegExp} skip_line_re 
+ * @param {*} indent 缩进
+ * @param {RegExp} split_re 
+ * @returns {object} {}
+ */
+function execute_cmd_to_map2(cmd, start_line_re, skip_line_re, indent, split_re) {
 
     var info = {
     };
@@ -67,7 +113,7 @@ function execute_cmd_to_map2(cmd, start_line_re, skip_line_re, indent, re) {
                 info[line]=node;
             }
         }else if(level2==1){
-            let part = line.split(re);
+            let part = line.split(split_re);
             key = part[0];
             value = part[1] === '' ? []: part[1];
             node[key] = value;
@@ -88,6 +134,28 @@ function execute_cmd_to_map2(cmd, start_line_re, skip_line_re, indent, re) {
 
 }
 
+function execute_cmd_to_array(cmd) {
+
+    var info = [];
+
+    let line
+    ;
+    let pipe = std.popen(cmd, "r");
+    while ((line = pipe.getline()) != null) {
+        info.push(line);
+    }
+    pipe.close();
+
+    return info;
+
+}
+/**
+ * 
+ * @param {*} cmd 
+ * @param {*} item_spliter_re 
+ * @param {*} key_value_spliter_re 
+ * @returns [{partN:valueN},...,{}]
+ */
 function execute_cmd_to_array_map(cmd, item_spliter_re, key_value_spliter_re) {
 
     var info = [];
@@ -147,7 +215,9 @@ function execute_cmd_to_table(cmd, re, with_header) {
 
 export default { 
     execute_cmd_to_map, 
+    execute_cmd_to_map_array,
     execute_cmd_to_map2, 
+    execute_cmd_to_array,
     execute_cmd_to_array_map,
     execute_cmd_to_table 
 }

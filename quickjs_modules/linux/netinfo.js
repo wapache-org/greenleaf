@@ -1,9 +1,99 @@
+import utils from './utils.js';
+
+// 通过各种命令获取cpu信息
+var key_value_split_regexp = /\s*:\s*\t*/,
+    empty_line_regexp = /^\s*$/,
+    column_split_regexp = /\s+/,
+    ipv4_regexp = /(\d{1,3}\.){3}\d{1,3}/
+;
+
+function get_network_info(){
+    var info = {
+        "network_controller": get_network_controller_info(),
+        "network_interface": get_network_interface_info()
+    };
+
+    return info;
+}
+
+// 网卡控制器信息
+function get_network_controller_info() {
+    var raw_info = utils.execute_cmd_to_array("lspci | awk -v FS=\": \" '/Ethernet|Network controller/{print $2}'");
+    var info = raw_info;
+
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
+}
+// cat /proc/net/dev
+
+// 网卡信息
+function get_network_interface_info() {
+    // 
+    var if_ips = utils.execute_cmd_to_map_array("ip -o addr show scope global | awk '/^[0-9]:/{print $2, $4}' | cut -f1 -d '/'", column_split_regexp);
+
+    var if_ipv4 = {};
+    for(let key in if_ips){
+        var values = if_ips[key];
+        for(let i=0;i<values.length;i++){
+            // console.log(values[i]);
+            if(ipv4_regexp.test(values[i])){
+                if_ipv4[key] = values[i];
+                break;
+            }
+        }
+    }
+
+    var details = {};
+    var if_names = utils.execute_cmd_to_array("ls /sys/class/net");
+    for(let i=0;i<if_names.length;i++){
+        details[if_names[i]]=get_network_interface_detail(if_names[i]);
+    }
+
+    var info = {
+        "names": if_names,
+        "details": details,
+        "ips": if_ips,
+        "ipv4": if_ipv4
+    };
+
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
+}
+
+function get_network_interface_detail(name) {
+    var raw_info = utils.execute_cmd_to_map("ethtool "+name+" 2>/dev/null", key_value_split_regexp);
+    var info = raw_info;
+
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
+}
+
+// for n in `ls`; do echo "$n: `cat $n`"; done;
+
+function get_network_interface_statistics(name) {
+    var raw_info = utils.execute_cmd_to_map("for n in `ls /sys/class/net/"+name+"/statistics`; do echo \"$n: `cat /sys/class/net/"+name+"/statistics/$n`\"; done;", key_value_split_regexp);
+    var info = raw_info;
+
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
+}
+
+export default {
+
+    get_network_info, 
+    get_network_controller_info,
+    get_network_interface_info,
+    get_network_interface_detail,
+    get_network_interface_statistics
+
+}
+
 
 // 硬件信息
 
 // dmidecode
 //  lspci | grep Ethernet 
-
+// lspci | awk -v FS=": " '/Ethernet|Network controller/{print $2}'
 
 // net-tools工具集
 
@@ -86,7 +176,7 @@ nagiosweb------nagios
 // 打印出所有网卡的信息
 // for eth in `ls /sys/class/net`; do ethtool $eth ; done;
 
-// 打印网卡速率
+// 打印网卡带宽
 // for eth in `ls /sys/class/net`; do echo "$eth `ethtool $eth 2>/dev/null | grep Speed`" ; done;
 
 // 打印网卡IP地址
