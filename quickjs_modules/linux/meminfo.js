@@ -70,9 +70,18 @@ function get_memory_proc_sys_vm() {
     return utils.execute_cmd_to_map("sysctl -a 2>/dev/null | grep vm", key_value_split_regexp2);
 }
 
+function get_memory_used_rate() {
+    var info= utils.execute_cmd_to_map('cat /proc/meminfo | egrep "MemTotal|MemAvailable" | awk \'{print $1" "$2}\'', key_value_split_regexp);
+    console.log(JSON.stringify(info, undefined, 2));
+    return (100 - (100 * parseInt(info.MemAvailable) / parseInt(info.MemTotal))).toFixed(2);
+}
+
+
+
 export default {
 
     get_memory_info,
-    get_memory_raw_info
+    get_memory_raw_info,
 
+    get_memory_used_rate
 }
