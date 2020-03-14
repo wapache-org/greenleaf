@@ -194,7 +194,7 @@ static int get_user_htpasswd(struct mg_str username, struct mg_str auth_domain, 
 static const struct mg_str api_prefix = MG_MK_STR("/api/");
 static void handle_api_request(struct mg_connection *nc, struct http_message *hm);
 
-static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm);
+static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc, struct http_message *hm);
 
 // #endregion-api declare area
 // ////////////////////////////////////////////////////////
@@ -289,10 +289,13 @@ extern void ssh_print_error(ssh_session session);
 #define DEFAULT_JS_OBJECT_CLASS_ID 1
 static JSRuntime *runtime;
 static JSContext *context;
-static JSValue grobal;
+// static JSValue grobal;
 
 static int qjs_runtime_init();
 static int qjs_runtime_free();
+
+static JSContext* qjs_context_init();
+static int qjs_context_free(JSContext* context);
 
 static int eval_buf(
     JSContext *ctx,
@@ -329,8 +332,12 @@ static JSValue js_PQprintresult(JSContext *ctx, JSValueConst this_val, int argc,
 
 static JSValue js_PQntuples(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_PQnfields(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
-static JSValue js_PQfname(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
 static JSValue js_PQfnumber(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_PQfname(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
+static JSValue js_PQftype(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_PQfsize(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 static JSValue js_PQgetvalue(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
@@ -853,7 +860,20 @@ static int is_websocket(const struct mg_connection *nc) {
 static void handle_api_request(struct mg_connection *nc, struct http_message *hm)
 {
 
-    qjs_handle_api_request(nc,hm);
+    // TODO: 开发阶段, 每次都重新加载脚本, 以便脚本修改后立马生效
+
+    JSRuntime* runtime = JS_NewRuntime();
+    if (!runtime) {
+        fprintf(stderr, "qjs: cannot allocate JS runtime\n");
+        exit(2);
+    }
+    JSContext* context = qjs_context_init(runtime);
+
+    qjs_handle_api_request(context, nc, hm);
+
+    qjs_context_free(context);
+    js_std_free_handlers(runtime);
+    JS_FreeRuntime(runtime);
 
     // // 需要改成用hashmap
     // char* path = (char*)(hm->uri.p);
@@ -869,7 +889,7 @@ static void handle_api_request(struct mg_connection *nc, struct http_message *hm
     // mg_serve_http(nc, hm, s_options.mg_options);
 }
 
-static void qjs_handle_api_request(struct mg_connection *nc, struct http_message *hm)
+static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc, struct http_message *hm)
 {
     // new request
     JSValue request = JS_NewObject(context);{
@@ -920,10 +940,14 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
 
     // handle request
     {
+        JSValue grobal = JS_GetGlobalObject(context);
         JSAtom fn_name = JS_NewAtom(context, s_options.api_handle_function);
         JSValue argv2[] = { request, response };
+
         JSValue rs = JS_Invoke(context, grobal, fn_name, 2, argv2);
+        
         JS_FreeAtom(context, fn_name);
+        JS_FreeValue(context, grobal);
 
         if(if_is_exception_then_free(context, rs)) goto clean;
         JS_FreeValue(context, rs);
@@ -955,6 +979,14 @@ static void qjs_handle_api_request(struct mg_connection *nc, struct http_message
             headers,
             body
         );
+
+        JS_FreeCString(context, status_text);
+        if(!JS_IsNull(body_value)) JS_FreeCString(context, body);
+
+        JS_FreeValue(context, status_value);
+        JS_FreeValue(context, status_text_value);
+        JS_FreeValue(context, headers_value);
+        JS_FreeValue(context, body_value);
         
     }
 
@@ -1176,12 +1208,19 @@ static int qjs_runtime_init()
       fprintf(stderr, "qjs: cannot allocate JS runtime\n");
       exit(2);
   }
-  context = JS_NewContext(runtime);
+  context = qjs_context_init(runtime);
+
+  return 0;
+}
+
+static JSContext* qjs_context_init(JSRuntime* runtime) 
+{
+
+  JSContext* context = JS_NewContext(runtime);
   if (!context) {
       fprintf(stderr, "qjs: cannot allocate JS context\n");
       exit(2);
   }
-  grobal = JS_GetGlobalObject(context);
 
   /* loader for ES6 modules */
   JS_SetModuleLoaderFunc(runtime, NULL, js_module_loader, NULL);
@@ -1191,19 +1230,6 @@ static int qjs_runtime_init()
   js_init_module_std(context, "std");
   js_init_module_os(context, "os");
 
-
-  // /* make 'std' and 'os' visible to non module code */
-  // const char *str = "import * as std from 'std';\n"
-  //     "import * as os from 'os';\n"
-  //     "globalThis.std = std;\n"
-  //     "globalThis.os = os;\n";
-  // eval_buf(context, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
-  // 
-  // if (eval_file(context, s_options.api_handle_file_path, 1)){
-  //   qjs_runtime_free();
-  //   exit(EXIT_FAILURE);
-  // }
-  
   /* make 'std' and 'os' visible to non module code */
   const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
   char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_options.api_handle_file_path)+ (strlen(s_options.api_handle_function)*4 ));
@@ -1211,17 +1237,24 @@ static int qjs_runtime_init()
   eval_buf(context, str3, strlen(str3), "<input>", JS_EVAL_TYPE_MODULE);
   free(str3);
 
+  JSValue grobal = JS_GetGlobalObject(context);
   JS_SetPropertyStr(context, grobal, "pg_connect_db", JS_NewCFunction(context, js_PQconnectdb, NULL, 0));
+  JS_FreeValue(context, grobal);
 
+  return context;
+}
+
+static int qjs_context_free(JSContext* context) 
+{
+  JS_FreeContext(context);
   return 0;
 }
 
-
 static int qjs_runtime_free() 
 {
-  JS_FreeValue(context, grobal);
-  js_std_free_handlers(runtime);
+  // JS_FreeValue(context, grobal);
   JS_FreeContext(context);
+  js_std_free_handlers(runtime);
   JS_FreeRuntime(runtime);
   return 0;
 }
@@ -1478,8 +1511,11 @@ static JSValue js_PQexec(JSContext *ctx, JSValueConst this_val, int argc, JSValu
 
       JS_SetPropertyStr(ctx, resultObj, "getRowCount", JS_NewCFunction(ctx, js_PQntuples, NULL, 0));
       JS_SetPropertyStr(ctx, resultObj, "getColumnCount", JS_NewCFunction(ctx, js_PQnfields, NULL, 0));
-      JS_SetPropertyStr(ctx, resultObj, "getColumnName", JS_NewCFunction(ctx, js_PQfname, NULL, 0));
       JS_SetPropertyStr(ctx, resultObj, "getColumnIndex", JS_NewCFunction(ctx, js_PQfnumber, NULL, 0));
+      JS_SetPropertyStr(ctx, resultObj, "getColumnName", JS_NewCFunction(ctx, js_PQfname, NULL, 0));
+      JS_SetPropertyStr(ctx, resultObj, "getColumnType", JS_NewCFunction(ctx, js_PQftype, NULL, 0));
+      JS_SetPropertyStr(ctx, resultObj, "getColumnSize", JS_NewCFunction(ctx, js_PQfsize, NULL, 0));
+       
 
       JS_SetPropertyStr(ctx, resultObj, "getValue", JS_NewCFunction(ctx, js_PQgetvalue, NULL, 0));
 
@@ -1516,6 +1552,17 @@ static JSValue js_PQnfields(JSContext *ctx, JSValueConst this_val, int argc, JSV
   return JS_NewInt32(ctx, cols);
 }
 
+// int PQfnumber(const PGresult *res, const char *column_name);
+static JSValue js_PQfnumber(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+{
+    PGresult* res = JS_GetOpaque(this_val, DEFAULT_JS_OBJECT_CLASS_ID);
+    if(res==NULL)
+      return JS_EXCEPTION;
+      const char* name = JS_ToCString(ctx, argv[0]);
+      int col = PQfnumber(res, name);
+  return JS_UNDEFINED;
+}
+
 // char *PQfname(const PGresult *res, int column_number);
 static JSValue js_PQfname(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
 {
@@ -1527,16 +1574,25 @@ static JSValue js_PQfname(JSContext *ctx, JSValueConst this_val, int argc, JSVal
     char* name = PQfname(res, col);
   return JS_NewString(ctx, name);
 }
-
-// int PQfnumber(const PGresult *res, const char *column_name);
-static JSValue js_PQfnumber(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+static JSValue js_PQftype(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
 {
     PGresult* res = JS_GetOpaque(this_val, DEFAULT_JS_OBJECT_CLASS_ID);
     if(res==NULL)
       return JS_EXCEPTION;
-      const char* name = JS_ToCString(ctx, argv[0]);
-      int col = PQfnumber(res, name);
-  return JS_UNDEFINED;
+
+    int col = JS_VALUE_GET_INT(argv[0]);
+    Oid type = PQftype(res, col);
+  return JS_NewInt32(ctx, type);
+}
+static JSValue js_PQfsize(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+{
+    PGresult* res = JS_GetOpaque(this_val, DEFAULT_JS_OBJECT_CLASS_ID);
+    if(res==NULL)
+      return JS_EXCEPTION;
+
+    int col = JS_VALUE_GET_INT(argv[0]);
+    int size = PQfsize(res, col);
+  return JS_NewInt32(ctx, size);
 }
 
 // char *PQgetvalue(const PGresult *res, int row_number, int column_number);
