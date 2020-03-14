@@ -114,7 +114,11 @@ export default {
 // 通过定时记录/proc/net/dev的内容, 计算两次采集的流量和时差, 可以计算出过去一段时间的网络流量
 // 用ethtool获取到网卡speed(带宽), 就可以计算出百分比
 
+// 全部网卡
 // ls /sys/class/net
+// 虚拟网卡
+// ls /sys/devices/virtual/net
+// 物理网卡 = 全部网卡 - 虚拟网卡
 
 
 // 其他文件
