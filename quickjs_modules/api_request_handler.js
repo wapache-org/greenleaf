@@ -1,13 +1,15 @@
 // import * as std from 'std';
 // import * as os from 'os';
 import engine from './template_engine.js';
+import gp from './gpdb/greenplum.js';
 
 engine.options.debug = true;
 engine.options.keepFormat = true;
 
 export default function handle_api_request(request, response){
 
-    console.log(get_current_time(), "[REQ_START]", JSON.stringify(request));
+    // console.log(get_current_time(), "[REQ_START]", JSON.stringify(request));
+    let start_time = new Date();
 
     try{
 
@@ -25,8 +27,14 @@ export default function handle_api_request(request, response){
         case '/4':
             pg_get_dashboard_stats(request, response);
             break;
+        case '/gp/segments':
+            gp_get_segment_configuration(request, response);
+            break;
+        case '/gp/activity_queries':
+            gp_get_activity_query(request, response);
+            break;
         default:
-
+            set_response_not_found(response);
         }
 
 
@@ -35,7 +43,10 @@ export default function handle_api_request(request, response){
         response.status_text = "Internal Server Error";
         fill_error_message(response, err);
     }finally{
-        console.log(get_current_time(), "[REQ_DONE ]", JSON.stringify({
+        console.log(get_current_time(), "[REQ_ENDED]", JSON.stringify({
+            stat:{
+                used_time: new Date().getMilliseconds() - start_time.getMilliseconds()
+            },
             request:{
                 method: request.method,
                 uri: request.uri
@@ -46,6 +57,63 @@ export default function handle_api_request(request, response){
         }));
     }
 };
+
+function gp_get_segment_configuration(request, response){
+
+    let client = gp.connect({
+        // postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
+        url: 'postgresql://gpadmin:gpadmin@10.150.10.111:5432/postgres'
+    });
+    try{
+        let options = {
+            // format:'object'
+        };
+        let segments = client.get_segment_configuration(options);
+        // console.log('segments', JSON.stringify(segments, undefined, 2));
+
+        set_response_ok(response, segments);
+    }finally{
+        client.close();
+    }
+
+}
+
+function gp_get_activity_query(request, response){
+
+    do_query(function(client){
+        let queries = client.list_activity_query();
+        // console.log('segments', JSON.stringify(segments, undefined, 2));
+
+        set_response_ok(response, queries);
+
+    });
+
+}
+
+function do_query(callback, request, response){
+
+    let client = gp.connect({
+        // postgresql://[user[:password]@][netloc][:port][,...][/dbname][?param1=value1&...]
+        url: 'postgresql://gpadmin:gpadmin@10.150.10.111:5432/postgres'
+    });
+    try{
+        callback(client, request, response);
+    }finally{
+        client.close();
+    }
+
+}
+
+function set_response_ok(response, body, status_message){
+    response.status = 200;
+    response.status_text = status_message || "OK";
+    response.body = body == null ? null : JSON.stringify(body);
+}
+function set_response_not_found(response, body, status_message){
+    response.status = 404;
+    response.status_text = status_message || "Not Found";
+    response.body = body == null ? null : JSON.stringify(body);
+}
 
 function get_current_time(){
     var d = new Date(), ms = d.getMilliseconds();
@@ -141,7 +209,7 @@ function query_postgresql_by_template(request, response, template_file_path, opt
     var sql = tempalte.render(data);
     console.log("sql", sql);
 
-    query_postgresql(request, response, sql);
+    query_postgresql(request, response, sql, options);
 }
 
 
