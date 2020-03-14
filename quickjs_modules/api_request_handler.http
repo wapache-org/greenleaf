@@ -38,6 +38,12 @@ Accept: application/json
     ]
 }
 
+### 获取主机资源统计
+GET {{baseUrl}}/host/pref
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
 
 ### 获取greenplum的节点信息
 GET {{baseUrl}}/gp/segments

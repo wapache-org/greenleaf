@@ -7,10 +7,9 @@ var key_value_split_regexp = /\s*:\s*/,
     key_value_split_regexp2 = /\s*=\s*/
 ;
 
-function get_disk_io_stat() {
-    var raw_info = utils.execute_cmd_to_table("iostat -x | tail -n +6", column_split_regexp, true);
-    var info = raw_info;
-
+function get_disk_io_stat(cols) {
+    let cmd = "iostat -x | tail -n +6"+ (cols ? (" | awk '{ if($0!=\"\") { print "+cols+" } }'") : "");
+    var info = utils.execute_cmd_to_table(cmd, column_split_regexp, true);
     // console.log(JSON.stringify(info, undefined, 2));
     return info;
 }

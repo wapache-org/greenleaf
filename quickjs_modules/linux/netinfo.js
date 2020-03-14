@@ -69,13 +69,43 @@ function get_network_interface_detail(name) {
 }
 
 // for n in `ls`; do echo "$n: `cat $n`"; done;
+/**
+ * 
+ * @param {string} name 网卡名称
+ * @param {string} filter 统计指标过滤条件, 用于egrep命令, 譬如"_bytes|_errors"
+ */
+function get_network_interface_statistics(name, filter) {
+    let cmd = "for n in `ls /sys/class/net/"+name+"/statistics"+(filter?(' | egrep "'+filter)+'"':"")+"`; do echo \"$n: `cat /sys/class/net/"+name+"/statistics/$n`\"; done;";
 
-function get_network_interface_statistics(name) {
-    var raw_info = utils.execute_cmd_to_map("for n in `ls /sys/class/net/"+name+"/statistics`; do echo \"$n: `cat /sys/class/net/"+name+"/statistics/$n`\"; done;", key_value_split_regexp);
-    var info = raw_info;
+    var info = utils.execute_cmd_to_map(cmd, key_value_split_regexp);
+    for (const key in info) {
+        if (info.hasOwnProperty(key)) {
+            info[key] = parseInt(info[key]);
+        }
+    }
 
     // console.log(JSON.stringify(info, undefined, 2));
     return info;
+}
+
+
+// ls /sys/class/net | egrep -v "`ls /sys/devices/virtual/net | awk 'BEGIN {print \"^&\"}{print \"|\"$0 }' | tr -d '\n'`"
+
+function get_physical_network_interfaces() {
+    return utils.execute_cmd_to_array('ls /sys/class/net | egrep -v "`ls /sys/devices/virtual/net | awk \'BEGIN {print \\"^&\\"}{print \\"|\\"$0 }\' | tr -d \'\\n\'`"');
+}
+
+function get_physical_network_interface_statistics() {
+    var info = {};
+    let faces = get_physical_network_interfaces();
+    for (let i = 0; i < faces.length; i++) {
+        const face = faces[i];
+        info[face] = get_network_interface_statistics(faces[i],"_bytes");
+
+    }
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
+    
 }
 
 export default {
@@ -84,7 +114,10 @@ export default {
     get_network_controller_info,
     get_network_interface_info,
     get_network_interface_detail,
-    get_network_interface_statistics
+    get_network_interface_statistics,
+
+    get_physical_network_interfaces,
+    get_physical_network_interface_statistics
 
 }
 
@@ -119,7 +152,7 @@ export default {
 // 虚拟网卡
 // ls /sys/devices/virtual/net
 // 物理网卡 = 全部网卡 - 虚拟网卡
-
+// ls /sys/class/net | egrep -v "`ls /sys/devices/virtual/net | awk 'BEGIN {print \"^&\"}{print \"|\"$0 }' | tr -d '\n'`"
 
 // 其他文件
 

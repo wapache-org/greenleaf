@@ -92,11 +92,22 @@ function get_cpu_dmidecode() {
 
 
 function get_cpu_total_used_rate() {
-    return utils.execute_cmd("cat /proc/stat 2>/dev/null | egrep \"^cpu \" | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'");
+    return parseFloat(utils.execute_cmd("cat /proc/stat 2>/dev/null | egrep \"^cpu \" | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'"));
 }
 
 function get_cpu_used_rates() {
-    return utils.execute_cmd_to_map("cat /proc/stat 2>/dev/null | grep cpu | awk '{print $1\": \"(100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11)))}'", key_value_split_regexp);
+
+    let cmd = "cat /proc/stat 2>/dev/null | grep cpu | awk '{print $1\": \"(100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11)))}'";
+
+    var info = utils.execute_cmd_to_map(cmd, key_value_split_regexp);
+    for (const key in info) {
+        if (info.hasOwnProperty(key)) {
+            info[key] = parseFloat(info[key]);
+        }
+    }
+
+    // console.log(JSON.stringify(info, undefined, 2));
+    return info;
 }
 
 export default {

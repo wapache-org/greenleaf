@@ -72,8 +72,14 @@ function get_memory_proc_sys_vm() {
 
 function get_memory_used_rate() {
     var info= utils.execute_cmd_to_map('cat /proc/meminfo | egrep "MemTotal|MemAvailable" | awk \'{print $1" "$2}\'', key_value_split_regexp);
-    console.log(JSON.stringify(info, undefined, 2));
-    return (100 - (100 * parseInt(info.MemAvailable) / parseInt(info.MemTotal))).toFixed(2);
+    // console.log(JSON.stringify(info, undefined, 2));
+    let total = parseInt(info.MemTotal), available = parseInt(info.MemAvailable);
+    return {
+        total: total,
+        used: total - available,
+        available: available,
+        rate: parseFloat((100 - (100 * available / total)).toFixed(2))
+    };
 }
 
 

@@ -1,7 +1,13 @@
-// import * as std from 'std';
-// import * as os from 'os';
+import * as std from 'std';
+import * as os from 'os';
+
 import engine from './template_engine.js';
 import gp from './gpdb/greenplum.js';
+
+import cpu from './linux/cpuinfo.js'
+import disk from './linux/diskinfo.js'
+import mem from './linux/meminfo.js'
+import net from './linux/netinfo.js'
 
 engine.options.debug = true;
 engine.options.keepFormat = true;
@@ -33,6 +39,9 @@ export default function handle_api_request(request, response){
         case '/gp/activity_queries':
             gp_get_activity_query(request, response);
             break;
+        case '/host/pref':
+            host_get_pref_info(request, response);
+            break;
         default:
             set_response_not_found(response);
         }
@@ -57,6 +66,38 @@ export default function handle_api_request(request, response){
         }));
     }
 };
+
+function host_get_pref_info(request, response) {
+    let start = new Date();
+    let cpu_rates = cpu.get_cpu_used_rates();
+    let mem_rate = mem.get_memory_used_rate();
+    let disk_stats = disk.get_disk_io_stat("$1,$6,$7,$14");
+    let net_stats = net.get_physical_network_interface_statistics();
+    let end = new Date();
+
+    let disks ={};
+    for (let row = 0; row < disk_stats.body.length; row++) {
+        const disk = disk_stats.body[row];
+        disks[disk[0]] = {
+            "read": parseFloat(disk[1]),  // read KB/s
+            "write": parseFloat(disk[2]), // write KB/s
+            "rate": parseFloat(disk[3]),  // %util
+        };
+    }
+
+
+    let body = {
+        cpu: cpu_rates,
+        men: mem_rate,
+        disk: disks,
+        net: net_stats,
+        start: start,
+        end: end,
+        used: end - start
+    };
+    set_response_ok(response, body);
+}
+
 
 function gp_get_segment_configuration(request, response){
 

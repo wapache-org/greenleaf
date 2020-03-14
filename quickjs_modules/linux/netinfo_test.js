@@ -1,6 +1,16 @@
 import net from './netinfo.js'
 import * as os from 'os'
 
+test2();
+
+function test2(){
+    let info = net.get_physical_network_interface_statistics();
+    console.log(JSON.stringify(info, undefined, 2));
+}
+
+
+function test1(){
+
 var info = net.get_network_info();
 
 //console.log(JSON.stringify(info, undefined, 2));
@@ -52,7 +62,7 @@ for(let k in stats){
     console.log(k, ': avg_rx_bytes=', avg_rx_bytes, ', avg_tx_bytes=', avg_tx_bytes);
 }
 
-
+}
 
 
 // "collisions": "0",
