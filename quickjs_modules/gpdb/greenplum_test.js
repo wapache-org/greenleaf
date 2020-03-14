@@ -11,8 +11,13 @@ try{
     // let dbs = client.list_database(undefined, true);
     // console.log('database list', JSON.stringify(dbs, undefined, 2));
 
-    let roles = client.list_role(undefined, true);
-    console.log('role list', JSON.stringify(roles, undefined, 2));
+    // let roles = client.list_role(undefined, true);
+    // console.log('role list', JSON.stringify(roles, undefined, 2));
+
+    // let segments = client.get_segment_configuration();
+    // console.log('segments', JSON.stringify(segments, undefined, 2));
+    let segments = client.get_segment_configuration({format:'object'});
+    console.log('segments', JSON.stringify(segments, undefined, 2));
 
 }finally{
     client.close();

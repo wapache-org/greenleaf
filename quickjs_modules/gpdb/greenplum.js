@@ -5,6 +5,7 @@ import engine from '../template_engine.js';
 engine.options.debug = false;
 engine.options.keepFormat = false;
 
+
 var Client = function(options){
     this.options = options;
 };
@@ -30,6 +31,16 @@ Client.prototype = {
             this.conn = null;
         }
     },
+    /**
+     * 执行查询语句,并返回查询结果
+     * @param {string} sql 查询语句
+     * @param {object} options 查询选项
+     * ```json
+     * {
+     * "format": "null: 以二维数组形式返回查询结果, object: 以array+key-value形式返回查询结果"
+     * } 
+     * ```
+     */
     query: function (sql, options){
         var rs = this.conn.query(sql);
         // rs.print();
@@ -39,17 +50,19 @@ Client.prototype = {
         //console.log('rows='+rows+', cols='+cols+'\n\n');
 
         var head = [];
+        var types = [];
         for(let col=0;col<cols;col++){
             head.push(rs.getColumnName(col));
+            types.push(rs.getColumnType(col));
         }
 
         var data = [];
 
-        if(options && options.format=='object'){        
+        if(options && options.format=='object'){
             for(let row=0;row<rows;row++){
                 var r = {};
                 for(let col=0;col<cols;col++){
-                    r[head[col]]=rs.getValue(row, col);
+                    r[head[col]]=gp.types.parse(types[col], rs.getValue(row, col));
                 }
                 data.push(r);
             }
@@ -57,7 +70,7 @@ Client.prototype = {
             for(let row=0;row<rows;row++){
                 var r = [];
                 for(let col=0;col<cols;col++){
-                    r.push(rs.getValue(row, col));
+                    r.push(gp.types.parse(types[col], rs.getValue(row, col)));
                 }
                 data.push(r);
             }
@@ -70,6 +83,9 @@ Client.prototype = {
             data: data
         };
     },
+    /**
+     * 获取数据库版本信息
+     */
     get_version: function(){
         var res = this.query(gp.sqls.select_version);
         var version = res.data[0][0];
@@ -97,12 +113,21 @@ Client.prototype = {
             greenplum_num : gp_ver_num
         };
     },
+    /**
+     * 获取数据库设置.
+     * 
+     * pset是模板内置变量, 此函数用于配合模板引擎工作.
+     * 
+     */
     get_pset: function(){
         return {
             sversion: this.basedon.dbversion,
             dbversion: this.dbversion,
             dbtype: this.dbtype
         };
+    },
+    get_segment_configuration: function(options){
+        return this.query(gp.sqls.select_segment_configuration, options);
     },
     list_database: function(pattern, verbose){
         var data = {
@@ -127,6 +152,16 @@ Client.prototype = {
         ,res = this.query(sql);
         ;
         return res;
+    },
+    list_activity_query: function(){
+        var data = {
+            pset: this.get_pset()
+        };
+        // console.log(JSON.stringify((data)));
+        var sql = gp.render(gp.templates.list_activity_query, data)
+        ,res = this.query(sql);
+        ;
+        return res;
     }
 };
 
@@ -135,12 +170,90 @@ var gp = {
         url: '',
         cache_template: true
     },
+    // 数据类型对应的oid值
+    types:{
+        bool: 16,
+        bytea: 17, // byte array
+        char: 18, 
+        name: 19, // 63-byte type for storing system identifiers
+        int8: 20,
+        int2: 21,
+        int2vector: 22, // array of int2, used in system tables
+        int4: 23,
+        regproc: 24, // registered procedure
+        text: 25,
+        oid: 26, // object identifier(oid), maximum 4 billion
+        tid: 27, // (block, offset), physical location of tuple
+        xid: 28, // transaction id
+        cid: 29, // command identifier type, sequence in transaction id
+        oidvector: 30, // array of oids, used in system tables
+
+        json: 114,
+        xml: 142,
+
+        float4: 700,
+        float8: 701,
+        
+        bpchar: 1042, // char(length), blank-padded string, fixed storage length
+        varchar: 1043, // varchar(length), non-blank-padded string, variable storage length
+
+        date: 1082,
+        time: 1083,
+        timestamp: 1114, // date and time
+        timestamptz: 1184, // date and time with time zone
+        interval: 1186, // @ <number> <units>, time interval
+        timetz: 1266, // time of day with time zone
+
+        bit: 1560, // fixed-length bit string
+        varbit: 1562, // variable-length bit string
+
+        numeric: 1700, // numeric(precision, decimal), arbitrary precision number
+        uuid: 2950, // UUID datatype
+
+        jsonb: 3802, // Binary JSON
+        jsonpath: 4072, // JSON path
+
+        is_integer: function(v){
+            return v === this.int2 
+            || v === this.int4
+            || v === this.int8
+            || v === this.oid
+            || v === this.xid
+            || v === this.cid
+            ;
+        },
+        is_float: function(v){
+            return v === this.float4 
+            || v === this.float8
+            || v === this.numeric
+            ;
+        },
+        is_number: function(v){
+            return this.is_integer(v) || this.is_float(v);
+        },
+        parse: function(type, value){
+            if(value!==null && value !== undefined) {
+                if(this.is_integer(type)){
+                    value = parseInt(value);
+                }else if(this.is_float(type)){
+                    value = parseFloat(value);
+                }else if(this.bool === type){
+                    value = value == 't';
+                }
+            }
+            return value;
+        }
+
+    },
     sqls: {
-        select_version: 'select version();'
+        select_version: 'select version()',
+        select_segment_configuration:'select * from gp_segment_configuration',
+        select_activity_query:'select * from pg_stat_activity'
     },
     templates: {
-        ccc: 'templates/psql/list_database.sql',
-        list_role: 'templates/psql/list_role.sql'
+        list_database: 'templates/psql/list_database.sql',
+        list_role: 'templates/psql/list_role.sql',
+        list_activity_query: 'templates/gpdb/pg_stat_activity.sql'
     },
     connect: function(options){
         var opt = {};
