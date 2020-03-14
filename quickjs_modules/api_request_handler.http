@@ -37,3 +37,18 @@ Accept: application/json
         "bio_stats"
     ]
 }
+
+
+### 获取greenplum的节点信息
+GET {{baseUrl}}/gp/segments
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
+### 获取正在执行的查询
+GET {{baseUrl}}/gp/activity_queries
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
+###
