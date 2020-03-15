@@ -23,6 +23,7 @@ include_directories(
   ./mustache 
   ./json-c
   ./sqlite
+  ./cron
   ./libraries/libpq/include
   ./libraries/quickjs/include
   ./libraries/libssh/include
@@ -43,6 +44,7 @@ add_subdirectory(sqlite)
 add_subdirectory(examples)
 add_subdirectory(json-c)
 add_subdirectory(ssh)
+add_subdirectory(cron)
 
 # add grobal libs
 # link_libraries(mongoose lua quickjs pq sqlite m dl readline)
@@ -63,6 +65,7 @@ target_link_libraries(greenleaf
   pq.a pgport.a pgcommon.a 
   m dl pthread
   ssh
+  cron
 )
 
 # add file copy target

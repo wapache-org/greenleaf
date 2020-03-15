@@ -67,3 +67,7 @@ add_custom_command(
 
 add_executable(qjs_module_example qjs_module_example.c)
 target_link_libraries(qjs_module_example quickjs m dl)
+
+
+add_executable(cronexpr_example cronexpr_example.c)
+target_link_libraries(cronexpr_example cron)
