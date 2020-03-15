@@ -8,6 +8,7 @@ import cpu from './linux/cpuinfo.js'
 import disk from './linux/diskinfo.js'
 import mem from './linux/meminfo.js'
 import net from './linux/netinfo.js'
+import osinfo from './linux/osinfo.js'
 
 engine.options.debug = true;
 engine.options.keepFormat = true;
@@ -39,8 +40,17 @@ export default function handle_api_request(request, response){
         case '/gp/activity_queries':
             gp_get_activity_query(request, response);
             break;
+        case '/host/baseinfo':
+            host_get_base_info(request, response);
+            break;
+        case '/host/osinfo':
+            host_get_os_info(request, response);
+            break;
         case '/host/pref':
             host_get_pref_info(request, response);
+            break;
+        case '/host/storage':
+            host_get_storage_info(request, response);
             break;
         default:
             set_response_not_found(response);
@@ -66,6 +76,67 @@ export default function handle_api_request(request, response){
         }));
     }
 };
+
+function host_get_base_info(request, response) {
+    let start = new Date();
+    
+    let cpu_info = cpu.get_cpu_lscpu();
+    
+    let mem_info = mem.get_memory_proc_meminfo();
+    let mem_dmi = mem.get_memory_dmidecode();
+
+    let disk_info = disk.get_disk_info();
+    let filesystem = disk.get_file_system_info({format: 'flat_map'});
+
+    let net_info = net.get_network_info();
+
+    let end = new Date();
+
+    let body = {
+        cpu: cpu_info,
+        mem: {
+            meminfo: mem_info,
+            dmiinfo: mem_dmi
+        },
+        disk: disk_info,
+        fs: filesystem, 
+        net: net_info,
+        start: start,
+        end: end,
+        used: end - start
+    };
+    set_response_ok(response, body);
+}
+
+function host_get_os_info(request, response) {
+    let start = new Date();
+    let os_info = osinfo.get_os_info();
+    let end = new Date();
+
+    let body = {
+        os: os_info,
+        start: start,
+        end: end,
+        used: end - start
+    };
+    set_response_ok(response, body);
+}
+
+function host_get_storage_info(request, response) {
+    let start = new Date();
+    let disk_info = disk.get_disk_info({filesystem: true});
+    let filesystem = disk.get_file_system_info({format: 'flat_map'});
+    let end = new Date();
+
+    let body = {
+        fs: filesystem,
+        disk: disk_info,
+        start: start,
+        end: end,
+        used: end - start
+    };
+    set_response_ok(response, body);
+}
 
 function host_get_pref_info(request, response) {
     let start = new Date();

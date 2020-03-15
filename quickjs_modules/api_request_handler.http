@@ -38,7 +38,26 @@ Accept: application/json
     ]
 }
 
-### 获取主机资源统计
+### 获取主机基本信息
+GET {{baseUrl}}/host/baseinfo
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
+
+### 获取主机基本信息
+GET {{baseUrl}}/host/osinfo
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
+### 获取主机存储信息
+GET {{baseUrl}}/host/storage
+Authorization: Digest {{username}} {{password}}
+Authentication-Mode: digest
+Accept: application/json
+
+### 获取主机性能指标
 GET {{baseUrl}}/host/pref
 Authorization: Digest {{username}} {{password}}
 Authentication-Mode: digest
