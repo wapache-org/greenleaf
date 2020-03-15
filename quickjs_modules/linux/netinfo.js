@@ -7,10 +7,10 @@ var key_value_split_regexp = /\s*:\s*\t*/,
     ipv4_regexp = /(\d{1,3}\.){3}\d{1,3}/
 ;
 
-function get_network_info(){
+function get_network_info(options){
     var info = {
-        "network_controller": get_network_controller_info(),
-        "network_interface": get_network_interface_info()
+        "controllers": get_network_controller_info(),
+        "interfaces": get_network_interface_info(options)
     };
 
     return info;
@@ -27,8 +27,9 @@ function get_network_controller_info() {
 // cat /proc/net/dev
 
 // 网卡信息
-function get_network_interface_info() {
-    // 
+function get_network_interface_info(options) {
+    options = options || {};
+
     var if_ips = utils.execute_cmd_to_map_array("ip -o addr show scope global | awk '/^[0-9]:/{print $2, $4}' | cut -f1 -d '/'", column_split_regexp);
 
     var if_ipv4 = {};
@@ -44,17 +45,23 @@ function get_network_interface_info() {
     }
 
     var details = {};
-    var if_names = utils.execute_cmd_to_array("ls /sys/class/net");
-    for(let i=0;i<if_names.length;i++){
-        details[if_names[i]]=get_network_interface_detail(if_names[i]);
+    if(options.detail){
+        var if_names = utils.execute_cmd_to_array("ls /sys/class/net");
+        for(let i=0;i<if_names.length;i++){
+            details[if_names[i]]=get_network_interface_detail(if_names[i]);
+        }
     }
 
     var info = {
-        "names": if_names,
+        "interfaces": if_names,
+        "physicals": get_physical_network_interfaces(),
         "details": details,
         "ips": if_ips,
         "ipv4": if_ipv4
     };
+
+    if(!options.detail) delete info.details;
+    if(!options.ips) delete info.ips;
 
     // console.log(JSON.stringify(info, undefined, 2));
     return info;
