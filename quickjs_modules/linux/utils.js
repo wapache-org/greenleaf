@@ -203,7 +203,12 @@ function execute_cmd_to_array_map(cmd, item_spliter_re, key_value_spliter_re) {
     return info;
 
 }
-
+/**
+ * 
+ * @param {string} cmd 命令
+ * @param {RegExp} re 列分割正则表达式
+ * @param {boolean} with_header 命令的输出是否包含列名, 默认: false
+ */
 function execute_cmd_to_table(cmd, re, with_header) {
 
     var info = {
@@ -233,6 +238,113 @@ function execute_cmd_to_table(cmd, re, with_header) {
 
 }
 
+/**
+ * 
+ * 用于最后一列的内容可能包含分隔符的命令行输出.
+ * 
+ * @param {string} cmd 命令
+ * @param {RegExp} split_re 列分割正则表达式
+ * @param {string} split_char 最后一列内容合并填充字符
+ * @param {boolean} with_header 输出内容是否包含表头
+ * @param {number} column_count 列数
+ */
+function execute_cmd_to_table2(cmd, split_re, split_char, with_header, column_count) {
+
+    var info = {
+        head: null,
+        body: []
+    };
+
+    let line
+    ;
+    let pipe = std.popen(cmd, "r");
+    while ((line = pipe.getline()) != null) {
+        //console.log('line', line);
+        if(line.length==0){
+            continue;
+        }
+        let part = line.split(split_re);
+        //console.log('part', part);
+        if(with_header && info.head === null){
+            info.head = part;
+        }else{
+            if(part.length > column_count){
+                let arr = [];
+                for (let i = 0; i < column_count-1; i++) {
+                    arr[i] = part[i];
+                    part[i] = "";
+                }
+                arr[column_count-1] = part.join(split_char).trim();
+
+                info.body.push(arr);
+            }else{
+                info.body.push(part);
+            }
+        }
+    }
+    pipe.close();
+
+    return info;
+
+}
+
+
+// 适用于对齐的输出, 譬如netstat -pnltu 
+function lines_to_table(lines, split_char, column_count){
+
+    let table = {
+        head:[],
+        body:[]
+    };
+
+    let max = lines
+    .map(e=>e.length)
+    .reduce((a,b)=>a>b?a:b, 0)
+    ;
+
+    let col_start=0, last_is_all_white_space=false;
+    for (let i = 0; i < max; i++) {
+        let all_white_space = lines
+        .map(e=>e.length<i || e.charAt(i) === split_char ? true: false)
+        .reduce((a,b)=>a && b, true)
+        ;
+        // console.log('i=', i, ', max=', max, ', all_white_space=', all_white_space, ', last_is_all_white_space=', last_is_all_white_space,', col_start=',col_start);
+        if(all_white_space){
+
+            // 列之间是多个空格, 忽略
+            if(last_is_all_white_space){
+                continue;
+            }
+
+            // 发现新组开始
+            table.head.push(lines[0].substring(col_start, i).trim());
+            for (let j = 1; j < lines.length; j++) {
+                if(table.body.length<=j-1) {
+                    table.body.push([]);
+                }
+                table.body[j-1].push(lines[j].substring(col_start, i).trim());
+            }
+            col_start = i;
+        }
+        last_is_all_white_space = all_white_space;
+
+        if(column_count - table.head.length <= 1){
+
+            table.head.push(lines[0].substring(col_start, lines[0].length).trim());
+            for (let j = 1; j < lines.length; j++) {
+                if(table.body.length<=j-1) {
+                    table.body.push([]);
+                }
+                table.body[j-1].push(lines[j].substring(col_start, lines[j].length).trim());
+            }
+
+            break;
+        }
+    }
+    return table;
+
+}
+
 export default { 
     execute_cmd,
     execute_cmd_to_map, 
@@ -240,5 +352,7 @@ export default {
     execute_cmd_to_map2, 
     execute_cmd_to_array,
     execute_cmd_to_array_map,
-    execute_cmd_to_table 
+    execute_cmd_to_table,
+    execute_cmd_to_table2,
+    lines_to_table
 }
