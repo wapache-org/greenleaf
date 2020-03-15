@@ -89,5 +89,8 @@ export default {
     get_memory_info,
     get_memory_raw_info,
 
+    get_memory_proc_meminfo, 
+    get_memory_dmidecode,
+
     get_memory_used_rate
 }
