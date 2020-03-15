@@ -16,20 +16,20 @@
 # 组件
 
 ```
-+-----------------------------------------+
-|   Other Systemm    |      Browser       | 
-+-----------------------------------------+
-                     | 
-                     V  
-+-----------------------------------------+
-|     RESTful API    |  WebSocket API     | <---- remote host/greenplum/postgresql/greenleaf
-+-----------------------------------------+
-|               Web Server                |
-+-----------------------------------------+
-|  cgi engine | lua engine | js engine    | 
-+-----------------------------------------+
-|   local storage    |        ssh         | -----> (remote or local) host/greenplum/postgresql/greenleaf
-+-----------------------------------------+
++--------------------------------------------------+
+|        Other Systemm    |      Browser           | 
++--------------------------------------------------+
+                          | 
+                          V  
++--------------------------------------------------+
+|          RESTful API    |  WebSocket API         | <---- remote host/greenplum/postgresql/greenleaf
++--------------------------------------------------+
+|      |             Web Server                    |
++ cron |-------------------------------------------+
+|      |cgi engine | lua engine | js engine        | 
++ tab  |-------------------------------------------+
+|      | local storage    |        ssh             | -----> (remote or local) host/greenplum/postgresql/greenleaf
++--------------------------------------------------+
 ```
 
 # 依赖
@@ -45,6 +45,7 @@
 6. lua: 是一个轻量级可嵌入的脚本引擎.
 7. libssh : 封装libssh使得lua/js等脚本能够直接ssh到其他远程服务器.
 8. xterm.js: 结合libssh实现通过浏览器访问其他远程主机, 提供堡垒机功能
+9. cron: 从mongoose-os-libs-cron复制过来的cronexpr和自己写的crontab, 还没写完, 有bug
 
 * 通过`mongoose`实现`Web Server`组件
 * 通过`quickjs`实现`javascript engine`组件
@@ -195,3 +196,4 @@ build/examples/sqlite_example
 让我们向白衣天使们致敬，共同祝愿他们春暖花开日、平安归来时！
 
 2020-03-08 01:11:11 截止至今日, 国内的疫情已经基本控制住了, 但是国外又蔓延了, 心塞!
+2020-03-16 00:18:24 截止至今日, 只能用席卷全球来形容了!
