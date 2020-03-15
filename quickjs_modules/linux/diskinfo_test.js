@@ -1,6 +1,8 @@
 import disk from './diskinfo.js'
 
-test1();
+// test1();
+// test3();
+test_get_disk_info();
 
 function test1(){
 
@@ -23,4 +25,16 @@ function test1(){
 function test2(){
     var info = disk.get_disk_used_rate();
     console.log(JSON.stringify(info, undefined, 2));
+}
+
+
+function test3(){
+    console.log('default', JSON.stringify(disk.get_file_system_info(), undefined, 2));
+    console.log('flat', JSON.stringify(disk.get_file_system_info({format:'flat'}), undefined, 2));
+    console.log('table', JSON.stringify(disk.get_file_system_info({format:'table'}), undefined, 2));
+}
+
+
+function test_get_disk_info(){
+    console.log('get_disk_info', JSON.stringify(disk.get_disk_info({filesystem: true}), undefined, 2));
 }
