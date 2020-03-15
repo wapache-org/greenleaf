@@ -87,12 +87,12 @@ function get_cpu_lscpu() {
 }
 
 function get_cpu_dmidecode() {
-    return utils.execute_cmd_to_map2("dmidecode -q --type processor 2>/dev/null" , null, null, '\t', key_value_split_regexp);
+    return utils.execute_cmd_to_map2("sudo dmidecode -q --type processor 2>/dev/null" , null, null, '\t', key_value_split_regexp);
 }
 
 
 function get_cpu_total_used_rate() {
-    return parseFloat(utils.execute_cmd("cat /proc/stat 2>/dev/null | egrep \"^cpu \" | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'"));
+    return parseFloat(utils.execute_cmd("egrep \"^cpu\" /proc/stat 2>/dev/null | awk '{print 100-(100*($5+$6)/($2+$3+$4+$5+$6+$7+$8+$9+$10+$11))}'"));
 }
 
 function get_cpu_used_rates() {
