@@ -1,26 +1,3 @@
-/*
- * Copyright 2015, alex at staticlibs.net
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * File:   ccronexpr.h
- * Author: alex
- *
- * Created on February 24, 2015, 9:35 AM
- */
-
 #ifndef CRONEXPR_H
 #define CRONEXPR_H
 
@@ -34,17 +11,33 @@ extern "C" {
 #include <time64.h>
 #endif /* ANDROID */
 
+// Linux crontab :
+// # Example of job definition:
+// # .---------------- minute (0 - 59)
+// # |  .------------- hour (0 - 23)
+// # |  |  .---------- day of month (1 - 31)
+// # |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+// # |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+// # |  |  |  |  |
+// # *  *  *  *  * user-name  command to be executed
+
 /**
- * Parsed cron expression
+ * cron表达式结构体
  */
 typedef struct {
+  /** 秒 */
   char *seconds;
+  /** 分 */
   char *minutes;
+  /** 时 */
   char *hours;
+  /** 星期 */
   char *days_of_week;
+  /** 日 */
   char *days_of_month;
+  /** 月 */
   char *months;
-} cron_expr;
+} cronexpr;
 
 /**
  * Parses specified cron expression.
@@ -55,10 +48,17 @@ typedef struct {
  *        error message in case of error. Will be set to NULL on success.
  *        The error message should NOT be freed by client.
  * @return parsed cron expression in case of success. Returned expression
- *        must be freed by client using 'cron_expr_free' function.
+ *        must be freed by client using 'cronexpr_free' function.
  *        NULL is returned on error.
  */
-cron_expr *cron_parse_expr(const char *expression, const char **error);
+cronexpr* cronexpr_parse(const char *expression, const char **error);
+
+/**
+ * Frees the memory allocated by the specified cron expression
+ *
+ * @param expr parsed cron expression to free
+ */
+void cronexpr_free(cronexpr *expr);
 
 /**
  * Uses the specified expression to calculate the next 'fire' date after
@@ -69,16 +69,9 @@ cron_expr *cron_parse_expr(const char *expression, const char **error);
  * @param expr parsed cron expression to use in next date calculation
  * @param date start date to start calculation from
  * @return next 'fire' date in case of success, '((time_t) -1)' in case of
- *error.
+ * error.
  */
-time_t cron_next(cron_expr *expr, time_t date);
-
-/**
- * Frees the memory allocated by the specified cron expression
- *
- * @param expr parsed cron expression to free
- */
-void cron_expr_free(cron_expr *expr);
+time_t cronexpr_next(cronexpr *expr, time_t date);
 
 #if defined(__cplusplus) && !defined(CRON_COMPILE_AS_CXX)
 }  // extern "C"

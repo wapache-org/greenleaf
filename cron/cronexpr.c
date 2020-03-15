@@ -38,6 +38,7 @@
 #define CRON_MAX_DAYS_OF_MONTH 32
 #define CRON_MAX_MONTHS 12
 
+// cron expr field
 #define CRON_CF_SECOND 0
 #define CRON_CF_MINUTE 1
 #define CRON_CF_HOUR_OF_DAY 2
@@ -50,38 +51,41 @@
 
 #define CRON_INVALID_INSTANT ((time_t) -1)
 
-static const char *DAYS_ARR[] = {"SUN", "MON", "TUE", "WED",
-                                 "THU", "FRI", "SAT"};
+static const char *DAYS_ARR[] = {
+  "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"
+};
 #define CRON_DAYS_ARR_LEN 7
-static const char *MONTHS_ARR[] = {"FOO", "JAN", "FEB", "MAR", "APR",
-                                   "MAY", "JUN", "JUL", "AUG", "SEP",
-                                   "OCT", "NOV", "DEC"};
+
+static const char *MONTHS_ARR[] = {
+  "FOO", 
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+};
 #define CRON_MONTHS_ARR_LEN 13
 
 #define CRON_MAX_STR_LEN_TO_SPLIT 256
 #define CRON_MAX_NUM_TO_SRING 1000000000
-/* computes number of digits in decimal number */
+/* 计算数字的位数, computes number of digits in decimal number */
 #define CRON_NUM_OF_DIGITS(num)                                               \
   (abs(num) < 10                                                              \
-       ? 1                                                                    \
-       : (abs(num) < 100                                                      \
-              ? 2                                                             \
-              : (abs(num) < 1000                                              \
-                     ? 3                                                      \
-                     : (abs(num) < 10000                                      \
-                            ? 4                                               \
-                            : (abs(num) < 100000                              \
-                                   ? 5                                        \
-                                   : (abs(num) < 1000000                      \
-                                          ? 6                                 \
-                                          : (abs(num) < 10000000              \
-                                                 ? 7                          \
-                                                 : (abs(num) < 100000000      \
-                                                        ? 8                   \
-                                                        : (abs(num) <         \
-                                                                   1000000000 \
-                                                               ? 9            \
-                                                               : 10)))))))))
+    ? 1                                                                       \
+    : (abs(num) < 100                                                         \
+      ? 2                                                                     \
+      : (abs(num) < 1000                                                      \
+        ? 3                                                                   \
+        : (abs(num) < 10000                                                   \
+          ? 4                                                                 \
+          : (abs(num) < 100000                                                \
+            ? 5                                                               \
+            : (abs(num) < 1000000                                             \
+              ? 6                                                             \
+              : (abs(num) < 10000000                                          \
+                ? 7                                                           \
+                : (abs(num) < 100000000                                       \
+                  ? 8                                                         \
+                  : (abs(num) < 1000000000                                    \
+                    ? 9                                                       \
+                    : 10)))))))))
 
 #ifndef _WIN32
 struct tm *gmtime_r(const time_t *timep, struct tm *result);
@@ -144,6 +148,9 @@ struct tm *cron_time(time_t *date, struct tm *out) {
 
 #endif /* CRON_USE_LOCAL_TIME */
 
+/**
+ * 释放字符二维数组
+ */
 static void free_splitted(char **splitted, size_t len) {
   size_t i;
   if (!splitted) return;
@@ -155,6 +162,9 @@ static void free_splitted(char **splitted, size_t len) {
   free(splitted);
 }
 
+/**
+ * 复制字符串, string duplicate
+ */
 static char *strdupl(const char *str, size_t len) {
   if (!str) return NULL;
   char *res = (char *) malloc(len + 1);
@@ -164,8 +174,8 @@ static char *strdupl(const char *str, size_t len) {
   return res;
 }
 
-static unsigned int next_set_bit(char *bits, unsigned int max,
-                                 unsigned int from_index, int *notfound) {
+static unsigned int next_set_bit(char *bits, unsigned int max, unsigned int from_index, int *notfound) 
+{
   unsigned int i;
   if (!bits) {
     *notfound = 1;
@@ -322,10 +332,12 @@ static int set_field(struct tm *calendar, int field, int val) {
  * Search the bits provided for the next set bit after the value provided,
  * and reset the calendar.
  */
-static unsigned int find_next(char *bits, unsigned int max, unsigned int value,
-                              struct tm *calendar, unsigned int field,
-                              unsigned int nextField, int *lower_orders,
-                              int *res_out) {
+static unsigned int find_next(
+  char *bits, unsigned int max, unsigned int value,
+  struct tm *calendar, unsigned int field,
+  unsigned int nextField, int *lower_orders,
+  int *res_out) 
+{
   int notfound = 0;
   int err = 0;
   unsigned int next_value = next_set_bit(bits, max, value, &notfound);
@@ -351,15 +363,16 @@ return_error:
   return 0;
 }
 
-static unsigned int find_next_day(struct tm *calendar, char *days_of_month,
-                                  unsigned int day_of_month, char *days_of_week,
-                                  unsigned int day_of_week, int *resets,
-                                  int *res_out) {
+static unsigned int find_next_day(
+  struct tm *calendar, char *days_of_month,
+  unsigned int day_of_month, char *days_of_week,
+  unsigned int day_of_week, int *resets,
+  int *res_out) 
+{
   int err;
   unsigned int count = 0;
   unsigned int max = 366;
-  while ((!days_of_month[day_of_month] || !days_of_week[day_of_week]) &&
-         count++ < max) {
+  while ((!days_of_month[day_of_month] || !days_of_week[day_of_week]) && count++ < max) {
     err = add_to_field(calendar, CRON_CF_DAY_OF_MONTH, 1);
     if (err) goto return_error;
     day_of_month = calendar->tm_mday;
@@ -373,7 +386,7 @@ return_error:
   return 0;
 }
 
-static int do_next(cron_expr *expr, struct tm *calendar, unsigned int dot) {
+static int do_next(cronexpr *expr, struct tm *calendar, unsigned int dot) {
   int i;
   int res = 0;
   int *resets = NULL;
@@ -652,8 +665,9 @@ static int has_char(char *str, char ch) {
   return 0;
 }
 
-static unsigned int *get_range(char *field, unsigned int min, unsigned int max,
-                               const char **error) {
+static unsigned int *get_range(
+  char *field, unsigned int min, unsigned int max, const char **error) 
+{
   char **parts = NULL;
   size_t len = 0;
   unsigned int *res = (unsigned int *) malloc(2 * sizeof(unsigned int));
@@ -710,8 +724,9 @@ return_error:
   return NULL;
 }
 
-static char *set_number_hits(char *value, unsigned int min, unsigned int max,
-                             const char **error) {
+static char *set_number_hits(
+  char *value, unsigned int min, unsigned int max, const char **error) 
+{
   size_t i;
   unsigned int i1;
   char *bits = (char *) malloc(max);
@@ -836,7 +851,7 @@ static char *set_days_of_month(char *field, const char **error) {
   return bits;
 }
 
-cron_expr *cron_parse_expr(const char *expression, const char **error) {
+cronexpr *cronexpr_parse(const char *expression, const char **error) {
   const char *err_local;
   char *seconds = NULL;
   char *minutes = NULL;
@@ -894,7 +909,7 @@ return_res:
     if (months) free(months);
     return NULL;
   }
-  cron_expr *res = (cron_expr *) malloc(sizeof(cron_expr));
+  cronexpr *res = (cronexpr *) malloc(sizeof(cronexpr));
   res->seconds = seconds;
   res->minutes = minutes;
   res->hours = hours;
@@ -904,7 +919,7 @@ return_res:
   return res;
 }
 
-time_t cron_next(cron_expr *expr, time_t date) {
+time_t cronexpr_next(cronexpr *expr, time_t date) {
   /*
   The plan:
   1 Round up to the next whole second
@@ -943,7 +958,7 @@ time_t cron_next(cron_expr *expr, time_t date) {
   return cron_mktime(calendar);
 }
 
-void cron_expr_free(cron_expr *expr) {
+void cronexpr_free(cronexpr *expr) {
   if (!expr) return;
   if (expr->seconds) {
     free(expr->seconds);
