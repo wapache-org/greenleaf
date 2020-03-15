@@ -13,12 +13,30 @@ function get_os_info(options){
     var info = {
         "uname": utils.execute_cmd("uname -a"),
         "hostname": utils.execute_cmd("hostname"),
-        "releases": utils.execute_cmd_to_map("cat /etc/*-release", equal_split_regexp),
+        "releases": get_releases(),
         "groups": utils.execute_cmd_to_table("awk -F: 'BEGIN{print \"id name users\"}{print $3,$1,$4}' /etc/group", column_split_regexp, true),
         "users": utils.execute_cmd_to_table("awk 'BEGIN{print \"name:has_password:uid:gid:descritption:home_path:bin_path\"}{print $0}' /etc/passwd", key_value_split_regexp, true),
-        "onlines": utils.execute_cmd_to_table("w | tail -n +2", tab_split_regexp, true),
+        "onlines": get_online_sessions(),
         "listenings":get_network_services()
     };
+
+    return info;
+}
+
+function get_releases(){
+    let info = utils.execute_cmd_to_map("cat /etc/*-release", equal_split_regexp);
+
+    for (const key in info) {
+        if (info.hasOwnProperty(key)) {
+            const value = info[key];
+            delete info[key];
+            if(value.charAt(0)==='"' && value.charAt(value.length-1)==='"'){
+                info[key.toLowerCase()] = value.substring(1, value.length-1);
+            }else{
+                info[key.toLowerCase()] = value;
+            }
+        }
+    }
 
     return info;
 }
@@ -29,7 +47,7 @@ function get_online_sessions(){
 
 
 function get_network_services(){
-    let lines = utils.execute_cmd_to_array('sudo netstat -pnltu 2>/dev/null | egrep -v "^Active|^tcp6|^udp6"');
+    let lines = utils.execute_cmd_to_array('netstat -pnltu 2>/dev/null | egrep -v "^Active|^tcp6|^udp6"');
     return utils.lines_to_table(lines, ' ', 7);
 }
 
