@@ -61,32 +61,44 @@ extern "C" {
 #endif /* __cplusplus */
 
 /*
- * An opaque type for the crontab job ID.
- */
-typedef intptr_t crontab_job_id_t;
-
-/*
  * Invalid value for the crontab job id.
  */
 #define CRONTAB_INVALID_JOB_ID ((crontab_job_id_t) 0)
+
+struct crontab_job;
+typedef struct crontab_job crontab_job;
 
 /*
  * Calculate the next fire date after the specified date, using crontab ID
  * (returned by all cron RPC methods)
  */
-typedef time_t (*crontab_job_calculate_trigger_time)(
+typedef time_t (*crontab_job_timer)(
     cronexpr *expr, 
     time_t date
 );
 typedef int (*crontab_job_trigger)(
+    crontab_job* job,
+    void *user_data
+);
+typedef int (*crontab_job_runner)(
     const int id,
     const char* name,
     const char* action, 
     const char* payload,
     void *userdata
 );
-
-typedef struct {
+int crontab_job_trigger_default(
+    crontab_job* job,
+    void *user_data
+);
+int crontab_job_runner_default(
+    const int id,
+    const char* name,
+    const char* action, 
+    const char* payload,
+    void *userdata
+);
+struct crontab_job {
     int id;
     char* name;
 
@@ -95,10 +107,15 @@ typedef struct {
     char* payload;
 
     int enable; // 1: true, 0: false
+    int trigger_on_load; // 装载后是否立刻执行一次, 1: true, 0: false
 
-    crontab_job_calculate_trigger_time* calculate_trigger_time;
-    crontab_job_trigger* trigger;
-} crontab_job;
+    time_t last_trigger_time;
+    time_t next_trigger_time;
+
+    crontab_job_timer timer;
+    crontab_job_trigger trigger;
+    crontab_job_runner runner;
+};
 
 typedef struct {
     char* at;
@@ -111,8 +128,8 @@ typedef struct {
  */
 typedef struct {
   /** 文件路径 */
-  char *path;
-  crontab_job_id_t next_id;
+  char *path; // 注意, 释放crontab时,不会free这个字段, 需要调用者自己控制, 因为有可能这个值不是指向堆内存
+  long next_id;
   /** 时 */
   int job_size;
   /** 分 */

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "json.h"
 
@@ -13,12 +14,45 @@
 
 #define MAX_FREE_JOBS_CNT 3
 
+int crontab_job_trigger_default( crontab_job* job, void *user_data){
+    time_t now; time(&now);
+    
+    if(job->next_trigger_time==0){
+      if(job->trigger_on_load){
+        job->next_trigger_time = now;
+      }else{
+        job->next_trigger_time = (*job->timer)(job->cron_expr, now);
+      }
+    }
+
+    if(now >= job->next_trigger_time){ // 如果当前时间>下一次执行时间, 那么触发执行
+        job->last_trigger_time = now;
+        job->next_trigger_time = (*job->timer)(job->cron_expr, job->last_trigger_time);
+
+        (*job->runner)(job->id,job->name,job->action,job->payload,user_data);
+    }
+    return 0;
+};
+
+int crontab_job_runner_default(
+    const int id,
+    const char* name,
+    const char* action, 
+    const char* payload,
+    void *userdata
+){
+    printf("job #%d triggered: name=%s, action=%s, payload=%s\n", id, name, action, payload);
+
+    return 0;
+};
+
 
 int crontab_new(crontab** cron_tab)
 {
   crontab* tab = calloc(1, sizeof(crontab));
   if(tab==NULL) return 1;
 
+  tab->path = JSON_PATH;
   tab->job_size = 1024;
   tab->jobs = calloc(tab->job_size, sizeof(crontab_job*));
   if(tab->jobs==NULL) {
@@ -35,7 +69,8 @@ int crontab_free(crontab* crontab)
 {
   if(!crontab) return 1;
   
-  free(crontab->path);
+  // 有可能这个值不是指向堆内存, 所以不自动释放
+  // free(crontab->path);
 
   for (size_t i = 0; i < crontab->job_size; i++)
   {
@@ -72,6 +107,12 @@ int crontab_new_job(crontab_job** job)
   crontab_job* cj = calloc(1, sizeof(crontab_job));
   if(cj==NULL) return 1;
 
+  cj->enable = 1;
+
+  cj->timer = cronexpr_next;
+  cj->trigger = crontab_job_trigger_default;
+  cj->runner = crontab_job_runner_default;
+
   *job = cj;
 
   return 0;
@@ -81,7 +122,6 @@ int crontab_free_job(crontab_job* job)
 {
   if(!job) return 1;
 
-  cronexpr* cron_expr;
   cronexpr_free(job->cron_expr);
   free(job->action);
   free(job->payload);
@@ -97,9 +137,10 @@ int crontab_add_job(crontab* crontab, crontab_job* job)
 {
   for (size_t i = 0; i < crontab->job_size; i++)
   {
-    crontab_job* j = (crontab_job*) (crontab->jobs+i);
+    crontab_job* j = crontab->jobs[i];
     if(!j) {
-      j=job;
+      job->id = crontab->next_id++;
+      j = job;
       return 0;
     }
   }
@@ -121,7 +162,7 @@ int crontab_remove_job(crontab* crontab, crontab_job* job)
 {
   for (size_t i = 0; i < crontab->job_size; i++)
   {
-    crontab_job* j = (crontab_job*) (crontab->jobs+i);
+    crontab_job* j = crontab->jobs[i];
     if(j && j==job) {
       j = NULL; // 需要手工调用crontab_free_job释放job
       return 0;
@@ -137,7 +178,7 @@ int crontab_clear_jobs(crontab* crontab)
 {
   for (size_t i = 0; i < crontab->job_size; i++)
   {
-    crontab_job* job = (crontab_job*) (crontab->jobs+i);
+    crontab_job* job = crontab->jobs[i];
     if(job) {
       crontab_free_job(job); // 不需要手工调用crontab_free_job释放job
       job = NULL;
@@ -170,7 +211,7 @@ int crontab_iterate(
 ){
   for (size_t i = 0; i < crontab->job_size; i++)
   {
-    crontab_job* job = (crontab_job*) (crontab->jobs+i);
+    crontab_job* job = crontab->jobs[i];
     if(job) 
       if(cb(job, user_data))
         return 1;
