@@ -724,6 +724,9 @@ return_error:
   return NULL;
 }
 
+/**
+ * 
+ */
 static char *set_number_hits(
   char *value, unsigned int min, unsigned int max, const char **error) 
 {
@@ -742,8 +745,9 @@ static char *set_number_hits(
     goto return_result;
   }
 
-  for (i = 0; i < len; i++) {
+  for (i = 0; i < len; i++) { // 循环处理每一组
     if (!has_char(fields[i], '/')) {
+      // 简单值或范围值
       /* Not an incrementer so it must be a range (possibly empty) */
       unsigned int *range = get_range(fields[i], min, max, error);
       if (*error) {
@@ -757,6 +761,7 @@ static char *set_number_hits(
       }
       free(range);
     } else {
+      // 起始值/增量值
       size_t len2 = 0;
       char **split = split_str(fields[i], '/', &len2);
       if (0 == len2 || len2 > 2) {
@@ -853,12 +858,14 @@ static char *set_days_of_month(char *field, const char **error) {
 
 cronexpr *cronexpr_parse(const char *expression, const char **error) {
   const char *err_local;
+  
   char *seconds = NULL;
   char *minutes = NULL;
   char *hours = NULL;
   char *days_of_week = NULL;
   char *days_of_month = NULL;
   char *months = NULL;
+
   size_t len = 0;
   char **fields = NULL;
   char *days_replaced = NULL;
@@ -870,17 +877,24 @@ cronexpr *cronexpr_parse(const char *expression, const char **error) {
     *error = "Invalid NULL expression";
     goto return_res;
   }
+
+  // 1. 先分割cron表达式的6个组成部分
   fields = split_str(expression, ' ', &len);
   if (len != 6) {
     *error = "Invalid number of fields, expression must consist of 6 fields";
     goto return_res;
   }
+  // printf("[DEBUG] split_str: seconds=%s, minutes=%s, hours=%s, days_of_week=%s, days_of_month=%s, months=%s\n",
+  //   fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6] );
+
+  // 1.1 时分秒
   seconds = set_number_hits(fields[0], 0, 60, error);
   if (*error) goto return_res;
   minutes = set_number_hits(fields[1], 0, 60, error);
   if (*error) goto return_res;
   hours = set_number_hits(fields[2], 0, 24, error);
   if (*error) goto return_res;
+  // 1.2 星期
   to_upper(fields[5]);
   days_replaced = replace_ordinals(fields[5], DAYS_ARR, CRON_DAYS_ARR_LEN);
   days_of_week = set_days(days_replaced, 8, error);
@@ -891,8 +905,10 @@ cronexpr *cronexpr_parse(const char *expression, const char **error) {
     days_of_week[0] = 1;
     days_of_week[7] = 0;
   }
+  // 1.3 日期
   days_of_month = set_days_of_month(fields[3], error);
   if (*error) goto return_res;
+  // 1.4 月
   months = set_months(fields[4], error);
   if (*error) goto return_res;
 
@@ -979,4 +995,80 @@ void cronexpr_free(cronexpr *expr) {
     free(expr->months);
   }
   free(expr);
+}
+
+
+void cronexpr_print(cronexpr *expr)
+{
+  if(expr->seconds){ // (0 - 59)
+
+    printf("\t\tseconds      : ");
+    for (size_t i = 0; i < 60; i++)
+    {
+      if( *(expr->seconds+i) == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+  if(expr->minutes){ // (0 - 59)
+
+    printf("\t\tminutes      : ");
+    for (size_t i = 0; i < 60; i++)
+    {
+      if( *(expr->minutes+i) == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+  if(expr->hours){ // (0 - 59)
+
+    printf("\t\thours        : ");
+    for (size_t i = 0; i < 24; i++)
+    {
+      if( *(expr->hours+i) == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+
+  if(expr->days_of_month){ // day of month (1 - 31)
+
+    printf("\t\tdays_of_month: ");
+    for (size_t i = 1; i <= 31; i++)
+    {
+      if( *(expr->days_of_month+i) == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+
+  if(expr->months){ // month (0 - 11) , cron里边是1-12, 但是c的calendar里是0-11
+
+    printf("\t\tmonths       : ");
+    for (size_t i = 0; i < 12; i++)
+    {
+      if( expr->months[i] == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+
+  if(expr->days_of_week){ // day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+
+    printf("\t\tdays_of_week : ");
+    for (size_t i = 0; i < 7; i++)
+    {
+      if( *(expr->days_of_week+i) == 1 ){
+        printf("%d,",i);
+      }
+    }
+    printf("\n");
+  }
+  
+
 }

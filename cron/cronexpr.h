@@ -44,11 +44,12 @@ typedef struct {
  *
  * @param expression cron expression as nul-terminated string,
  *        should be no longer that 256 bytes
- * @param error output error message, will be set to string literal
- *        error message in case of error. Will be set to NULL on success.
+ * @param error output error message, will be set to string literal error message in case of error. 
+ *        Will be set to NULL on success.
  *        The error message should NOT be freed by client.
- * @return parsed cron expression in case of success. Returned expression
- *        must be freed by client using 'cronexpr_free' function.
+ *        返回的是静态的文本, 不是动态从堆分配的, 所以不需要释放
+ * @return parsed cron expression in case of success. 
+ *        Returned expression must be freed by client using 'cronexpr_free' function.
  *        NULL is returned on error.
  */
 cronexpr* cronexpr_parse(const char *expression, const char **error);
@@ -72,6 +73,8 @@ void cronexpr_free(cronexpr *expr);
  * error.
  */
 time_t cronexpr_next(cronexpr *expr, time_t date);
+
+void cronexpr_print(cronexpr *expr);
 
 #if defined(__cplusplus) && !defined(CRON_COMPILE_AS_CXX)
 }  // extern "C"
