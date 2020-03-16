@@ -71,3 +71,6 @@ target_link_libraries(qjs_module_example quickjs m dl)
 
 add_executable(cronexpr_example cronexpr_example.c)
 target_link_libraries(cronexpr_example cron)
+
+add_executable(crontab_example crontab_example.c)
+target_link_libraries(crontab_example cron)
