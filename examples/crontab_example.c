@@ -6,21 +6,23 @@
 #include <unistd.h>
 
 #include "crontab.h"
-
-#define true 1
-#define false 0
+#include "common/logger.h"
 
 char* new_string(char* content)
 {
-    char* str = malloc(strlen(content));
+    size_t len = strlen(content);
+    char* str = malloc(len+1);
     if(str){
-        memcpy(str, content, strlen(content));
+        memcpy(str, content, len);
+        *(str+len) = '\0';
     }
     return str;
 }
 
 int main(int argc, char* argv[])
 {
+    logger_info("the crontab example is running.");
+
     const char* err;
 
     crontab* crontab = NULL;
@@ -98,19 +100,15 @@ int main(int argc, char* argv[])
         job->name = new_string("job1");
         job->action = new_string("pg_vacuum");
         job->payload = new_string("sys_user,sys_role");
-        job->cron_expr = cronexpr_parse("0 * * * * *", &err);
+        job->cron_expr = cronexpr_parse("0/3 * * * * *", &err);
 
         if(crontab_add_job(crontab, job)){
             goto free;
         }
 
         while(true){
-            printf(".\n");
             crontab_iterate(crontab, crontab_job_trigger_default, NULL);
-            // fix: not work...
-
             sleep(1);
-
         }
 
     }
