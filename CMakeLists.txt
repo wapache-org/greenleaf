@@ -56,7 +56,11 @@ set(ssh_SRCS1
   ssh/connect_ssh.c
 )
 
-add_executable(greenleaf main.c ${ssh_SRCS1})
+set(commons_SRCS
+  common/logger.c
+)
+
+add_executable(greenleaf main.c ${ssh_SRCS1} ${commons_SRCS})
 # add_dependencies(greenleaf copy_files)
 target_link_libraries(greenleaf 
   mongoose json-c
@@ -65,7 +69,7 @@ target_link_libraries(greenleaf
   pq.a pgport.a pgcommon.a 
   m dl pthread
   ssh
-  cron
+  crontab
 )
 
 # add file copy target

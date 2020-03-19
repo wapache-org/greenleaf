@@ -107,7 +107,8 @@ struct crontab_job {
     char* payload;
 
     int enable; // 1: true, 0: false
-    int trigger_on_load; // 装载后是否立刻执行一次, 1: true, 0: false
+    /** 装载后是否立刻执行一次, 1: true, 0: false */
+    int trigger_on_load;
 
     time_t last_trigger_time;
     time_t next_trigger_time;

@@ -25,6 +25,9 @@
 #include "mongoose.h"
 #include "ssh/ssh_common.h"
 
+#include "crontab.h"
+#include "common/logger.h"
+
 // #endregion include area
 // ////////////////////////////////////////////////////////////////////////////
 // #region declare area
@@ -494,6 +497,60 @@ static void signal_handler(int sig_num)
 // ////////////////////////////////////////////////////////
 // #region main function implement area
 
+static char* new_string(char* content)
+{
+    size_t len = strlen(content);
+    char* str = malloc(len+1);
+    if(str){
+        memcpy(str, content, len);
+        *(str+len) = '\0';
+    }
+    return str;
+}
+
+void *crontab_thread_proc(void *param) {
+  // struct mg_mgr *mgr = (struct mg_mgr *) param;
+  
+  logger_info("the crontab thread started.");
+
+  const char* err;
+  crontab* crontab = NULL;
+
+  if(crontab_new(&crontab)){
+      goto free;
+  }
+  
+  if(crontab_load(crontab)){
+      goto free;
+  }
+
+  // crontab_job* job = NULL;
+
+  // if(crontab_new_job(&job)){
+  //     goto free;
+  // }
+
+  // job->name = new_string("job1");
+  // job->action = new_string("pg_vacuum");
+  // job->payload = new_string("sys_user,sys_role");
+  // job->cron_expr = cronexpr_parse("0/3 * * * * *", &err);
+
+  // if(crontab_add_job(crontab, job)){
+  //     goto free;
+  // }
+
+  while (s_options.signal == 0) {
+    sleep(1);
+    crontab_iterate(crontab, crontab_job_trigger_default, NULL);
+  }
+
+free:
+    crontab_free(crontab);
+
+  logger_info("the crontab thread stoped.");
+  return NULL;
+}
+
 /**
  * 
  */
@@ -522,6 +579,9 @@ int main(int argc, char *argv[])
 
     // 初始化quickjs运行环境
     qjs_runtime_init();
+
+
+    mg_start_thread(crontab_thread_proc, NULL);
     
     printf("Starting server on port %s\r\n", s_options.mg_http_port);
 

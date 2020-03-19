@@ -6,17 +6,29 @@
 #include "json.h"
 
 #include "crontab.h"
+#include "common/logger.h"
 
 /* TODO(dfrank): make it configurable */
-#define JSON_PATH "crontab.json"
+#define JSON_PATH "conf/crontab.json"
 
 #define MIN_ID (1)
 
 #define MAX_FREE_JOBS_CNT 3
 
+static char* new_string(const char* content)
+{
+    size_t len = strlen(content);
+    char* str = malloc(len+1);
+    if(str){
+        memcpy(str, content, len);
+        *(str+len) = '\0';
+    }
+    return str;
+}
+
 int crontab_job_trigger_default( crontab_job* job, void *user_data){
     time_t now; time(&now);
-    
+
     if(job->next_trigger_time==0){
       if(job->trigger_on_load){
         job->next_trigger_time = now;
@@ -25,12 +37,15 @@ int crontab_job_trigger_default( crontab_job* job, void *user_data){
       }
     }
 
+    logger_debug("diff=%d, now=%d, next_trigger_time=%d", (job->next_trigger_time-now), now, job->next_trigger_time);
+
     if(now >= job->next_trigger_time){ // 如果当前时间>下一次执行时间, 那么触发执行
         job->last_trigger_time = now;
         job->next_trigger_time = (*job->timer)(job->cron_expr, job->last_trigger_time);
 
         (*job->runner)(job->id,job->name,job->action,job->payload,user_data);
     }
+
     return 0;
 };
 
@@ -90,7 +105,41 @@ int crontab_free(crontab* crontab)
  */
 int crontab_load(crontab* crontab)
 {
+  const char* err;
+
   // TODO 根据crontab->path读取文件内容, 并解析
+  json_object* jobs = json_object_from_file(crontab->path);
+  if(!jobs) {
+    logger_error("load crontab failed, file = %s, message=%s", crontab->path, json_util_get_last_err());
+    return 0; 
+  }
+  array_list* list = json_object_get_array(jobs);
+  if(!list) { 
+    logger_error("crontab file format wrong, file = %s, message=%s", crontab->path, json_util_get_last_err());
+    return 0; 
+  }
+  
+  for (size_t i = 0; i < array_list_length(list); i++)
+  {
+    json_object* j = json_object_array_get_idx(jobs, i);
+
+    crontab_job* job = NULL;
+    if(crontab_new_job(&job)){
+        return 1;
+    }
+
+    job->name = new_string(json_object_get_string(json_object_object_get(j, "name")));
+    job->action = new_string(json_object_get_string(json_object_object_get(j, "action")));
+    job->payload = new_string(json_object_get_string(json_object_object_get(j, "payload")));
+    job->cron_expr = cronexpr_parse(json_object_get_string(json_object_object_get(j, "cron_expr")), &err);
+
+    if(crontab_add_job(crontab, job)){
+        return 2;
+    }
+  }
+
+  return 0;
+  
 }
 
 /*
@@ -139,8 +188,10 @@ int crontab_add_job(crontab* crontab, crontab_job* job)
   {
     crontab_job* j = crontab->jobs[i];
     if(!j) {
-      job->id = crontab->next_id++;
+      logger_info("crontab_add_job ...");
       j = job;
+      j->id = crontab->next_id++;
+      crontab->jobs[i] = j;
       return 0;
     }
   }
@@ -164,7 +215,7 @@ int crontab_remove_job(crontab* crontab, crontab_job* job)
   {
     crontab_job* j = crontab->jobs[i];
     if(j && j==job) {
-      j = NULL; // 需要手工调用crontab_free_job释放job
+      crontab->jobs[i] = NULL; // 需要手工调用crontab_free_job释放job
       return 0;
     }
   }
@@ -181,7 +232,7 @@ int crontab_clear_jobs(crontab* crontab)
     crontab_job* job = crontab->jobs[i];
     if(job) {
       crontab_free_job(job); // 不需要手工调用crontab_free_job释放job
-      job = NULL;
+      crontab->jobs[i] = NULL;
       return 0;
     }
   }

@@ -7,4 +7,8 @@
 # set(CMAKE_C_FLAGS "-std=c11 ${CMAKE_CXX_FLAGS}")
 
 aux_source_directory(. DIR_CRON_SRCS)
-add_library(cron ${DIR_CRON_SRCS})
+add_library(crontab ${DIR_CRON_SRCS} ../common/logger.c)
+target_link_libraries(crontab 
+  json-c
+  m dl pthread
+)
