@@ -3650,7 +3650,7 @@ struct {								\
 #ifdef _WIN32
 #define MG_ENABLE_THREADS 1
 #else
-#define MG_ENABLE_THREADS 0
+#define MG_ENABLE_THREADS 1
 #endif
 #endif
 
