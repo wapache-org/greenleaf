@@ -1,0 +1,30 @@
+greenleaf:
+  # 组播地址, 支持加入多个组
+  groups:
+    - "udp://ip[:port]" # 一个都不配置, 证明是单机
+  # 配置
+  config:
+    path: "conf"
+    # include:
+    #   - ""
+  # 存储
+  storage:
+    path: "data"
+    sqlite: "greenleaf.db"
+  # 日志
+  logger:
+    enabled: true
+    level: debug
+  # 管理
+  admin:
+    enabled: false
+    address: 
+      - "http://ip[:port][/context]" # 第一个是自己, 如果只有一个地址, 证明是单机
+      - "http://ip[:port][/context]" # 第二个, 如果多于一个地址, 证明是集群, 最少需要配置3个地址
+      - "http://ip[:port][/context]" # 第三个
+  # 定时任务
+  crontab:
+    enabled: false
+    path: "crontab.json"
+  # 其他服务列表
+  # services:

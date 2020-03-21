@@ -11,11 +11,13 @@
 //header for getopt_long
 #include <getopt.h>
 
+#include <assert.h>
+
 // header for postgresql
 #include "libpq-fe.h"
 
 // header for quickjs
-#include <quickjs/quickjs-libc.h>
+#include "quickjs/quickjs-libc.h"
 
 #include "libssh/callbacks.h"
 #include "libssh/libssh.h"
@@ -27,6 +29,11 @@
 
 #include "crontab.h"
 #include "common/logger.h"
+#include "common/str_builder.h"
+#include "common/array_list.h"
+#include "common/hash_map.h"
+
+#include "yaml.h"
 
 // #endregion include area
 // ////////////////////////////////////////////////////////////////////////////
@@ -495,18 +502,243 @@ static void signal_handler(int sig_num)
 
 // #endregion options implement area
 // ////////////////////////////////////////////////////////
+// #region yaml implement area
+
+
+int yaml_print_version()
+{
+    int major = -1;
+    int minor = -1;
+    int patch = -1;
+    char buf[64];
+
+    yaml_get_version(&major, &minor, &patch);
+    sprintf(buf, "%d.%d.%d", major, minor, patch);
+    assert(strcmp(buf, yaml_get_version_string()) == 0);
+
+    printf("yaml version = %s\n", buf);
+
+    /* Print structure sizes. */
+    printf("sizeof(token) = %d\n", sizeof(yaml_token_t));
+    printf("sizeof(event) = %d\n", sizeof(yaml_event_t));
+    printf("sizeof(parser) = %d\n", sizeof(yaml_parser_t));
+
+    return 0;
+}
+
+struct greenpleaf_options
+{
+  arraylist * groups;
+  map_t* config;
+  map_t* storage;
+  struct 
+  {
+    int enabled;
+    char* level;
+    map_t* loggers;
+  } logger;
+  struct 
+  {
+    int enabled;
+    arraylist * address;
+  } admin;
+  struct 
+  {
+    int enabled;
+    char* path;
+  } crontab;
+  arraylist * services;
+};
+
+// TODO : yaml的api还不熟悉, 这个函数有内存泄漏, 逻辑也很混乱, 需要重写.
+// 考虑先转成json, 然后再转成结构体
+int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
+{
+  *opt = NULL;
+  
+  int rc = 0;
+
+  FILE *file;
+  yaml_parser_t parser;
+  yaml_char_t* value = NULL;
+  char* level_1_key = NULL;
+  char* level_2_key = NULL;
+  char* level_3_key = NULL;
+
+  arraylist* list;
+  map_t* map;
+  char* map_key = NULL;
+
+  int level = 0;
+
+  file = fopen(file_path, "rb");
+  assert(file);
+
+  assert(yaml_parser_initialize(&parser));
+  yaml_parser_set_input_file(&parser, file);
+
+  yaml_event_t  event;   /* New variable */
+  /* START new code */
+  do {
+    if (!yaml_parser_parse(&parser, &event)) {
+       printf("Parser error %d\n", parser.error);
+       return rc;
+    }
+
+    switch(event.type)
+    { 
+    case YAML_NO_EVENT: puts("No event!"); break;
+    /* Stream start/end */
+    case YAML_STREAM_START_EVENT: puts("STREAM START"); break;
+    case YAML_STREAM_END_EVENT:   puts("STREAM END");   break;
+    /* Block delimeters */
+    case YAML_DOCUMENT_START_EVENT: 
+      puts("<b>Start Document</b>"); 
+    break;
+    case YAML_DOCUMENT_END_EVENT:   puts("<b>End Document</b>");   break;
+    case YAML_SEQUENCE_START_EVENT: 
+      level++;
+      puts("<b>Start Sequence</b>"); 
+      if (level==3 && memcmp(level_2_key,"groups", strlen("groups"))==0)
+      {
+        list = (*opt)->groups = arraylist_new(NULL);
+      }else if (level==4 && memcmp(level_2_key,"admin", strlen("admin"))==0 && map_key!=NULL){
+        list = (*opt)->admin.address = arraylist_new(NULL);
+      }
+    break;
+    case YAML_SEQUENCE_END_EVENT:   
+      level--;
+      puts("<b>End Sequence</b>");
+      list = NULL;
+    break;
+    case YAML_MAPPING_START_EVENT:  
+      level++;
+      map_key=NULL;
+      puts("<b>Start Mapping</b>");    
+      if (level==3){
+        if( memcmp(level_2_key,"config", strlen("config"))==0 ) {
+          map = (*opt)->config = hashmap_new();
+        } else
+        if( memcmp(level_2_key,"storage", strlen("storage"))==0 ) {
+          map = (*opt)->storage = hashmap_new();
+        } else
+        if( memcmp(level_2_key,"logger", strlen("logger"))==0 ) {
+          map = (*opt)->logger.loggers = hashmap_new();
+        }
+
+      }
+
+    break;
+    case YAML_MAPPING_END_EVENT:    
+      level--;
+      puts("<b>End Mapping</b>");    
+      map = NULL;
+    break;
+    /* Data */
+    case YAML_ALIAS_EVENT:  
+      printf("Got alias (anchor %s)\n", event.data.alias.anchor); 
+    break;
+    case YAML_SCALAR_EVENT: 
+      value = event.data.scalar.value;
+      printf("Got scalar (value %s)\n", value); 
+      switch(level){
+      case 1:{
+        level_1_key = new_string(value);
+        if(*opt==NULL && memcmp(level_1_key,"greenleaf", strlen("greenleaf"))==0){
+          *opt = calloc(1, sizeof(struct greenpleaf_options));
+          puts("====================>>>>>>>>>>>>Start greenleaf");  
+        }
+      }
+      break;
+      case 2:{
+        level_2_key = new_string(value);
+        printf("====================>>>>>>>>>>>>level 2 %s\n", level_2_key);
+      }
+      break;
+      case 3:{
+        level_3_key = new_string(value);
+        if(list!=NULL){
+          printf("====================>>>>>>>>>>>>list %s add %s\n", level_2_key, value);
+          arraylist_add(list, new_string(value));
+        } else if(map!=NULL){
+          if(map_key==NULL){
+            map_key = new_string(value);
+          }else{
+            printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
+            
+            if( memcmp(level_2_key,"logger", strlen("logger"))==0 ) {
+              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
+                (*opt)->logger.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
+              }else
+              if( memcmp(map_key,"level", strlen("level"))==0 ) {
+                (*opt)->logger.level = new_string(value);
+              }
+            }
+            
+            hashmap_put(map, map_key, new_string(value));
+
+            map_key = NULL;
+          }
+        }else{
+          // printf("====================>>>>>>>>>>>>level_2_key %s \n", level_2_key);
+          if( memcmp(level_2_key,"admin", strlen("admin"))==0 ) {
+            if(map_key==NULL){
+              map_key = new_string(value);
+            }else{
+              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
+                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
+                (*opt)->admin.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
+              }
+              map_key = NULL;
+            }
+          }else 
+          if( memcmp(level_2_key,"crontab", strlen("crontab"))==0 ) {
+            if(map_key==NULL){
+              map_key = new_string(value);
+            }else{
+              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
+                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
+                (*opt)->crontab.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
+              } else if( memcmp(map_key,"path", strlen("path"))==0 ) {
+                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
+                (*opt)->crontab.path = new_string(value);
+              }
+              map_key = NULL;
+            }
+          }
+        }
+      }
+      break;
+      case 4:{
+        if(list!=NULL){
+          printf("====================>>>>>>>>>>>>list %s add %s\n", level_3_key, value);
+          arraylist_add(list, new_string(value));
+        }
+      }break;
+      default:{
+      }
+      }
+    }
+    if(event.type != YAML_STREAM_END_EVENT)
+      yaml_event_delete(&event);
+  } while(event.type != YAML_STREAM_END_EVENT);
+  yaml_event_delete(&event);
+  /* END new code */
+
+  // yaml_document_delete(document);
+
+  yaml_parser_delete(&parser);
+
+  assert(!fclose(file));
+
+  rc=1;
+  return rc;
+}
+
+// #endregion yaml implement area
+// ////////////////////////////////////////////////////////
 // #region main function implement area
 
-static char* new_string(char* content)
-{
-    size_t len = strlen(content);
-    char* str = malloc(len+1);
-    if(str){
-        memcpy(str, content, len);
-        *(str+len) = '\0';
-    }
-    return str;
-}
 
 void *crontab_thread_proc(void *param) {
   // struct mg_mgr *mgr = (struct mg_mgr *) param;
@@ -556,6 +788,11 @@ free:
  */
 int main(int argc, char *argv[]) 
 {
+    struct greenpleaf_options * opt_yaml;
+    if(yaml_parse_file("conf/greenleaf.yml", &opt_yaml)){
+      exit(EXIT_FAILURE);
+    }
+
     // 解析命令行参数
     parse_options(argc,argv);
 

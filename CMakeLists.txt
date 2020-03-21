@@ -34,17 +34,19 @@ link_directories(
   libraries/quickjs/lib/quickjs
   libraries/libpq/lib
   libraries/libssh/lib
+  libraries/libyaml/lib
 )
 
 # add block directories
-add_subdirectory(lua)
-add_subdirectory(mongoose)
-add_subdirectory(mustache)
-add_subdirectory(sqlite)
-add_subdirectory(examples)
+add_subdirectory(common)
 add_subdirectory(json-c)
-add_subdirectory(ssh)
+add_subdirectory(mongoose)
 add_subdirectory(cron)
+add_subdirectory(ssh)
+add_subdirectory(sqlite)
+add_subdirectory(lua)
+add_subdirectory(mustache)
+add_subdirectory(examples)
 
 # add grobal libs
 # link_libraries(mongoose lua quickjs pq sqlite m dl readline)
@@ -56,20 +58,20 @@ set(ssh_SRCS1
   ssh/connect_ssh.c
 )
 
-set(commons_SRCS
-  common/logger.c
-)
 
-add_executable(greenleaf main.c ${ssh_SRCS1} ${commons_SRCS})
+add_executable(greenleaf main.c)
 # add_dependencies(greenleaf copy_files)
 target_link_libraries(greenleaf 
-  mongoose json-c
+  common
+  mongoose 
+  json-c yaml
+  crontab
+  ssh
+  ssh_common
   lua quickjs.a
   sqlite
   pq.a pgport.a pgcommon.a 
   m dl pthread
-  ssh
-  crontab
 )
 
 # add file copy target
