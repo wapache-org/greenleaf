@@ -2371,70 +2371,18 @@ static int mg_http_handle_forwarding(struct mg_connection *nc,
 }
 #endif /* MG_ENABLE_FILESYSTEM */
 
-MG_INTERNAL int mg_uri_to_local_path(struct http_message *hm,
-                                     const struct mg_serve_http_opts *opts,
+
+MG_INTERNAL int mg_check_local_path(struct http_message *hm,
+                                     struct mg_str root,
                                      char **local_path,
                                      struct mg_str *remainder) {
   int ok = 1;
   const char *cp = hm->uri.p, *cp_end = hm->uri.p + hm->uri.len;
-  struct mg_str root = {NULL, 0};
   const char *file_uri_start = cp;
+
   *local_path = NULL;
   remainder->p = NULL;
   remainder->len = 0;
-
-  { /* 1. Determine which root to use. */
-
-#if MG_ENABLE_HTTP_URL_REWRITES
-    const char *rewrites = opts->url_rewrites;
-#else
-    const char *rewrites = "";
-#endif
-    struct mg_str *hh = mg_get_http_header(hm, "Host");
-    struct mg_str a, b;
-    /* Check rewrites first. */
-    while ((rewrites = mg_next_comma_list_entry(rewrites, &a, &b)) != NULL) {
-      if (a.len > 1 && a.p[0] == '@') {
-        /* Host rewrite. */
-        if (hh != NULL && hh->len == a.len - 1 &&
-            mg_ncasecmp(a.p + 1, hh->p, a.len - 1) == 0) {
-          root = b;
-          break;
-        }
-      } else {
-        /* Regular rewrite, URI=directory */
-        size_t match_len = mg_match_prefix_n(a, hm->uri);
-        if (match_len > 0) {
-          file_uri_start = hm->uri.p + match_len;
-          if (*file_uri_start == '/' || file_uri_start == cp_end) {
-            /* Match ended at component boundary, ok. */
-          } else if (*(file_uri_start - 1) == '/') {
-            /* Pattern ends with '/', backtrack. */
-            file_uri_start--;
-          } else {
-            /* No match: must fall on the component boundary. */
-            continue;
-          }
-          root = b;
-          break;
-        }
-      }
-    }
-    /* If no rewrite rules matched, use DAV or regular document root. */
-    if (root.p == NULL) {
-#if MG_ENABLE_HTTP_WEBDAV
-      if (opts->dav_document_root != NULL && mg_is_dav_request(&hm->method)) {
-        root.p = opts->dav_document_root;
-        root.len = strlen(opts->dav_document_root);
-      } else
-#endif
-      {
-        root.p = opts->document_root;
-        root.len = strlen(opts->document_root);
-      }
-    }
-    assert(root.p != NULL && root.len > 0);
-  }
 
   { /* 2. Find where in the canonical URI path the local path ends. */
     const char *u = file_uri_start + 1;
@@ -2528,6 +2476,93 @@ out:
        *local_path ? *local_path : "", (int) remainder->len, remainder->p));
   return ok;
 }
+
+MG_INTERNAL int mg_uri_to_local_path(struct http_message *hm,
+                                     const struct mg_serve_http_opts *opts,
+                                     char **local_path,
+                                     struct mg_str *remainder) {
+  int ok = 1;
+  const char *cp = hm->uri.p, *cp_end = hm->uri.p + hm->uri.len;
+  struct mg_str root = {NULL, 0};
+  const char *file_uri_start = cp;
+
+
+  { /* 1. Determine which root to use. */
+
+#if MG_ENABLE_HTTP_URL_REWRITES
+    const char *rewrites = opts->url_rewrites;
+    struct mg_str *hh = mg_get_http_header(hm, "Host");
+    struct mg_str a, b;
+    /* Check rewrites first. */
+    while ((rewrites = mg_next_comma_list_entry(rewrites, &a, &b)) != NULL) {
+      if (a.len > 1 && a.p[0] == '@') {
+        /* Host rewrite. */
+        if (hh != NULL && hh->len == a.len - 1 &&
+            mg_ncasecmp(a.p + 1, hh->p, a.len - 1) == 0) {
+          root = b;
+          break;
+        }
+      } else {
+        /* Regular rewrite, URI=directory */
+        size_t match_len = mg_match_prefix_n(a, hm->uri);
+        if (match_len > 0) {
+          file_uri_start = hm->uri.p + match_len;
+          if (*file_uri_start == '/' || file_uri_start == cp_end) {
+            /* Match ended at component boundary, ok. */
+          } else if (*(file_uri_start - 1) == '/') {
+            /* Pattern ends with '/', backtrack. */
+            file_uri_start--;
+          } else {
+            /* No match: must fall on the component boundary. */
+            continue;
+          }
+          root = b;
+          break;
+        }
+      }
+    }
+#endif
+    /* If no rewrite rules matched, use DAV or regular document root. */
+#if MG_ENABLE_HTTP_WEBDAV
+    if (root.p == NULL) {
+      if (opts->dav_document_root != NULL && mg_is_dav_request(&hm->method)) {
+        root.p = opts->dav_document_root;
+        root.len = strlen(opts->dav_document_root);
+      }
+    }
+#endif
+      // {
+      //   root.p = opts->document_root;
+      //   root.len = strlen(opts->document_root);
+      // }
+    // }
+    // assert(root.p != NULL && root.len > 0);
+  }
+
+  if (root.p == NULL) {
+    root.p = opts->document_root;
+    root.len = strlen(opts->document_root);
+    assert(root.p != NULL && root.len > 0);
+    ok = mg_check_local_path(hm, root, local_path, remainder);
+    if (!ok && opts->document_roots!=NULL) {
+      for (size_t i = 0; i < sizeof(opts->document_roots)/sizeof(const char*); i++)
+      {
+        root.p = opts->document_roots[i];
+        root.len = strlen(root.p);
+        assert(root.p != NULL && root.len > 0);
+        ok = mg_check_local_path(hm, root, local_path, remainder);
+        if(ok) break;
+      }
+    }
+  } else {
+    assert(root.p != NULL && root.len > 0);
+    ok = mg_check_local_path(hm, root, local_path, remainder);
+  }
+
+  return ok;
+
+}
+
 
 static int mg_get_month_index(const char *s) {
   static const char *month_names[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",

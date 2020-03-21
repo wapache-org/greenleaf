@@ -4866,6 +4866,9 @@ struct mg_serve_http_opts {
   /* Path to web root directory */
   const char *document_root;
 
+  /* Path to web root directory */
+  const char **document_roots;
+
   /* List of index files. Default is "" */
   const char *index_files;
 
