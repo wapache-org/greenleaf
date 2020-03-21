@@ -114,5 +114,6 @@ int	str_builder_appendf(str_builder_t *sb, int max_length, const char *format, .
 
 char* new_string(char* content);
 
+#define STR_IS_EQUALS(a,b) memcmp(a,b, strlen(b))==0
 
 #endif /* __STR_BUILDER_H__ */
