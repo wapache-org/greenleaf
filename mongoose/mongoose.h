@@ -18,7 +18,7 @@
  */
 
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_common.h"
+#line 1 "mg_common.h"
 #endif
 #ifndef CS_MONGOOSE_SRC_COMMON_H_
 #define CS_MONGOOSE_SRC_COMMON_H_
@@ -3133,7 +3133,7 @@ struct {								\
 
 #endif /* !_SYS_QUEUE_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_features.h"
+#line 1 "mg_features.h"
 #endif
 
 #ifndef CS_MONGOOSE_SRC_FEATURES_H_
@@ -3308,7 +3308,7 @@ struct {								\
 
 #endif /* CS_MONGOOSE_SRC_FEATURES_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_net_if.h"
+#line 1 "mg_net_if.h"
 #endif
 
 #ifndef CS_MONGOOSE_SRC_NET_IF_H_
@@ -3438,7 +3438,7 @@ double mg_mgr_min_timer(const struct mg_mgr *mgr);
 
 #endif /* CS_MONGOOSE_SRC_NET_IF_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_ssl_if.h"
+#line 1 "mg_ssl_if.h"
 #endif
 
 #ifndef CS_MONGOOSE_SRC_SSL_IF_H_
@@ -3492,7 +3492,7 @@ int mg_ssl_if_write(struct mg_connection *nc, const void *data, size_t len);
 
 #endif /* CS_MONGOOSE_SRC_SSL_IF_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_net.h"
+#line 1 "mg_net.h"
 #endif
 
 /*
@@ -4078,7 +4078,7 @@ double mg_time(void);
 
 #endif /* CS_MONGOOSE_SRC_NET_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_uri.h"
+#line 1 "mg_uri.h"
 #endif
 
 /*
@@ -4144,7 +4144,7 @@ int mg_normalize_uri_path(const struct mg_str *in, struct mg_str *out);
 #endif /* __cplusplus */
 #endif /* CS_MONGOOSE_SRC_URI_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_util.h"
+#line 1 "mg_util.h"
 #endif
 
 /*
@@ -4358,7 +4358,7 @@ struct mg_str mg_url_encode(const struct mg_str src);
 #endif /* __cplusplus */
 #endif /* CS_MONGOOSE_SRC_UTIL_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_http.h"
+#line 1 "mg_http.h"
 #endif
 
 /*
@@ -4734,7 +4734,7 @@ void mg_http_send_digest_auth_request(struct mg_connection *c,
 
 #endif /* CS_MONGOOSE_SRC_HTTP_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_http_server.h"
+#line 1 "mg_http_server.h"
 #endif
 /*
  * === Server API reference
@@ -5298,7 +5298,7 @@ void mg_http_reverse_proxy(struct mg_connection *nc,
 
 #endif /* CS_MONGOOSE_SRC_HTTP_SERVER_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_http_client.h"
+#line 1 "mg_http_client.h"
 #endif
 /*
  * === Client API reference
@@ -5363,7 +5363,7 @@ int mg_http_create_digest_auth_header(char *buf, size_t buf_len,
 #endif /* __cplusplus */
 #endif /* CS_MONGOOSE_SRC_HTTP_CLIENT_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_mqtt.h"
+#line 1 "mg_mqtt.h"
 #endif
 
 /*
@@ -5578,7 +5578,7 @@ int mg_mqtt_vmatch_topic_expression(const char *exp, struct mg_str topic);
 
 #endif /* CS_MONGOOSE_SRC_MQTT_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_mqtt_server.h"
+#line 1 "mg_mqtt_server.h"
 #endif
 
 /*
@@ -5669,7 +5669,7 @@ struct mg_mqtt_session *mg_mqtt_next(struct mg_mqtt_broker *brk,
 #endif /* MG_ENABLE_MQTT_BROKER */
 #endif /* CS_MONGOOSE_SRC_MQTT_BROKER_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_dns.h"
+#line 1 "mg_dns.h"
 #endif
 
 /*
@@ -5833,7 +5833,7 @@ void mg_set_protocol_dns(struct mg_connection *nc);
 #endif /* __cplusplus */
 #endif /* CS_MONGOOSE_SRC_DNS_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_dns_server.h"
+#line 1 "mg_dns_server.h"
 #endif
 
 /*
@@ -5926,7 +5926,7 @@ void mg_dns_send_reply(struct mg_connection *nc, struct mg_dns_reply *r);
 #endif /* MG_ENABLE_DNS_SERVER */
 #endif /* CS_MONGOOSE_SRC_DNS_SERVER_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_resolv.h"
+#line 1 "mg_resolv.h"
 #endif
 
 /*
@@ -6006,7 +6006,7 @@ int mg_resolve_from_hosts_file(const char *host, union socket_address *usa);
 #endif /* __cplusplus */
 #endif /* CS_MONGOOSE_SRC_RESOLV_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_coap.h"
+#line 1 "mg_coap.h"
 #endif
 
 /*
@@ -6158,7 +6158,7 @@ uint32_t mg_coap_compose(struct mg_coap_message *cm, struct mbuf *io);
 
 #endif /* CS_MONGOOSE_SRC_COAP_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_sntp.h"
+#line 1 "mg_sntp.h"
 #endif
 
 #ifndef CS_MONGOOSE_SRC_SNTP_H_
@@ -6211,7 +6211,7 @@ struct mg_connection *mg_sntp_get_time(struct mg_mgr *mgr,
 
 #endif /* CS_MONGOOSE_SRC_SNTP_H_ */
 #ifdef MG_MODULE_LINES
-#line 1 "mongoose/src/mg_socks.h"
+#line 1 "mg_socks.h"
 #endif
 
 #ifndef CS_MONGOOSE_SRC_SOCKS_H_
