@@ -173,7 +173,7 @@ char *str_builder_dump(const str_builder_t *sb, size_t *len)
 }
 
 #define SB_MAX_FRAG_LENGTH		4096
-int	str_builder_appendf(const str_builder_t *sb, int max_length, const char *format, ...)
+int	str_builder_appendf(str_builder_t *sb, int max_length, const char *format, ...)
 {
     
     if(max_length<=0){
@@ -181,7 +181,7 @@ int	str_builder_appendf(const str_builder_t *sb, int max_length, const char *for
     }
     
 	int			rc = 0;
-	char		buf[max_length];
+	char	    buf[max_length];
 	va_list		args;
 
 	va_start (args, format);
@@ -195,4 +195,15 @@ int	str_builder_appendf(const str_builder_t *sb, int max_length, const char *for
 
     return 0;
 
+}
+
+char* new_string(char* content)
+{
+    size_t len = strlen(content);
+    char* str = malloc(len+1);
+    if(str){
+        memcpy(str, content, len);
+        *(str+len) = '\0';
+    }
+    return str;
 }

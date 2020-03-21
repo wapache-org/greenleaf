@@ -109,7 +109,10 @@ char *str_builder_dump(const str_builder_t *sb, size_t *len);
 
 
 
-int	str_builder_appendf(const str_builder_t *sb, int max_length, const char *format, ...);
+int	str_builder_appendf(str_builder_t *sb, int max_length, const char *format, ...);
+
+
+char* new_string(char* content);
 
 
 #endif /* __STR_BUILDER_H__ */

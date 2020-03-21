@@ -50,4 +50,4 @@ arraylist_del_idx(struct arraylist *arr, size_t idx, size_t count);
 }
 #endif
 
-#endif
+#endif // _ARRAY_LIST_H_
