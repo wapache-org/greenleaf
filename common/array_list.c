@@ -129,6 +129,26 @@ arraylist_length(struct arraylist *arr)
 }
 
 int
+arraylist_is_empty(struct arraylist *arr)
+{
+  return arr->length == 0 ? 1:0;
+}
+
+extern arraylist*
+arraylist_sublist(struct arraylist *al, size_t start, size_t end)
+{
+  arraylist* list = NULL;
+  for (size_t i = start; i < al->length && i < end; i++)
+  {
+    if(list==NULL){
+      list = arraylist_new(al->free_fn);
+    }
+    arraylist_add(list, arraylist_get_idx(al,i));
+  }
+  return list;
+}
+
+int
 arraylist_del_idx( struct arraylist *arr, size_t idx, size_t count )
 {
 	size_t i, stop;
@@ -136,9 +156,21 @@ arraylist_del_idx( struct arraylist *arr, size_t idx, size_t count )
 	stop = idx + count;
 	if ( idx >= arr->length || stop > arr->length ) return -1;
 	for ( i = idx; i < stop; ++i ) {
-		if ( arr->array[i] ) arr->free_fn( arr->array[i] );
+		if ( arr->array[i] && arr->free_fn) 
+      arr->free_fn( arr->array[i] );
 	}
 	memmove( arr->array + idx, arr->array + stop, (arr->length - stop) * sizeof(void*) );
 	arr->length -= count;
 	return 0;
+}
+
+extern void**
+arraylist_toarray(struct arraylist *al)
+{
+  return al->array;
+  // void** arr = calloc(al->length, sizeof(void*));
+  // for (size_t i = 0; i < al->length; ++i ) {
+  //   arr[i] = al->array[i];
+  // }
+  // return arr;
 }

@@ -36,6 +36,15 @@ arraylist_add(struct arraylist *al, void *data);
 extern size_t
 arraylist_length(struct arraylist *al);
 
+extern int
+arraylist_is_empty(struct arraylist *al);
+
+extern arraylist*
+arraylist_sublist(struct arraylist *al, size_t start, size_t end);
+
+extern void**
+arraylist_toarray(struct arraylist *al);
+
 extern void
 arraylist_sort(struct arraylist *arr, int(*compar)(const void *, const void *));
 
