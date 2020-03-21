@@ -424,129 +424,6 @@ void print_call_stack(void) {
 // #region implement area
 // ////////////////////////////////////////////////////////
 // #region options implement area
-struct main_options {
-
-  struct mg_mgr mg_manager;
-  struct mg_serve_http_opts mg_options;
-  char * mg_http_port;
-
-  struct mg_connection* mg_acceptor;
-  
-  char * sqlite_path;
-  void * sqlite_handle;
-
-  char * api_handle_file_path;
-  char * api_handle_function;
-
-  char * execute_script_path;
-
-  int signal;
-
-};
-
-static struct main_options s_options;
-
-static void parse_options(int argc, char* argv[])
-{
-  s_options.mg_http_port = "8000";
-  s_options.sqlite_path = "greenleaf.db";
-  s_options.api_handle_file_path = "qjs_modules/api_request_handler.js";
-  s_options.api_handle_function = "handle_api_request";
-
-  s_options.execute_script_path = NULL;
-
-  struct mg_serve_http_opts* opts = &s_options.mg_options;
-
-  // 先设置默认值
-  opts->document_root = "static";
-  opts->enable_directory_listing = "no";
-  opts->auth_domain = "localhost";
-  // opts->get_user_htpasswd_fn = get_user_htpasswd;
-
-  // 如果只有短选项, 用getopt就够了
-  // int code = getopt(argc, argv, short_opts);
-
-  // 解析长选项和短选项
-  int opt = 0;
-  while((opt=getopt_long(argc,argv,short_opts,long_options,NULL))!=-1){
-    switch (opt)
-    {
-    case 'h':
-      usage(argc, argv);
-      exit(EXIT_SUCCESS);
-      break;
-    case 'a':
-      opts->auth_domain = optarg;
-      break;
-    case 'd':
-      s_options.sqlite_path = optarg;
-      break;
-    case 'e':
-      s_options.execute_script_path = optarg;
-      break;
-    case 'r':
-      opts->document_root = optarg;
-      printf("document_root=%s\r\n", opts->document_root);
-      break;
-    case 'p':
-      s_options.mg_http_port = optarg;
-      break;
-    case 'q':
-      s_options.api_handle_file_path = optarg;
-      printf("api_handle_file_path=%s\r\n", s_options.api_handle_file_path);
-      break;
-    case 'l':
-      opts->enable_directory_listing = "yes";
-      break;
-    
-    default:
-      usage(argc, argv);
-      exit(EXIT_FAILURE);
-      break;
-    }
-  }
-
-  /* Open database */
-  // if ((s_options.sqlite_handle = db_open(s_db_path)) == NULL) {
-  //     fprintf(stderr, "Cannot open DB [%s]\n", s_db_path);
-  //     exit(EXIT_FAILURE);
-  // }
-
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-}
-
-static void signal_handler(int sig_num) 
-{
-    signal(sig_num, signal_handler);
-    s_options.signal = sig_num;
-}
-
-// #endregion options implement area
-// ////////////////////////////////////////////////////////
-// #region yaml implement area
-
-
-int yaml_print_version()
-{
-    int major = -1;
-    int minor = -1;
-    int patch = -1;
-    char buf[64];
-
-    yaml_get_version(&major, &minor, &patch);
-    sprintf(buf, "%d.%d.%d", major, minor, patch);
-    assert(strcmp(buf, yaml_get_version_string()) == 0);
-
-    printf("yaml version = %s\n", buf);
-
-    /* Print structure sizes. */
-    printf("sizeof(token) = %d\n", sizeof(yaml_token_t));
-    printf("sizeof(event) = %d\n", sizeof(yaml_event_t));
-    printf("sizeof(parser) = %d\n", sizeof(yaml_parser_t));
-
-    return 0;
-}
 
 struct greenpleaf_options
 {
@@ -562,11 +439,15 @@ struct greenpleaf_options
   struct 
   {
     int enabled;
-    char* path;
-    char* auto_domain;
+    arraylist* ducument_roots;
+    char*      bind_address;
+    arraylist* node_addresses;
+    char* api_prefix;
     char* api_router;
-    arraylist * address;
-    int enable_directory_listing;
+    char* api_handler;
+    char* auth_domain;
+    // {"yes", "no"}
+    char* enable_directory_listing;
   } admin;
   struct 
   {
@@ -576,12 +457,96 @@ struct greenpleaf_options
   arraylist * services;
 };
 
+struct main_options {
+
+  int signal;
+
+  char * conf_file_path;
+  char * execute_script_path;
+
+  struct greenpleaf_options gl_options;
+
+  struct mg_mgr mg_manager;
+  struct mg_connection * mg_acceptor;
+  struct mg_serve_http_opts mg_options;
+
+  void * sqlite_handle;
+
+};
+
+static struct main_options s_options;
+
+static void signal_handler(int sig_num) 
+{
+    signal(sig_num, signal_handler);
+    s_options.signal = sig_num;
+}
+
+static void parse_options(int argc, char* argv[])
+{
+
+  // 先设置默认值
+  s_options.conf_file_path = "conf/greenleaf.yml";
+  s_options.execute_script_path = NULL;
+
+  struct mg_serve_http_opts* opts = &s_options.mg_options;
+  opts->document_root = "static";
+  opts->enable_directory_listing = "no";
+  opts->auth_domain = "localhost";
+
+  struct greenpleaf_options* gl_opts = &s_options.gl_options;
+
+  // 如果只有短选项, 用getopt就够了
+  // int code = getopt(argc, argv, short_opts);
+
+  // 解析长选项和短选项
+  int opt = 0;
+  while((opt=getopt_long(argc,argv,short_opts,long_options,NULL))!=-1){
+    switch (opt)
+    {
+    case 'h':
+      usage(argc, argv);
+      exit(EXIT_SUCCESS);
+      break;
+    // case 'a':
+    //   opts->auth_domain = optarg;
+    //   break;
+    // case 'd':
+    //   s_options.sqlite_path = optarg;
+    //   break;
+    case 'c':
+      s_options.conf_file_path = optarg;
+      break;
+    case 'e':
+      s_options.execute_script_path = optarg;
+      break;
+    // case 'r':
+    //   opts->document_root = optarg;
+    //   printf("document_root=%s\r\n", opts->document_root);
+    //   break;
+    // case 'p':
+    //   s_options.mg_http_port = optarg;
+    //   break;
+    // case 'q':
+    //   s_options.api_handle_file_path = optarg;
+    //   printf("api_handle_file_path=%s\r\n", s_options.api_handle_file_path);
+    //   break;
+    // case 'l':
+    //   opts->enable_directory_listing = "yes";
+    //   break;
+    
+    default:
+      usage(argc, argv);
+      exit(EXIT_FAILURE);
+      break;
+    }
+  }
+}
+
 // TODO : yaml的api还不熟悉, 这个函数有内存泄漏, 逻辑也很混乱, 需要重写.
 // 考虑先转成json, 然后再转成结构体
-int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
+int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
 {
-  *opt = NULL;
-  
   int rc = 0;
 
   FILE *file;
@@ -607,97 +572,117 @@ int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
   /* START new code */
   do {
     if (!yaml_parser_parse(&parser, &event)) {
-       printf("Parser error %d\n", parser.error);
+       logger_fatal("load config file failed: Parser error %d", parser.error);
        return rc;
     }
 
     switch(event.type)
     { 
-    case YAML_NO_EVENT: puts("No event!"); break;
+    case YAML_NO_EVENT: 
+      logger_trace("No event!"); 
+    break;
     /* Stream start/end */
-    case YAML_STREAM_START_EVENT: puts("STREAM START"); break;
-    case YAML_STREAM_END_EVENT:   puts("STREAM END");   break;
+    case YAML_STREAM_START_EVENT: logger_trace("STREAM START"); break;
+    case YAML_STREAM_END_EVENT:   logger_trace("STREAM END");   break;
     /* Block delimeters */
     case YAML_DOCUMENT_START_EVENT: 
-      puts("<b>Start Document</b>"); 
+      logger_trace("<b>Start Document</b>"); 
     break;
-    case YAML_DOCUMENT_END_EVENT:   puts("<b>End Document</b>");   break;
+    case YAML_DOCUMENT_END_EVENT:   logger_trace("<b>End Document</b>");   break;
     case YAML_SEQUENCE_START_EVENT: 
       level++;
-      puts("<b>Start Sequence</b>"); 
-      if (level==3 && memcmp(level_2_key,"groups", strlen("groups"))==0)
+      logger_trace("Start Sequence, level=%d", level); 
+
+      list = NULL;
+      map = NULL;
+      if (level==3 && STR_IS_EQUALS(level_2_key,"groups"))
       {
-        list = (*opt)->groups = arraylist_new(NULL);
-      }else if (level==4 && memcmp(level_2_key,"admin", strlen("admin"))==0 && map_key!=NULL){
-        list = (*opt)->admin.address = arraylist_new(NULL);
+        list = opt->groups = arraylist_new(NULL);
+        logger_debug("map %s put %s list", level_1_key, level_2_key);
+      }else if (level==4 && STR_IS_EQUALS(level_2_key,"admin") && map_key!=NULL){
+        if(STR_IS_EQUALS(map_key,"ducument_roots")){
+          list = opt->admin.ducument_roots = arraylist_new(NULL);
+          logger_debug("map %s put %s list", level_2_key, map_key);
+        }else if(STR_IS_EQUALS(map_key,"node_addresses")){
+          list = opt->admin.node_addresses = arraylist_new(NULL);
+          logger_debug("map %s put %s list", level_2_key, map_key);
+        }
       }
     break;
     case YAML_SEQUENCE_END_EVENT:   
+      logger_trace("Start Sequence, level=%d", level); 
       level--;
-      puts("<b>End Sequence</b>");
       list = NULL;
+      map = NULL;
+      map_key=NULL;
     break;
     case YAML_MAPPING_START_EVENT:  
       level++;
+      logger_trace("Start Mapping, level=%d", level); 
+
+      list = NULL;
+      map = NULL;
       map_key=NULL;
-      puts("<b>Start Mapping</b>");    
       if (level==3){
-        if( memcmp(level_2_key,"config", strlen("config"))==0 ) {
-          map = (*opt)->config = hashmap_new();
+        if( STR_IS_EQUALS(level_2_key,"config") ) {
+          map = opt->config = hashmap_new();
         } else
-        if( memcmp(level_2_key,"storage", strlen("storage"))==0 ) {
-          map = (*opt)->storage = hashmap_new();
+        if( STR_IS_EQUALS(level_2_key,"storage") ) {
+          map = opt->storage = hashmap_new();
         } else
-        if( memcmp(level_2_key,"logger", strlen("logger"))==0 ) {
-          map = (*opt)->logger.loggers = hashmap_new();
+        if( STR_IS_EQUALS(level_2_key,"logger") ) {
+          map = opt->logger.loggers = hashmap_new();
         }
 
       }
 
     break;
     case YAML_MAPPING_END_EVENT:    
+      logger_trace("End Mapping, level=%d", level); 
       level--;
-      puts("<b>End Mapping</b>");    
+      list = NULL;
       map = NULL;
+      map_key=NULL;
     break;
     /* Data */
     case YAML_ALIAS_EVENT:  
-      printf("Got alias (anchor %s)\n", event.data.alias.anchor); 
+      logger_trace("Got alias (anchor %s)", event.data.alias.anchor); 
     break;
     case YAML_SCALAR_EVENT: 
       value = event.data.scalar.value;
-      printf("Got scalar (value %s)\n", value); 
+      logger_trace("Got scalar (value %s)", value); 
       switch(level){
       case 1:{
         level_1_key = new_string(value);
-        if(*opt==NULL && memcmp(level_1_key,"greenleaf", strlen("greenleaf"))==0){
-          *opt = calloc(1, sizeof(struct greenpleaf_options));
-          puts("====================>>>>>>>>>>>>Start greenleaf");  
-        }
+        logger_debug("level 1 %s", level_1_key);
+        // if(*opt==NULL && memcmp(level_1_key,"greenleaf", strlen("greenleaf"))==0){
+        //   *opt = calloc(1, sizeof(struct greenpleaf_options));
+        //   puts("====================>>>>>>>>>>>>Start greenleaf");  
+        // }
       }
       break;
       case 2:{
         level_2_key = new_string(value);
-        printf("====================>>>>>>>>>>>>level 2 %s\n", level_2_key);
+        logger_debug("level 2 %s", level_2_key);
       }
       break;
       case 3:{
         level_3_key = new_string(value);
         if(list!=NULL){
-          printf("====================>>>>>>>>>>>>list %s add %s\n", level_2_key, value);
+          logger_debug("list %s add %s", level_2_key, value);
           arraylist_add(list, new_string(value));
         } else if(map!=NULL){
           if(map_key==NULL){
             map_key = new_string(value);
           }else{
-            printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
+            logger_debug("map %s put %s, %s", level_2_key, map_key, value);
             
-            if( memcmp(level_2_key,"logger", strlen("logger"))==0 ) {
-              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
-                (*opt)->logger.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
+            if( STR_IS_EQUALS(level_2_key,"logger") ) {
+              if( STR_IS_EQUALS(map_key,"enabled") ) {
+                opt->logger.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
               }else
-              if( memcmp(map_key,"level", strlen("level"))==0 ) {
-                (*opt)->logger.level = new_string(value);
+              if( STR_IS_EQUALS(map_key,"level") ) {
+                opt->logger.level = new_string(value);
               }
             }
             
@@ -706,28 +691,46 @@ int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
             map_key = NULL;
           }
         }else{
-          // printf("====================>>>>>>>>>>>>level_2_key %s \n", level_2_key);
-          if( memcmp(level_2_key,"admin", strlen("admin"))==0 ) {
+          // logger_debug("level_2_key %s \n", level_2_key);
+          if( STR_IS_EQUALS(level_2_key,"admin") ) {
             if(map_key==NULL){
               map_key = new_string(value);
             }else{
-              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
-                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
-                (*opt)->admin.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
+              if( STR_IS_EQUALS(map_key,"enabled") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
+              }else if( STR_IS_EQUALS(map_key,"bind_address") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.bind_address = new_string(value);
+              }else if( STR_IS_EQUALS(map_key,"api_prefix") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.api_prefix = new_string(value);
+              }else if( STR_IS_EQUALS(map_key,"api_router") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.api_router = new_string(value);
+              }else if( STR_IS_EQUALS(map_key,"api_handler") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.api_handler = new_string(value);
+              }else if( STR_IS_EQUALS(map_key,"auth_domain") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.auth_domain = new_string(value);
+              }else if( STR_IS_EQUALS(map_key,"enable_directory_listing") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->admin.enable_directory_listing = STR_IS_EQUALS(value,"yes") ? "yes" : "no";
               }
               map_key = NULL;
             }
           }else 
-          if( memcmp(level_2_key,"crontab", strlen("crontab"))==0 ) {
+          if( STR_IS_EQUALS(level_2_key,"crontab") ) {
             if(map_key==NULL){
               map_key = new_string(value);
             }else{
-              if( memcmp(map_key,"enabled", strlen("enabled"))==0 ) {
-                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
-                (*opt)->crontab.enabled = memcmp(value,"true", strlen("true"))==0 ? 1 : 0;
-              } else if( memcmp(map_key,"path", strlen("path"))==0 ) {
-                printf("====================>>>>>>>>>>>>map %s put %s, %s\n", level_2_key, map_key, value);
-                (*opt)->crontab.path = new_string(value);
+              if( STR_IS_EQUALS(map_key,"enabled")) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->crontab.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
+              } else if( STR_IS_EQUALS(map_key,"path") ) {
+                logger_debug("map %s put %s, %s", level_2_key, map_key, value);
+                opt->crontab.path = new_string(value);
               }
               map_key = NULL;
             }
@@ -737,7 +740,7 @@ int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
       break;
       case 4:{
         if(list!=NULL){
-          printf("====================>>>>>>>>>>>>list %s add %s\n", level_3_key, value);
+          logger_debug("list %s add %s", level_3_key, value);
           arraylist_add(list, new_string(value));
         }
       }break;
@@ -757,11 +760,10 @@ int yaml_parse_file(const char* file_path, struct greenpleaf_options ** opt)
 
   assert(!fclose(file));
 
-  rc=1;
   return rc;
 }
 
-// #endregion yaml implement area
+// #endregion options implement area
 // ////////////////////////////////////////////////////////
 // #region main function implement area
 
@@ -814,39 +816,93 @@ free:
  */
 int main(int argc, char *argv[]) 
 {
-    struct greenpleaf_options * opt_yaml;
-    if(yaml_parse_file("conf/greenleaf.yml", &opt_yaml)){
-      exit(EXIT_FAILURE);
+
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+
+  logger_set_level(LOG_DEBUG);
+
+  // 解析命令行参数
+  parse_options(argc,argv);
+
+  struct mg_serve_http_opts* mg_opts = &s_options.mg_options;
+  struct greenpleaf_options* gl_opts = &s_options.gl_options;
+
+  // 如果是执行脚本, 执行并退出
+  if (s_options.execute_script_path!=NULL) {
+    exit(js_execute_script(s_options.execute_script_path));
+  }
+
+  // 加载配置文件
+  if(gl_load_conf(s_options.conf_file_path, gl_opts)){
+    exit(EXIT_FAILURE);
+  }
+
+  // 设置日志
+  if(s_options.gl_options.logger.enabled){
+    if(STR_IS_EQUALS( s_options.gl_options.logger.level, "trace")){
+      logger_set_level(LOG_TRACE);
+    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "debug")){
+      logger_set_level(LOG_DEBUG);
+    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "info")){
+      logger_set_level(LOG_INFO);
+    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "warn")){
+      logger_set_level(LOG_WARN);
+    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "error")){
+      logger_set_level(LOG_ERROR);
+    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "fatal")){
+      logger_set_level(LOG_FATAL);
     }
+  }else{
+    logger_set_level(LOG_NONE);
+  }
 
-    // 解析命令行参数
-    parse_options(argc,argv);
+  /* Open database */
+  // if ((s_options.sqlite_handle = db_open(s_db_path)) == NULL) {
+  //     fprintf(stderr, "Cannot open DB [%s]\n", s_db_path);
+  //     exit(EXIT_FAILURE);
+  // }
 
-    // 如果是执行脚本, 执行并退出
-    if (s_options.execute_script_path!=NULL)
-      return js_execute_script(s_options.execute_script_path);
+  // 启动定时任务, 如果不运行管理服务, 则在主线程运行, 否则新开一个线程执行
+  if(gl_opts->crontab.enabled){
+    if(gl_opts->admin.enabled){
+      mg_start_thread(crontab_thread_proc, NULL);
+    }else{
+      crontab_thread_proc(NULL);
+      exit(EXIT_SUCCESS);
+    }
+  }
+
+  // 启动管理服务
+  if(gl_opts->admin.enabled) {
 
     // 初始化 mongoose web server
     mg_mgr_init(&s_options.mg_manager, NULL);
-    s_options.mg_acceptor = mg_bind(&s_options.mg_manager, s_options.mg_http_port, event_handler);
+    s_options.mg_acceptor = mg_bind(&s_options.mg_manager, gl_opts->admin.bind_address, event_handler);
     // {
       mg_set_protocol_http_websocket(s_options.mg_acceptor);
       mg_set_timer(s_options.mg_acceptor, mg_time() + SESSION_CHECK_INTERVAL);
-
+      // TODO: when auth method support cookie
       mg_register_http_endpoint(s_options.mg_acceptor, s_login_url, login_handler);
       mg_register_http_endpoint(s_options.mg_acceptor, s_logout_url, logout_handler);
     // }
     
+
+    mg_opts->enable_directory_listing = gl_opts->admin.enable_directory_listing;
+    if( ! arraylist_is_empty(gl_opts->admin.ducument_roots)){
+      mg_opts->document_root = arraylist_get_idx(gl_opts->admin.ducument_roots, 0);
+      arraylist_del_idx(gl_opts->admin.ducument_roots,0,1);
+      mg_opts->document_roots = (const char**)arraylist_toarray(gl_opts->admin.ducument_roots);
+    }
+    mg_opts->auth_domain = gl_opts->admin.auth_domain;
+
     // 初始化libssh运行环境
     ssh_init();
 
     // 初始化quickjs运行环境
     qjs_runtime_init();
 
-
-    mg_start_thread(crontab_thread_proc, NULL);
-    
-    printf("Starting server on port %s\r\n", s_options.mg_http_port);
+    printf("Starting server on %s\r\n", gl_opts->admin.bind_address);
 
     /* 进入主事件循环, Run event loop until signal is received */
     while (s_options.signal == 0) {
@@ -860,15 +916,17 @@ int main(int argc, char *argv[])
     /* Cleanup */
     mg_mgr_free(&s_options.mg_manager);
 
-    // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
-
     // 释放quickjs运行环境资源
     qjs_runtime_free();
 
     // 释放libssh运行环境资源
     ssh_finalize();
 
-    return 0;
+    // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
+
+  }
+
+  return 0;
 }
 
 // #endregion postgres declare area
@@ -1264,7 +1322,7 @@ static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc,
     // handle request
     {
         JSValue grobal = JS_GetGlobalObject(context);
-        JSAtom fn_name = JS_NewAtom(context, s_options.api_handle_function);
+        JSAtom fn_name = JS_NewAtom(context, s_options.gl_options.admin.api_handler);
         JSValue argv2[] = { request, response };
 
         JSValue rs = JS_Invoke(context, grobal, fn_name, 2, argv2);
@@ -1639,9 +1697,11 @@ static JSContext* qjs_context_init(JSRuntime* runtime)
   js_init_module_os(context, "os");
 
   /* make 'std' and 'os' visible to non module code */
+  const char* fn = s_options.gl_options.admin.api_handler;
+  const char* path = s_options.gl_options.admin.api_router;
   const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
-  char *str3 = (char *) malloc(strlen(str2)-8 + strlen(s_options.api_handle_file_path)+ (strlen(s_options.api_handle_function)*4 ));
-  sprintf(str3, str2, s_options.api_handle_function, s_options.api_handle_file_path, s_options.api_handle_function, s_options.api_handle_function);
+  char *str3 = (char *) malloc(strlen(str2)-8 + strlen(path)+ (strlen(fn)*4 ));
+  sprintf(str3, str2, fn, path, fn, fn);
   eval_buf(context, str3, strlen(str3), "<input>", JS_EVAL_TYPE_MODULE);
   free(str3);
 

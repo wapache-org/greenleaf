@@ -1,7 +1,7 @@
 greenleaf:
   # 组播地址, 支持加入多个组
-  groups:
-    - "udp://ip[:port]" # 一个都不配置, 证明是单机
+  # groups:
+  #   - "udp://ip[:port]" # 格式: udp://ip[:port], 一个都不配置, 证明是单机
   # 配置
   config:
     path: "conf"
@@ -14,17 +14,39 @@ greenleaf:
   # 日志
   logger:
     enabled: true
-    level: debug
+    level: debug # trace,debug,info,warn,error,fatal
+  # 模板
+  # template:
+  #   path: "templates"
+  # QuickJS脚本引擎
+  # quickjs:
+  #   path: "quickjs_modules"
+  
   # 管理
   admin:
-    enabled: false
-    address: 
-      - "http://ip[:port][/context]" # 第一个是自己, 如果只有一个地址, 证明是单机
-      - "http://ip[:port][/context]" # 第二个, 如果多于一个地址, 证明是集群, 最少需要配置3个地址
-      - "http://ip[:port][/context]" # 第三个
+    enabled: true
+    ducument_roots: 
+      - "static"
+      - "/home/wapache/layui/admin"
+    bind_address: ":8000" # 格式: [PROTO://][IP_ADDRESS]:PORT, 其中 PROTO取值范围: tcp/udp
+    node_addresses: # 高可用集群节点列表
+      # - "http://ip[:port][/context]" # 第一个, 如果只有一个地址, 证明是单机
+      # - "http://ip[:port][/context]" # 第二个, 如果多于一个地址, 证明是集群, 最少需要配置3个地址
+      # - "http://ip[:port][/context]" # 第三个, 建议最多指定3个或者5个
+    api_prefix: "/api/"
+    api_router: "quickjs_modules/api_request_handler.js"
+    api_handler: "handle_api_request"
+    enable_directory_listing: "no" # yes/no
+    # auth_methods:
+    #   - cookie
+    #   - basic
+    #   - digest
+    auth_domain: "greenleaf"
+    # web_ssh:
+    #   enabled: false
   # 定时任务
   crontab:
     enabled: false
-    path: "crontab.json"
+    path: "conf/crontab.json"
   # 其他服务列表
   # services:
