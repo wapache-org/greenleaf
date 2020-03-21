@@ -191,9 +191,9 @@ endif()
 
 # Once we've done basic symbol/header searches let's add them in.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in        ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
-message(STATUS "Written ${CMAKE_CURRENT_BINARY_DIR}/config.h")
+message(STATUS "Written ${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/json_config.h.in   ${CMAKE_CURRENT_SOURCE_DIR}/json_config.h)
-message(STATUS "Written ${CMAKE_CURRENT_BINARY_DIR}/json_config.h")
+message(STATUS "Written ${CMAKE_CURRENT_SOURCE_DIR}/json_config.h")
 
 if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_C_FLAGS           "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
