@@ -12,7 +12,7 @@
 
 typedef void (*logger_lock_func)(void *udata, int lock);
 
-enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
+enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL, LOG_NONE };
 
 #define logger_trace(...) logger_log(LOG_TRACE, __FILE__, __LINE__, __VA_ARGS__)
 #define logger_debug(...) logger_log(LOG_DEBUG, __FILE__, __LINE__, __VA_ARGS__)
