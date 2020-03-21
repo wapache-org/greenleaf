@@ -6,6 +6,8 @@ set(ssh_SRCS
   connect_ssh.c
 )
 
+add_library(ssh_common ${ssh_SRCS})
+
 add_executable(ssh-client ssh_client.c ${ssh_SRCS})
 target_compile_options(ssh-client PRIVATE ${DEFAULT_C_COMPILE_FLAGS})
 target_link_libraries(ssh-client ssh)
