@@ -8,7 +8,7 @@ set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
-add_definitions(-DMG_ENABLE_DNS_SERVER)
+add_definitions(-DMG_ENABLE_DNS_SERVER -DMG_ENABLE_THREADS -DMG_ENABLE_HTTP_STREAMING_MULTIPART)
 
 add_compile_options(-Wl,-E)
 
@@ -52,13 +52,6 @@ add_subdirectory(examples)
 # link_libraries(mongoose lua quickjs pq sqlite m dl readline)
 
 # add target
-set(ssh_SRCS1
-  ssh/authentication.c
-  ssh/knownhosts.c
-  ssh/connect_ssh.c
-)
-
-
 add_executable(greenleaf main.c)
 # add_dependencies(greenleaf copy_files)
 target_link_libraries(greenleaf 

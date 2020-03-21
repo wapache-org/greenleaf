@@ -165,6 +165,28 @@ void check_sessions(void);
 // ////////////////////////////////////////////////////////
 // #region mongoose-security declare area
 
+// input username and auth_domain , output ha1
+// return 1: found, 0 not found
+typedef int (*mg_auth_get_user_htpasswd_fn)(struct mg_str username, struct mg_str auth_domain, char* out_ha1);
+
+int mg_http_custom_is_authorized(struct http_message *hm, const char *domain, 
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn);
+
+int mg_http_custom_check_digest_auth(
+  struct http_message *hm, 
+  const char *auth_domain,
+  mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+);
+
+int mg_custom_check_digest_auth(
+    struct mg_str method, struct mg_str uri,
+    struct mg_str username, struct mg_str cnonce,
+    struct mg_str response, struct mg_str qop,
+    struct mg_str nc, struct mg_str nonce,
+    struct mg_str auth_domain, 
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+);
+
 static const char *s_login_url = "/api/user/login.json";
 static const char *s_logout_url = "/api/user/logout.json";
 static const char *s_login_user = "username";
@@ -439,7 +461,7 @@ static void parse_options(int argc, char* argv[])
   opts->document_root = "static";
   opts->enable_directory_listing = "no";
   opts->auth_domain = "localhost";
-  opts->get_user_htpasswd_fn = get_user_htpasswd;
+  // opts->get_user_htpasswd_fn = get_user_htpasswd;
 
   // 如果只有短选项, 用getopt就够了
   // int code = getopt(argc, argv, short_opts);
@@ -540,7 +562,11 @@ struct greenpleaf_options
   struct 
   {
     int enabled;
+    char* path;
+    char* auto_domain;
+    char* api_router;
     arraylist * address;
+    int enable_directory_listing;
   } admin;
   struct 
   {
@@ -1012,7 +1038,7 @@ static int check_authentication(struct mg_connection *nc, struct http_message *h
     if(mg_http_custom_is_authorized(
         hm, 
         s_options.mg_options.auth_domain, 
-        s_options.mg_options.get_user_htpasswd_fn
+        get_user_htpasswd
     )){
       rc = 1;
     }else{
@@ -1306,6 +1332,91 @@ static int mg_str_is_equal(const struct mg_str *s1, const struct mg_str *s2) {
 // #endregion API implement area
 // ////////////////////////////////////////////////////////
 // #region mongoose-security implement area
+
+
+int mg_http_custom_check_digest_auth(struct http_message *hm, const char *auth_domain,
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+) {
+  int ret = 0;
+  struct mg_str *hdr;
+  char username_buf[50], cnonce_buf[64], response_buf[40], uri_buf[200],
+      qop_buf[20], nc_buf[20], nonce_buf[16];
+
+  char *username = username_buf, *cnonce = cnonce_buf, *response = response_buf,
+       *uri = uri_buf, *qop = qop_buf, *nc = nc_buf, *nonce = nonce_buf;
+
+  /* Parse "Authorization:" header, fail fast on parse error */
+  if (hm == NULL || mg_auth_get_user_htpasswd == NULL ||
+      (hdr = mg_get_http_header(hm, "Authorization")) == NULL ||
+      mg_http_parse_header2(hdr, "username", &username, sizeof(username_buf)) ==
+          0 ||
+      mg_http_parse_header2(hdr, "cnonce", &cnonce, sizeof(cnonce_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "response", &response, sizeof(response_buf)) ==
+          0 ||
+      mg_http_parse_header2(hdr, "uri", &uri, sizeof(uri_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "qop", &qop, sizeof(qop_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "nc", &nc, sizeof(nc_buf)) == 0 ||
+      mg_http_parse_header2(hdr, "nonce", &nonce, sizeof(nonce_buf)) == 0 ||
+      mg_check_nonce(nonce) == 0) {
+    ret = 0;
+    goto clean;
+  }
+
+  /* NOTE(lsm): due to a bug in MSIE, we do not compare URIs */
+
+  ret = mg_custom_check_digest_auth(
+      hm->method,
+      mg_mk_str_n(
+          hm->uri.p,
+          hm->uri.len + (hm->query_string.len ? hm->query_string.len + 1 : 0)),
+      mg_mk_str(username), mg_mk_str(cnonce), mg_mk_str(response),
+      mg_mk_str(qop), mg_mk_str(nc), mg_mk_str(nonce), mg_mk_str(auth_domain),
+      mg_auth_get_user_htpasswd);
+
+clean:
+  if (username != username_buf) free(username);
+  if (cnonce != cnonce_buf) free(cnonce);
+  if (response != response_buf) free(response);
+  if (uri != uri_buf) free(uri);
+  if (qop != qop_buf) free(qop);
+  if (nc != nc_buf) free(nc);
+  if (nonce != nonce_buf) free(nonce);
+
+  return ret;
+}
+
+int mg_custom_check_digest_auth(
+    struct mg_str method, struct mg_str uri,
+    struct mg_str username, struct mg_str cnonce,
+    struct mg_str response, struct mg_str qop,
+    struct mg_str nc, struct mg_str nonce,
+    struct mg_str auth_domain, 
+    mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
+) {
+  char f_ha1[128];
+  char exp_resp[33];
+
+  if (mg_auth_get_user_htpasswd(username, auth_domain, f_ha1)) {
+      /* Username and domain matched, check the password */
+      mg_mkmd5resp(method.p, method.len, uri.p, uri.len, f_ha1, strlen(f_ha1),
+                   nonce.p, nonce.len, nc.p, nc.len, cnonce.p, cnonce.len,
+                   qop.p, qop.len, exp_resp);
+      logger_debug("%.*s %s %.*s %s", (int) username.len, username.p,
+                     auth_domain, (int) response.len, response.p, exp_resp);
+      return mg_ncasecmp(response.p, exp_resp, strlen(exp_resp)) == 0;
+  }
+
+  /* None of the entries matched - return failure */
+  return 0;
+}
+int mg_http_custom_is_authorized(
+  struct http_message *hm, const char *domain, 
+  mg_auth_get_user_htpasswd_fn get_user_htpasswd_fn
+){
+  return mg_http_custom_check_digest_auth(hm, domain, get_user_htpasswd_fn);
+}
+
+
 
 static int send_cookie_auth_request(struct mg_connection *nc, char* message)
 {
