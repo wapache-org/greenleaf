@@ -8028,6 +8028,10 @@ MG_INTERNAL int mg_check_local_path(struct http_message *hm,
           break;
         }
       }
+      if(!exists){
+        ok=0;
+        break;
+      }
       if (u >= cp_end) break;
       parse_uri_component((const char **) &next, cp_end, "/", &component);
       if (component.len > 0) {
