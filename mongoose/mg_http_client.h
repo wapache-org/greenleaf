@@ -49,6 +49,12 @@ struct mg_connection *mg_connect_http_opt(
     struct mg_mgr *mgr, MG_CB(mg_event_handler_t ev_handler, void *user_data),
     struct mg_connect_opts opts, const char *url, const char *extra_headers,
     const char *post_data);
+    
+void mg_mkmd5resp(const char *method, size_t method_len, const char *uri,
+                         size_t uri_len, const char *ha1, size_t ha1_len,
+                         const char *nonce, size_t nonce_len, const char *nc,
+                         size_t nc_len, const char *cnonce, size_t cnonce_len,
+                         const char *qop, size_t qop_len, char *resp);
 
 /* Creates digest authentication header for a client request. */
 int mg_http_create_digest_auth_header(char *buf, size_t buf_len,

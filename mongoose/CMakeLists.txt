@@ -47,7 +47,7 @@
 # 设置预处理选项
 # add_definitions(-DMG_DISABLE_MQTT -DMG_DISABLE_COAP)
 
-add_definitions(-DMG_ENABLE_DNS_SERVER)
+add_definitions(-DMG_ENABLE_DNS_SERVER -DMG_ENABLE_THREADS -DMG_ENABLE_HTTP_STREAMING_MULTIPART)
 
 
 # 设置目标编译选项
@@ -55,6 +55,4 @@ add_definitions(-DMG_ENABLE_DNS_SERVER)
 # target_compile_definitions(mongoose XXX)
 # set(CMAKE_C_FLAGS "-std=c11 ${CMAKE_CXX_FLAGS}")
 
-
-aux_source_directory(. DIR_MONGOOSE_SRCS)
-add_library(mongoose ${DIR_MONGOOSE_SRCS})
+add_library(mongoose mongoose.c)

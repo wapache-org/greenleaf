@@ -433,6 +433,14 @@ void mg_register_http_endpoint_opt(struct mg_connection *nc,
                                    struct mg_http_endpoint_opts opts);
 
 /*
+ * Check for authentication timeout.
+ * Clients send time stamp encoded in nonce. Make sure it is not too old,
+ * to prevent replay attacks.
+ * Assumption: nonce is a hexadecimal number of seconds since 1970.
+ */
+int mg_check_nonce(const char *nonce) ;
+
+/*
  * Authenticates a HTTP request against an opened password file.
  * Returns 1 if authenticated, 0 otherwise.
  */

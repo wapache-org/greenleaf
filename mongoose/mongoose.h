@@ -1,22 +1,3 @@
-/*
- * Copyright (c) 2004-2013 Sergey Lyubka
- * Copyright (c) 2013-2020 Cesanta Software Limited
- * All rights reserved
- *
- * This software is dual-licensed: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. For the terms of this
- * license, see <http://www.gnu.org/licenses/>.
- *
- * You are free to use this software under the terms of the GNU General
- * Public License, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * Alternatively, you can license this software under a commercial
- * license, as set out in <https://www.cesanta.com/license>.
- */
-
 #ifdef MG_MODULE_LINES
 #line 1 "mg_common.h"
 #endif
@@ -5171,6 +5152,14 @@ void mg_register_http_endpoint_opt(struct mg_connection *nc,
                                    struct mg_http_endpoint_opts opts);
 
 /*
+ * Check for authentication timeout.
+ * Clients send time stamp encoded in nonce. Make sure it is not too old,
+ * to prevent replay attacks.
+ * Assumption: nonce is a hexadecimal number of seconds since 1970.
+ */
+int mg_check_nonce(const char *nonce) ;
+
+/*
  * Authenticates a HTTP request against an opened password file.
  * Returns 1 if authenticated, 0 otherwise.
  */
@@ -5351,6 +5340,12 @@ struct mg_connection *mg_connect_http_opt(
     struct mg_mgr *mgr, MG_CB(mg_event_handler_t ev_handler, void *user_data),
     struct mg_connect_opts opts, const char *url, const char *extra_headers,
     const char *post_data);
+    
+void mg_mkmd5resp(const char *method, size_t method_len, const char *uri,
+                         size_t uri_len, const char *ha1, size_t ha1_len,
+                         const char *nonce, size_t nonce_len, const char *nc,
+                         size_t nc_len, const char *cnonce, size_t cnonce_len,
+                         const char *qop, size_t qop_len, char *resp);
 
 /* Creates digest authentication header for a client request. */
 int mg_http_create_digest_auth_header(char *buf, size_t buf_len,

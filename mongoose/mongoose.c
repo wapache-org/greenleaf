@@ -7491,7 +7491,7 @@ void cs_md5(char buf[33], ...) {
   cs_to_hex(buf, hash, sizeof(hash));
 }
 
-static void mg_mkmd5resp(const char *method, size_t method_len, const char *uri,
+void mg_mkmd5resp(const char *method, size_t method_len, const char *uri,
                          size_t uri_len, const char *ha1, size_t ha1_len,
                          const char *nonce, size_t nonce_len, const char *nc,
                          size_t nc_len, const char *cnonce, size_t cnonce_len,
@@ -7533,7 +7533,7 @@ int mg_http_create_digest_auth_header(char *buf, size_t buf_len,
  * to prevent replay attacks.
  * Assumption: nonce is a hexadecimal number of seconds since 1970.
  */
-static int mg_check_nonce(const char *nonce) {
+int mg_check_nonce(const char *nonce) {
   unsigned long now = (unsigned long) mg_time();
   unsigned long val = (unsigned long) strtoul(nonce, NULL, 16);
   return (now >= val) && (now - val < 60 * 60);
