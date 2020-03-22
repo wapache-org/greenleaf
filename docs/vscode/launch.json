@@ -5,11 +5,54 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "mongoose_lua(gdb)",
+            "name": "main(gdb)",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/mongoose_lua",
-            "args": ["../templates/template.mtc","../templates/template.json"],
+            "program": "${workspaceFolder}/build/greenleaf",
+            "args": [
+                //"-f", "conf/greenleaf.yml"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                // {"text": "-gdb-set follow-fork-mode child"},
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "webssh(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/greenleaf",
+            "args": [
+                "-q","quickjs_modules/api_request_handler.js"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "restful_server(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/restful_server",
+            "args": ["-d","../static/restful"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
             "environment": [],
@@ -17,7 +60,66 @@
             "MIMode": "gdb",
             "setupCommands": [
                 {
-                    "description": "",
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "api_server(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/api_server",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "layuiadmin(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/mongoose_lua",
+            "args": [
+                "-r","/home/wapache/layui/admin"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "web_server_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/web_server_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
@@ -36,11 +138,322 @@
             "MIMode": "gdb",
             "setupCommands": [
                 {
-                    "description": "",
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "websocket_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/websocket_example",
+            "args": ["../static/websocket"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "sqlite_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/sqlite_example",
+            "args": ["sqlite_example.db","key1","value1"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "api_server_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/api_server_example",
+            "args": ["-r","../../static/api_server", "-f","api_server_example.db"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "auth_cookie_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/auth_cookie_example",
+            "args": ["../../shtml"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "v7js_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/v7js_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_example",
+            "args": ["../../v7js/template_engine.js"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "postgres_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/postgres_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_postgres_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_postgres_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },{
+            "name": "qjs_mongoose_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/qjs_mongoose_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "ssh_client(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ssh/ssh-client",
+            "args": ["root@10.150.10.111"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "cron_expr(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/cronexpr_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "crontab(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/crontab_example",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "udp_multicast_example(gdb)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/examples/udp_multicast_example",
+            "args": ["-c","vscode_debug"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/examples",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "为 gdb 启用整齐打印",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
             ]
         }
+        
     ]
 }
