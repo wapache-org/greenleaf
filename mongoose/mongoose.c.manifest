@@ -1,7 +1,6 @@
 mg_internal.h
 common/mg_mem.h
 common/cs_base64.c
-common/cs_dbg.h
 common/cs_dbg.c
 common/cs_dirent.h
 common/cs_dirent.c

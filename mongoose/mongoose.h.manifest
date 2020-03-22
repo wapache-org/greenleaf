@@ -26,6 +26,7 @@ common/cs_time.h
 common/mg_str.h
 common/mbuf.h
 common/cs_base64.h
+common/cs_dbg.h
 common/str_util.h
 common/queue.h
 mg_features.h
