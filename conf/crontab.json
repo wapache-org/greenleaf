@@ -2,6 +2,7 @@
 
 {
     "name":"heartbeat",
+    "description":"",
     "action":"heartbeat",
     "payload":"",
     "cron_expr":"0/3 * * * * *"

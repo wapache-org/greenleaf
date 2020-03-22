@@ -1,7 +1,4 @@
 greenleaf:
-  # 组播地址, 支持加入多个组
-  # groups:
-  #   - "udp://ip[:port]" # 格式: udp://ip[:port], 一个都不配置, 证明是单机
   # 配置
   config:
     path: "conf"
@@ -21,10 +18,13 @@ greenleaf:
   # QuickJS脚本引擎
   # quickjs:
   #   path: "quickjs_modules"
-  
-  # 管理
+  # 定时任务
+  crontab:
+    enabled: false
+    path: "conf/crontab.json"
+  # 管理接口
   admin:
-    enabled: true
+    enabled: false
     ducument_roots: 
       - "static"
       - "/home/wapache/layui/admin"
@@ -44,9 +44,18 @@ greenleaf:
     auth_domain: "greenleaf"
     # web_ssh:
     #   enabled: false
-  # 定时任务
-  crontab:
-    enabled: false
-    path: "conf/crontab.json"
+  # 点对点通信地址, 研究下看看能不能重用groups里的配置
+  # point:
+  #   ip: "" # 格式: IP, 空字符串表示使用 INADDR_ANY
+  #   port: "2391" # 
+  # 组播地址, 支持加入多个组, 最多8个
+  groups: # 一个都不配置, 证明是单机, 多个组一般用于有多个网卡, 处于不同局域网的情况
+    - enabled: true
+      name: "default" 
+      local: "INADDR_ANY" # 格式: IP, 空字符串表示使用 INADDR_ANY
+      group: "239.0.0.1" # 格式: IP
+      port: "2391" # 
+      heartbeat: 5 # 心跳周期, 单位秒, 取值范围:[1,60]
+
   # 其他服务列表
   # services:
