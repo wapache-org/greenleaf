@@ -13,6 +13,8 @@
 
 #include <assert.h>
 
+#include <sys/prctl.h>
+
 // header for postgresql
 #include "libpq-fe.h"
 
@@ -44,39 +46,32 @@
 
 // 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
 // 建议按字母顺序编写
-static char* short_opts = "a:d:e:hlp:q:r:";
+static char* short_opts = "c:e:f:h";
 // 长选项字符串, 
 // {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
 // 建议按长选项字母顺序编写
 static const struct option long_options[] = {
-		{"auth-domain",1,NULL,'a'},
-		{"database",1,NULL,'d'},
-		{"enable-directory-listing",0,NULL,'l'},
+		{"crontab",1,NULL,'c'},
 		{"execute",1,NULL,'e'},
-		{"help",0,NULL,'h'},
-		{"port",1,NULL,'p'},
-		{"root",1,NULL,'r'},
-		{"qjs-api-router",1,NULL,'q'}
+		{"file"   ,1,NULL,'f'},
+		{"help"   ,0,NULL,'h'}
 };
 // 打印选项说明
 static void usage(int argc, char* argv[])
 {
   printf("Usages: \n");
+  printf("    %s -c conf/crontab.json\n", argv[0]);
   printf("    %s -e qjs-modules/hello.js\n", argv[0]);
-  printf("    %s -p 8080 -r static\n", argv[0]);
+  printf("    %s -f conf/%s.yml\n", argv[0], argv[0]);
   printf("Options:\n");
-  printf("    [-%s, --%s]     %s\n", "h","help","print this message");
-  printf("    [-%s, --%s]     %s\n", "a","auth-domain","the domain parameter of http digest");
-  printf("    [-%s, --%s]     %s\n", "d","database","the database file path");
+  printf("    [-%s, --%s]     %s\n", "c","crontab","the contab json file, e.g. conf/crontab.json");
   printf("    [-%s, --%s]     %s\n", "e","execute","execute script");
-  printf("    [-%s, --%s]     %s\n", "p","poot","web server bingding port, default is 8000.");
-  printf("    [-%s, --%s]     %s\n", "q","qjs-api-router","web server api request route file, default is `qjs_modules/api_request_handler.js`.");
-  printf("    [-%s, --%s]     %s\n", "r","root","web server root directory, default is `static`.");
-  printf("    [-%s, --%s]     %s\n", "l","enable-directory-listing","if cannot find index file, list directory files, default is no.");
+  printf("    [-%s, --%s]     %s\n", "f","file"   ,"the config file, default is conf/greenleaf.yml");
+  printf("    [-%s, --%s]     %s\n", "h","help"   ,"print this message");
 }
 
 // 解析选项
-static void parse_options(int argc, char* argv[]);
+static void parse_cmd_options(int argc, char* argv[]);
 
 // 
 static void signal_handler(int sig_num);
@@ -89,7 +84,7 @@ static const struct mg_str s_get_method = MG_MK_STR("GET");
 static const struct mg_str s_put_method = MG_MK_STR("PUT");
 static const struct mg_str s_delele_method = MG_MK_STR("DELETE");
 
-static void event_handler(struct mg_connection *nc, int ev, void *ev_data);
+static void admin_event_handler(struct mg_connection *nc, int ev, void *ev_data);
 
 static int mg_str_has_prefix(const struct mg_str *uri, const struct mg_str *prefix);
 static int mg_str_is_equal(const struct mg_str *s1, const struct mg_str *s2);
@@ -378,9 +373,6 @@ static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 // ////////////////////////////////////////////////////////
 // #region sqlite declare area
 
-static void *s_db_handle = NULL;
-static const char *s_db_path = "sqlite.db";
-
 // #endregion sqlite declare area
 // ////////////////////////////////////////////////////////
 // #region postgres declare area
@@ -417,6 +409,15 @@ void print_call_stack(void) {
 // #endregion debug area
 // ////////////////////////////////////////////////////////
 // #region misc declare area
+
+// 心跳内容
+static char* heartbeat_content = "heartbeat.";
+
+// 事件处理器
+static void multicast_event_handler(struct mg_connection *nc, int ev, void *p);
+
+void * crontab_thread_proc(void *param);
+
 // #endregion misc declare area
 // ////////////////////////////////////////////////////////
 // #endregion declare area
@@ -425,17 +426,25 @@ void print_call_stack(void) {
 // ////////////////////////////////////////////////////////
 // #region options implement area
 
-struct greenpleaf_options
+// 配置文件的配置项
+struct conf_file_options
 {
-  arraylist * groups;
   map_t* config;
   map_t* storage;
+
   struct 
   {
     int enabled;
     char* level;
     map_t* loggers;
   } logger;
+
+  struct 
+  {
+    int enabled;
+    char* path;
+  } crontab;
+
   struct 
   {
     int enabled;
@@ -449,52 +458,93 @@ struct greenpleaf_options
     // {"yes", "no"}
     char* enable_directory_listing;
   } admin;
-  struct 
-  {
+
+  int group_count;
+  struct group_conf {
     int enabled;
-    char* path;
-  } crontab;
+    char* name; 
+
+    char* local; // 格式: IP, 空字符串表示使用 INADDR_ANY
+
+    char* group; // multicast group 地址, 格式: IP
+    int port;  // multicast group 端口 
+
+    int heartbeat; // 心跳周期, 单位秒, 取值范围:[1,60]
+  } groups[8]; // struct multicast_group
+
   arraylist * services;
+
 };
 
-struct main_options {
+// 对应greenpleaf配置文件中的groups配置项
+struct multicast_context
+{
+    int enabled;
+    char* name; 
+    int heartbeat;
+
+  // 组播"连接"
+  struct mg_connection *sender;
+  struct mg_connection *receiver;
+
+  char* status;
+};
+
+// 管理服务
+struct admin_context
+{
+
+  struct mg_connection * mg_acceptor;
+  struct mg_serve_http_opts mg_options;
+
+};
+
+// 命令行上下文
+struct cmd_context {
+
+  char * execute_script_path;
+
+  char * crontab_file_path;
+  crontab* crontab;
+
+  char * conf_file_path;
+  struct conf_file_options conf_file_options;
 
   int signal;
 
-  char * conf_file_path;
-  char * execute_script_path;
+  struct mg_mgr event_loop_manager;
 
-  struct greenpleaf_options gl_options;
+  struct admin_context admin_context;
 
-  struct mg_mgr mg_manager;
-  struct mg_connection * mg_acceptor;
-  struct mg_serve_http_opts mg_options;
+  int group_count;
+  struct multicast_context* multicast_contexts[32];
 
   void * sqlite_handle;
 
 };
 
-static struct main_options s_options;
+// 命令行上下文全局变量
+static struct cmd_context s_context;
 
 static void signal_handler(int sig_num) 
 {
     signal(sig_num, signal_handler);
-    s_options.signal = sig_num;
+    s_context.signal = sig_num;
 }
 
-static void parse_options(int argc, char* argv[])
+static void parse_cmd_options(int argc, char* argv[])
 {
-
   // 先设置默认值
-  s_options.conf_file_path = "conf/greenleaf.yml";
-  s_options.execute_script_path = NULL;
 
-  struct mg_serve_http_opts* opts = &s_options.mg_options;
+  s_context.execute_script_path = NULL;
+
+  s_context.conf_file_path = "conf/greenleaf.yml";
+  struct conf_file_options* conf = &s_context.conf_file_options;
+
+  struct mg_serve_http_opts* opts = &s_context.admin_context.mg_options;
   opts->document_root = "static";
   opts->enable_directory_listing = "no";
   opts->auth_domain = "localhost";
-
-  struct greenpleaf_options* gl_opts = &s_options.gl_options;
 
   // 如果只有短选项, 用getopt就够了
   // int code = getopt(argc, argv, short_opts);
@@ -504,37 +554,19 @@ static void parse_options(int argc, char* argv[])
   while((opt=getopt_long(argc,argv,short_opts,long_options,NULL))!=-1){
     switch (opt)
     {
+    case 'c':
+      s_context.crontab_file_path = optarg;
+      break;
+    case 'e':
+      s_context.execute_script_path = optarg;
+      break;
+    case 'f':
+      s_context.conf_file_path = optarg;
+      break;
     case 'h':
       usage(argc, argv);
       exit(EXIT_SUCCESS);
       break;
-    // case 'a':
-    //   opts->auth_domain = optarg;
-    //   break;
-    // case 'd':
-    //   s_options.sqlite_path = optarg;
-    //   break;
-    case 'c':
-      s_options.conf_file_path = optarg;
-      break;
-    case 'e':
-      s_options.execute_script_path = optarg;
-      break;
-    // case 'r':
-    //   opts->document_root = optarg;
-    //   printf("document_root=%s\r\n", opts->document_root);
-    //   break;
-    // case 'p':
-    //   s_options.mg_http_port = optarg;
-    //   break;
-    // case 'q':
-    //   s_options.api_handle_file_path = optarg;
-    //   printf("api_handle_file_path=%s\r\n", s_options.api_handle_file_path);
-    //   break;
-    // case 'l':
-    //   opts->enable_directory_listing = "yes";
-    //   break;
-    
     default:
       usage(argc, argv);
       exit(EXIT_FAILURE);
@@ -545,9 +577,11 @@ static void parse_options(int argc, char* argv[])
 
 // TODO : yaml的api还不熟悉, 这个函数有内存泄漏, 逻辑也很混乱, 需要重写.
 // 考虑先转成json, 然后再转成结构体
-int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
+int parse_conf_file()
 {
   int rc = 0;
+
+  struct conf_file_options* conf = &s_context.conf_file_options;
 
   FILE *file;
   yaml_parser_t parser;
@@ -556,13 +590,13 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
   char* level_2_key = NULL;
   char* level_3_key = NULL;
 
-  arraylist* list;
-  map_t* map;
+  arraylist* list = NULL;
+  map_t* map = NULL;
   char* map_key = NULL;
 
   int level = 0;
 
-  file = fopen(file_path, "rb");
+  file = fopen(s_context.conf_file_path, "rb");
   assert(file);
 
   assert(yaml_parser_initialize(&parser));
@@ -597,14 +631,14 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
       map = NULL;
       if (level==3 && STR_IS_EQUALS(level_2_key,"groups"))
       {
-        list = opt->groups = arraylist_new(NULL);
-        logger_debug("map %s put %s list", level_1_key, level_2_key);
+        // list = arraylist_new(NULL);
+        // logger_debug("map %s put %s list", level_1_key, level_2_key);
       }else if (level==4 && STR_IS_EQUALS(level_2_key,"admin") && map_key!=NULL){
         if(STR_IS_EQUALS(map_key,"ducument_roots")){
-          list = opt->admin.ducument_roots = arraylist_new(NULL);
+          list = conf->admin.ducument_roots = arraylist_new(NULL);
           logger_debug("map %s put %s list", level_2_key, map_key);
         }else if(STR_IS_EQUALS(map_key,"node_addresses")){
-          list = opt->admin.node_addresses = arraylist_new(NULL);
+          list = conf->admin.node_addresses = arraylist_new(NULL);
           logger_debug("map %s put %s list", level_2_key, map_key);
         }
       }
@@ -615,34 +649,41 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
       list = NULL;
       map = NULL;
       map_key=NULL;
+
     break;
     case YAML_MAPPING_START_EVENT:  
       level++;
       logger_trace("Start Mapping, level=%d", level); 
 
-      list = NULL;
       map = NULL;
       map_key=NULL;
       if (level==3){
         if( STR_IS_EQUALS(level_2_key,"config") ) {
-          map = opt->config = hashmap_new();
+          map = conf->config = hashmap_new();
         } else
         if( STR_IS_EQUALS(level_2_key,"storage") ) {
-          map = opt->storage = hashmap_new();
+          map = conf->storage = hashmap_new();
         } else
         if( STR_IS_EQUALS(level_2_key,"logger") ) {
-          map = opt->logger.loggers = hashmap_new();
+          map = conf->logger.loggers = hashmap_new();
         }
-
+      }else if(level==4){
       }
 
     break;
     case YAML_MAPPING_END_EVENT:    
       logger_trace("End Mapping, level=%d", level); 
+      if(level==4){
+        if( STR_IS_EQUALS(level_2_key,"groups") ){
+          conf->group_count++;
+        }
+      }
+
       level--;
       list = NULL;
       map = NULL;
       map_key=NULL;
+
     break;
     /* Data */
     case YAML_ALIAS_EVENT:  
@@ -679,10 +720,10 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
             
             if( STR_IS_EQUALS(level_2_key,"logger") ) {
               if( STR_IS_EQUALS(map_key,"enabled") ) {
-                opt->logger.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
+                conf->logger.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
               }else
               if( STR_IS_EQUALS(map_key,"level") ) {
-                opt->logger.level = new_string(value);
+                conf->logger.level = new_string(value);
               }
             }
             
@@ -698,25 +739,25 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
             }else{
               if( STR_IS_EQUALS(map_key,"enabled") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
+                conf->admin.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
               }else if( STR_IS_EQUALS(map_key,"bind_address") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.bind_address = new_string(value);
+                conf->admin.bind_address = new_string(value);
               }else if( STR_IS_EQUALS(map_key,"api_prefix") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.api_prefix = new_string(value);
+                conf->admin.api_prefix = new_string(value);
               }else if( STR_IS_EQUALS(map_key,"api_router") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.api_router = new_string(value);
+                conf->admin.api_router = new_string(value);
               }else if( STR_IS_EQUALS(map_key,"api_handler") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.api_handler = new_string(value);
+                conf->admin.api_handler = new_string(value);
               }else if( STR_IS_EQUALS(map_key,"auth_domain") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.auth_domain = new_string(value);
+                conf->admin.auth_domain = new_string(value);
               }else if( STR_IS_EQUALS(map_key,"enable_directory_listing") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->admin.enable_directory_listing = STR_IS_EQUALS(value,"yes") ? "yes" : "no";
+                conf->admin.enable_directory_listing = STR_IS_EQUALS(value,"yes") ? "yes" : "no";
               }
               map_key = NULL;
             }
@@ -727,10 +768,10 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
             }else{
               if( STR_IS_EQUALS(map_key,"enabled")) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->crontab.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
+                conf->crontab.enabled = STR_IS_EQUALS(value,"true") ? 1 : 0;
               } else if( STR_IS_EQUALS(map_key,"path") ) {
                 logger_debug("map %s put %s, %s", level_2_key, map_key, value);
-                opt->crontab.path = new_string(value);
+                conf->crontab.path = new_string(value);
               }
               map_key = NULL;
             }
@@ -743,6 +784,32 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
           logger_debug("list %s add %s", level_3_key, value);
           arraylist_add(list, new_string(value));
         }
+
+        if( STR_IS_EQUALS(level_2_key,"groups") ){
+          struct group_conf* g = &conf->groups[conf->group_count];
+
+          if(map_key==NULL){
+            map_key = new_string(value);
+          }else{
+            logger_debug("group %s[%d] put %s, %s", level_2_key, conf->group_count, map_key, value);
+            
+            if( STR_IS_EQUALS(map_key,"enabled") ) {
+              g->enabled = STR_IS_EQUALS(value,"true");
+            }else if( STR_IS_EQUALS(map_key,"name") ) {
+              g->name = new_string(value);
+            }else if( STR_IS_EQUALS(map_key,"local") ) {
+              g->local = new_string(value);
+            }else if( STR_IS_EQUALS(map_key,"group") ) {
+              g->group = new_string(value);
+            }else if( STR_IS_EQUALS(map_key,"port") ) {
+              g->port = atoi(new_string(value));
+            }else if( STR_IS_EQUALS(map_key,"heartbeat") ) {
+              g->heartbeat = atoi(new_string(value));
+            }
+            map_key = NULL;
+          }
+        }
+
       }break;
       default:{
       }
@@ -767,95 +834,147 @@ int gl_load_conf(const char* file_path, struct greenpleaf_options * opt)
 // ////////////////////////////////////////////////////////
 // #region main function implement area
 
-
-void *crontab_thread_proc(void *param) {
-  // struct mg_mgr *mgr = (struct mg_mgr *) param;
-  
-  logger_info("the crontab thread started.");
-
-  const char* err;
-  crontab* crontab = NULL;
-
-  if(crontab_new(&crontab)){
-      goto free;
-  }
-  
-  if(crontab_load(crontab)){
-      goto free;
-  }
-
-  // crontab_job* job = NULL;
-
-  // if(crontab_new_job(&job)){
-  //     goto free;
-  // }
-
-  // job->name = new_string("job1");
-  // job->action = new_string("pg_vacuum");
-  // job->payload = new_string("sys_user,sys_role");
-  // job->cron_expr = cronexpr_parse("0/3 * * * * *", &err);
-
-  // if(crontab_add_job(crontab, job)){
-  //     goto free;
-  // }
-
-  while (s_options.signal == 0) {
-    sleep(1);
-    crontab_iterate(crontab, crontab_job_trigger_default, NULL);
-  }
-
-free:
-    crontab_free(crontab);
-
-  logger_info("the crontab thread stoped.");
-  return NULL;
-}
+void start_admin_process();
+int start_main_loop();
 
 /**
  * 
  */
 int main(int argc, char *argv[]) 
 {
-
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  logger_set_level(LOG_DEBUG);
+  logger_set_level(LOG_NONE);
+  cs_log_set_level(LL_INFO); // _LL_MAX
 
   // 解析命令行参数
-  parse_options(argc,argv);
+  parse_cmd_options(argc,argv);
 
-  struct mg_serve_http_opts* mg_opts = &s_options.mg_options;
-  struct greenpleaf_options* gl_opts = &s_options.gl_options;
-
-  // 如果是执行脚本, 执行并退出
-  if (s_options.execute_script_path!=NULL) {
-    exit(js_execute_script(s_options.execute_script_path));
+  // 如果只是执行脚本, 执行并退出
+  if (s_context.execute_script_path!=NULL) {
+    exit(js_execute_script(s_context.execute_script_path));
   }
 
-  // 加载配置文件
-  if(gl_load_conf(s_options.conf_file_path, gl_opts)){
+  // 如果只是执行定时任务, 执行并退出
+  if (s_context.crontab_file_path!=NULL) {
+    crontab_thread_proc(NULL);
+    exit(EXIT_SUCCESS);
+  }
+
+  // 如果是读取配置文件, 解析并执行
+  if(parse_conf_file()){
     exit(EXIT_FAILURE);
   }
 
+  struct conf_file_options* conf = &s_context.conf_file_options;
   // 设置日志
-  if(s_options.gl_options.logger.enabled){
-    if(STR_IS_EQUALS( s_options.gl_options.logger.level, "trace")){
+  if(conf->logger.enabled){
+    if(STR_IS_EQUALS( conf->logger.level, "trace")){
       logger_set_level(LOG_TRACE);
-    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "debug")){
+    }else if(STR_IS_EQUALS( conf->logger.level, "debug")){
       logger_set_level(LOG_DEBUG);
-    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "info")){
+    }else if(STR_IS_EQUALS( conf->logger.level, "info")){
       logger_set_level(LOG_INFO);
-    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "warn")){
+    }else if(STR_IS_EQUALS( conf->logger.level, "warn")){
       logger_set_level(LOG_WARN);
-    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "error")){
+    }else if(STR_IS_EQUALS( conf->logger.level, "error")){
       logger_set_level(LOG_ERROR);
-    }else if(STR_IS_EQUALS( s_options.gl_options.logger.level, "fatal")){
+    }else if(STR_IS_EQUALS( conf->logger.level, "fatal")){
       logger_set_level(LOG_FATAL);
     }
   }else{
     logger_set_level(LOG_NONE);
   }
+
+  if(conf->admin.enabled) {
+    pid_t child_pid = fork(); // fork进程, 启动管理服务
+    if (child_pid == 0){
+			logger_info("This is child process, parent process id is: %d, child process id is: %d", getppid(), getpid());
+      // child process
+      start_admin_process();
+      exit(EXIT_SUCCESS);
+    }else{
+			logger_info("This is parent process, parent process id is: %d, child process id is: %d", getpid(), child_pid);
+      // parent process
+      prctl(PR_SET_PDEATHSIG,SIGHUP); // 防止父进程意外退出, 子进程成了野生进程
+    }
+  }
+
+  // 进入主事件循环
+  start_main_loop();
+
+  return 0;
+}
+
+void start_admin_process(){
+
+  struct mg_mgr* mgr = &s_context.event_loop_manager;
+  struct admin_context* ctx = &s_context.admin_context;
+
+  struct mg_serve_http_opts* mg_opts = &ctx->mg_options;
+  struct conf_file_options* gl_opts = &s_context.conf_file_options;
+
+    // 初始化 mongoose web server
+  mg_mgr_init(mgr, NULL);
+  struct mg_connection * nc = mg_bind(mgr, gl_opts->admin.bind_address, admin_event_handler);
+  // {
+    if (nc == NULL) {
+      logger_fatal("admin proces, binding failed: %s", gl_opts->admin.bind_address);
+      exit(EXIT_FAILURE);
+    }
+    mg_set_protocol_http_websocket(nc);
+    mg_set_timer(nc, mg_time() + SESSION_CHECK_INTERVAL);
+    // TODO: when auth method support cookie
+    mg_register_http_endpoint(nc, s_login_url, login_handler);
+    mg_register_http_endpoint(nc, s_logout_url, logout_handler);
+  // }
+  ctx->mg_acceptor = nc;
+
+  mg_opts->enable_directory_listing = gl_opts->admin.enable_directory_listing;
+  if( ! arraylist_is_empty(gl_opts->admin.ducument_roots)){
+    mg_opts->document_root = arraylist_get_idx(gl_opts->admin.ducument_roots, 0);
+    arraylist_del_idx(gl_opts->admin.ducument_roots,0,1);
+    mg_opts->document_roots = (const char**)arraylist_toarray(gl_opts->admin.ducument_roots);
+  }
+  mg_opts->auth_domain = gl_opts->admin.auth_domain;
+
+  // 初始化libssh运行环境
+  ssh_init();
+
+  // 初始化quickjs运行环境
+  qjs_runtime_init();
+
+  logger_info("Starting admin server on %s\r\n", gl_opts->admin.bind_address);
+
+  /* 进入主事件循环, Run event loop until signal is received */
+  while (s_context.signal == 0) {
+    // 因为mg的poll不包含ssh的socket, 所以就算ssh有数据, mg也是不知道
+    // 只有当有输入或者超时事件到, 才会触发,, 所以需要设置得小一点, 同时ssh的接收缓冲区设置得大一点
+    mg_mgr_poll(mgr, 100);
+  }
+
+  logger_info("Exiting on signal %d\r\n", s_context.signal);
+
+  /* Cleanup */
+  mg_mgr_free(mgr);
+
+  // 释放quickjs运行环境资源
+  qjs_runtime_free();
+
+  // 释放libssh运行环境资源
+  ssh_finalize();
+
+  // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
+
+}
+
+int start_main_loop() 
+{
+
+  struct mg_mgr* mgr = &s_context.event_loop_manager;
+  
+  struct conf_file_options* gl_opts = &s_context.conf_file_options;
 
   /* Open database */
   // if ((s_options.sqlite_handle = db_open(s_db_path)) == NULL) {
@@ -865,68 +984,123 @@ int main(int argc, char *argv[])
 
   // 启动定时任务, 如果不运行管理服务, 则在主线程运行, 否则新开一个线程执行
   if(gl_opts->crontab.enabled){
-    if(gl_opts->admin.enabled){
-      mg_start_thread(crontab_thread_proc, NULL);
-    }else{
-      crontab_thread_proc(NULL);
-      exit(EXIT_SUCCESS);
-    }
+    mg_start_thread(crontab_thread_proc, NULL);
   }
 
-  // 启动管理服务
-  if(gl_opts->admin.enabled) {
+  mg_mgr_init(mgr, NULL);
 
-    // 初始化 mongoose web server
-    mg_mgr_init(&s_options.mg_manager, NULL);
-    s_options.mg_acceptor = mg_bind(&s_options.mg_manager, gl_opts->admin.bind_address, event_handler);
-    // {
-      mg_set_protocol_http_websocket(s_options.mg_acceptor);
-      mg_set_timer(s_options.mg_acceptor, mg_time() + SESSION_CHECK_INTERVAL);
-      // TODO: when auth method support cookie
-      mg_register_http_endpoint(s_options.mg_acceptor, s_login_url, login_handler);
-      mg_register_http_endpoint(s_options.mg_acceptor, s_logout_url, logout_handler);
-    // }
+  // join multicast groups and send heartbeat.
+  // arraylist* groups = gl_opts->groups;
+  // int group_count = arraylist_length(groups);
+  for (size_t i = 0; i < gl_opts->group_count; i++)
+  {
+    struct group_conf* conf = &gl_opts->groups[i];
+
+    struct multicast_context* ctx = calloc(1,sizeof(struct multicast_context));
+    ctx->enabled = conf->enabled;
+    ctx->name = conf->name;
+    ctx->heartbeat = conf->heartbeat;
     
+    s_context.multicast_contexts[i] = ctx;
 
-    mg_opts->enable_directory_listing = gl_opts->admin.enable_directory_listing;
-    if( ! arraylist_is_empty(gl_opts->admin.ducument_roots)){
-      mg_opts->document_root = arraylist_get_idx(gl_opts->admin.ducument_roots, 0);
-      arraylist_del_idx(gl_opts->admin.ducument_roots,0,1);
-      mg_opts->document_roots = (const char**)arraylist_toarray(gl_opts->admin.ducument_roots);
-    }
-    mg_opts->auth_domain = gl_opts->admin.auth_domain;
-
-    // 初始化libssh运行环境
-    ssh_init();
-
-    // 初始化quickjs运行环境
-    qjs_runtime_init();
-
-    printf("Starting server on %s\r\n", gl_opts->admin.bind_address);
-
-    /* 进入主事件循环, Run event loop until signal is received */
-    while (s_options.signal == 0) {
-      // 因为mg的poll不包含ssh的socket, 所以就算ssh有数据, mg也是不知道
-      // 只有当有输入或者超时事件到, 才会触发,, 所以需要设置得小一点, 同时ssh的接收缓冲区设置得大一点
-      mg_mgr_poll(&s_options.mg_manager, 100);
+    if(!ctx->enabled) {
+      logger_debug("multicast group %s is disabled, skip it.", conf->name);
+      continue;
+    } else {
+      logger_debug("multicast group %s: joining...", conf->name);
     }
 
-    printf("Exiting on signal %d\r\n", s_options.signal);
+    // receive 
+    char listen[256];
+    snprintf(listen, sizeof(listen), "udp://%d", conf->port);
+    ctx->receiver = mg_bind(mgr, listen, multicast_event_handler);
+    if (ctx->receiver == NULL) {
+      //perror("cannot bind\n");
+      logger_error("multicast group %s: cannot bind to %s", conf->name, listen);
+      continue;
+    }
+    ctx->receiver->user_data = ctx;
 
-    /* Cleanup */
-    mg_mgr_free(&s_options.mg_manager);
+    struct ip_mreq req;
+    req.imr_multiaddr.s_addr = inet_addr(conf->group);
+    req.imr_interface.s_addr = conf->local==NULL || strlen(conf->local)==0 || STR_IS_EQUALS(conf->local, "INADDR_ANY") 
+      ? htonl(INADDR_ANY) : inet_addr(conf->local);
+    if (setsockopt(ctx->receiver->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *) &req, sizeof(req)) < 0) {
+      //perror("Adding multicast group error");
+      logger_error("multicast group %s: add membership failed , multiaddr=%s, interface=%s", conf->name, conf->group, conf->local);
+      continue;
+    }
+    logger_debug("multicast group %s: receiver added membership on %s:%d", conf->name, conf->group, conf->port);
 
-    // 释放quickjs运行环境资源
-    qjs_runtime_free();
+    // send
+    char group_address[256];
+    snprintf(group_address, sizeof(group_address), "udp://%s:%d", conf->group, conf->port);
+    ctx->sender = mg_connect(mgr, group_address, multicast_event_handler);
+    if (ctx->sender == NULL) {
+      // perror("cannot connect multicast address\n");
+      logger_error("multicast group %s: sender cannot connect multicast address = %s", conf->name, group_address);
+      continue;
+    }
+    ctx->sender->user_data = ctx;
+    logger_debug("multicast group %s: sender connect on %s", conf->name, group_address);
 
-    // 释放libssh运行环境资源
-    ssh_finalize();
+    mg_set_timer(ctx->sender, mg_time() + conf->heartbeat);
 
-    // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
-
+    logger_info("multicast group %s: joined on %s", conf->name, group_address);
   }
+
+  logger_info("Start main event loop");
+  while (s_context.signal == 0) {
+    mg_mgr_poll(mgr, 1000);
+  }
+
+  mg_mgr_free(mgr);
+
+  logger_info("Exiting main event loop on signal %d", s_context.signal);
 
   return 0;
+}
+
+static void multicast_event_handler(struct mg_connection *nc, int ev, void *p) {
+  (void) p;
+  switch (ev) {
+    case MG_EV_TIMER: {// 定时发送心跳
+      // if(group_sender == nc) {
+        struct multicast_context* g = nc->user_data;
+        mg_send(nc, heartbeat_content, strlen(heartbeat_content));
+        mg_set_timer(nc, mg_time() + g->heartbeat);
+    }  // }
+    break;
+    case MG_EV_SEND: { // 心跳发送成功
+      // if(group_sender == nc) {
+        const char *peer = inet_ntoa(nc->sa.sin.sin_addr);
+        uint16_t port = ntohs(nc->sa.sin.sin_port);
+        printf("%f Heartbeat Sended to %s:%d\n", mg_time(), peer, port);
+      // }
+    }
+    break;
+    case MG_EV_RECV:{ // 接收心跳成功
+      const char *peer = inet_ntoa(nc->sa.sin.sin_addr);
+      uint16_t port = ntohs(nc->sa.sin.sin_port);
+      struct mbuf *io = &nc->recv_mbuf;
+      printf("%f Received (%zu bytes): '%.*s' from %s:%d\n", mg_time(), 
+        io->len, (int) io->len, io->buf, 
+        peer, port
+      );
+      mbuf_remove(io, io->len);
+      nc->flags |= MG_F_SEND_AND_CLOSE; // udp没有连接, 接收到就是处理完, 就需要关闭了
+    }
+    break;
+    case MG_EV_POLL: {
+      // if(group_receiver != nc && group_sender != nc){
+      //   const char *peer = inet_ntoa(nc->sa.sin.sin_addr);
+      //   printf("poll: nc->sa: %s %d\n", peer, ntohs(nc->sa.sin.sin_port));
+      // }
+    }
+    break;
+    default:
+      break;
+  }
 }
 
 // #endregion postgres declare area
@@ -940,7 +1114,7 @@ struct mg_str auth_mode_jwt = MG_MK_STR("jwt");
 
 char * clear_screen = "\x1B[2J";
 
-static void event_handler(struct mg_connection *nc, int ev, void *ev_data) 
+static void admin_event_handler(struct mg_connection *nc, int ev, void *ev_data) 
 {
     switch (ev) {
     case MG_EV_HTTP_REQUEST:{ // 接收到http请求
@@ -951,7 +1125,7 @@ static void event_handler(struct mg_connection *nc, int ev, void *ev_data)
             handle_api_request(nc, hm);
           }
         } else {
-            mg_serve_http(nc, hm, s_options.mg_options); /* Serve static content */
+            mg_serve_http(nc, hm, s_context.admin_context.mg_options); /* Serve static content */
         }
         break;
     }
@@ -1095,12 +1269,12 @@ static int check_authentication(struct mg_connection *nc, struct http_message *h
   } else if(mg_str_is_equal(auth_mode, &auth_mode_digest)){
     if(mg_http_custom_is_authorized(
         hm, 
-        s_options.mg_options.auth_domain, 
+        s_context.admin_context.mg_options.auth_domain, 
         get_user_htpasswd
     )){
       rc = 1;
     }else{
-        mg_http_send_digest_auth_request(nc, s_options.mg_options.auth_domain);
+        mg_http_send_digest_auth_request(nc, s_context.admin_context.mg_options.auth_domain);
         rc = 0;
     }
   }
@@ -1267,7 +1441,7 @@ static void handle_api_request(struct mg_connection *nc, struct http_message *hm
     // }
     
 
-    // mg_serve_http(nc, hm, s_options.mg_options);
+    // mg_serve_http(nc, hm, s_context.admin_context.mg_options);
 }
 
 static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc, struct http_message *hm)
@@ -1322,7 +1496,7 @@ static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc,
     // handle request
     {
         JSValue grobal = JS_GetGlobalObject(context);
-        JSAtom fn_name = JS_NewAtom(context, s_options.gl_options.admin.api_handler);
+        JSAtom fn_name = JS_NewAtom(context, s_context.conf_file_options.admin.api_handler);
         JSValue argv2[] = { request, response };
 
         JSValue rs = JS_Invoke(context, grobal, fn_name, 2, argv2);
@@ -1549,7 +1723,7 @@ static int check_pass(const char *user, const char *pass)
       return 1;
   }else{
     char ha1[128]; 
-    if(get_user_htpasswd(mg_mk_str(user), mg_mk_str(s_options.mg_options.auth_domain), ha1) && (strcmp(pass, ha1) == 0)){
+    if(get_user_htpasswd(mg_mk_str(user), mg_mk_str(s_context.admin_context.mg_options.auth_domain), ha1) && (strcmp(pass, ha1) == 0)){
         return 1;
     }
   }
@@ -1697,8 +1871,8 @@ static JSContext* qjs_context_init(JSRuntime* runtime)
   js_init_module_os(context, "os");
 
   /* make 'std' and 'os' visible to non module code */
-  const char* fn = s_options.gl_options.admin.api_handler;
-  const char* path = s_options.gl_options.admin.api_router;
+  const char* fn = s_context.conf_file_options.admin.api_handler;
+  const char* path = s_context.conf_file_options.admin.api_router;
   const char *str2 = "import %s from '%s';\n""globalThis.%s = %s;\n";
   char *str3 = (char *) malloc(strlen(str2)-8 + strlen(path)+ (strlen(fn)*4 ));
   sprintf(str3, str2, fn, path, fn, fn);
@@ -2170,7 +2344,56 @@ static int js_execute_script(const char* script_file){
 }
 // #endregion quickjs-postgres implement area
 // ////////////////////////////////////////////////////////
+// #region crontab implement area
+
+
+void * crontab_thread_proc(void *param) {
+  // struct mg_mgr *mgr = (struct mg_mgr *) param;
+  
+  logger_info("the crontab service started.");
+
+  const char* err;
+  crontab* crontab = NULL;
+
+  if(crontab_new(&crontab)){
+      goto free;
+  }
+  
+  if(crontab_load(crontab)){
+      goto free;
+  }
+
+  // crontab_job* job = NULL;
+
+  // if(crontab_new_job(&job)){
+  //     goto free;
+  // }
+
+  // job->name = new_string("job1");
+  // job->action = new_string("pg_vacuum");
+  // job->payload = new_string("sys_user,sys_role");
+  // job->cron_expr = cronexpr_parse("0/3 * * * * *", &err);
+
+  // if(crontab_add_job(crontab, job)){
+  //     goto free;
+  // }
+
+  while (s_context.signal == 0) {
+    sleep(1);
+    crontab_iterate(crontab, crontab_job_trigger_default, NULL);
+  }
+
+free:
+    crontab_free(crontab);
+
+  logger_info("the crontab service stoped.");
+  return NULL;
+}
+
+// #endregion crontab implement area
+// ////////////////////////////////////////////////////////
 // #region misc implement area
+
 
 // #endregion misc implement area
 // ////////////////////////////////////////////////////////////////////////////
