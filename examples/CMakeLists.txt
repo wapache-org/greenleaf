@@ -74,3 +74,6 @@ target_link_libraries(cronexpr_example cron)
 
 add_executable(crontab_example crontab_example.c ../common/logger.c)
 target_link_libraries(crontab_example cron)
+
+add_executable(udp_multicast_example udp_multicast_example.c)
+target_link_libraries(udp_multicast_example mongoose pthread)
