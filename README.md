@@ -45,7 +45,8 @@
 6. lua: 是一个轻量级可嵌入的脚本引擎.
 7. libssh : 封装libssh使得lua/js等脚本能够直接ssh到其他远程服务器.
 8. xterm.js: 结合libssh实现通过浏览器访问其他远程主机, 提供堡垒机功能
-9. cron: 从mongoose-os-libs-cron复制过来的cronexpr和自己写的crontab, 还没写完, 有bug
+9. cron: 从mongoose-os-libs-cron复制过来的cronexpr和自己写的crontab
+1. libyaml: 是一个yaml文件的读写库, `greenleaf`现在支持读取yml配置文件了
 
 * 通过`mongoose`实现`Web Server`组件
 * 通过`quickjs`实现`javascript engine`组件
@@ -93,25 +94,19 @@ make
 
 ```
 Usages: 
+    greenleaf -c conf/crontab.json
     greenleaf -e qjs-modules/hello.js
-    greenleaf -p 8080 -r static
-    greenleaf -q qjs_modules/api_handler.js
+    greenleaf -f conf/greenleaf.yml
 Options:
-    [-h, --help]     print this message
-    [-a, --auth-domain]     the domain parameter of http digest
-    [-d, --database]     the database file path
+    [-c, --crontab]     the contab json file, e.g. conf/crontab.json
     [-e, --execute]     execute script
-    [-p, --poot]     web server bingding port, default is 8000.
-    [-q, --qjs-api-router]     web server api request route file, default is `qjs_modules/api_request_handler.js`.
-    [-r, --root]     web server root directory, default is `static`.
-    [-l, --enable-directory-listing]     if cannot find index file, list directory files, default is no.
+    [-f, --file]     the config file, default is conf/greenleaf.yml
+    [-h, --help]     print this message
 ```
 
-* `-r, --root`指定WEB Server的根目录, 存放html, js, css, image等静态资源文件.
+* `-c, --crontab`定时执行指定crontab文件里的job.
 * `-e, --execute`直接执行一个脚本文件, 可以理解为`QuickJS`自带的`qjs`命令的简化版, 主要用于调试和测试脚本.
-* `-q, --qjs-api-router` 指定RESTful API请求的处理脚本, 所有`/api/`开头的请求都会转发到此脚本中进行处理.
-
-其他选项暂时不做说明.
+* `-f, --file` 解析配置文件, 根据配置文件的内容执行指定任务或服务.
 
 webssh体验:
 1. 修改`static/xterm/index.html`文件中的连接主机,端口,用户名和密码
@@ -196,4 +191,7 @@ build/examples/sqlite_example
 让我们向白衣天使们致敬，共同祝愿他们春暖花开日、平安归来时！
 
 2020-03-08 01:11:11 截止至今日, 国内的疫情已经基本控制住了, 但是国外又蔓延了, 心塞!
+
 2020-03-16 00:18:24 截止至今日, 只能用席卷全球来形容了!
+
+2020-03-22 23:47:03 截止至今日, 支援武汉的医护人员已经完成使命了, 国内基本无新增病例, 可是国外疫情却越来越糟糕了!
