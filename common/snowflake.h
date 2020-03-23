@@ -20,8 +20,12 @@ THE SOFTWARE.
 #ifndef __SNOWFLAKE__
 #define __SNOWFLAKE__
 
+#include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+
 // the timestamp in milliseconds of the start of the custom epoch
-#define SNOWFLAKE_EPOCH 1388534400000 //Midnight January 1, 2014
+#define SNOWFLAKE_EPOCH 1577808000000 // 2020-01-01 00:00:00
 
 #define SNOWFLAKE_TIME_BITS 41
 #define SNOWFLAKE_REGIONID_BITS 4
@@ -29,18 +33,45 @@ THE SOFTWARE.
 #define SNOWFLAKE_SEQUENCE_BITS 8
 
 struct _snowflake_state {
+    int inited;
+
     // milliseconds since SNOWFLAKE_EPOCH 
     long int time;
     long int seq_max;
     long int worker_id;
     long int region_id;
     long int seq;
+
+    long int epoch;
+    int time_bits;
+    int region_id_bits;
+    int worker_id_bits;
+    int sequence_bits;
+
     long int time_shift_bits;
     long int region_shift_bits;
     long int worker_shift_bits;
+
+    time_t started_at;
+    char *version;
+    long int ids;
+    long int waits;
+    long int seq_cap;
+
 } snowflake_global_state;
 
-long int snowflake_id();
-int snowflake_init(int region_id, int worker_id);
+/**
+ * 线程不安全
+ */
+long int snowflake_id(struct _snowflake_state * state);
+#define snowflake_id_default()  snowflake_id(&snowflake_global_state);
+
+/**
+ * return 0: suceess, other: failed
+ */
+int snowflake_init(struct _snowflake_state * state, long int epoch, int time_bits, int region_id_bits, int worker_id_bits, int sequence_bits, int region_id, int worker_id);
+
+#define snowflake_init_default(region_id, worker_id) snowflake_init(&snowflake_global_state, \
+SNOWFLAKE_EPOCH, SNOWFLAKE_TIME_BITS, SNOWFLAKE_REGIONID_BITS, SNOWFLAKE_WORKERID_BITS, SNOWFLAKE_SEQUENCE_BITS, region_id, worker_id);
 
 #endif /* __SNOWFLAKE__ */

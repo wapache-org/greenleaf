@@ -16,82 +16,85 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
 
 #include "snowflake.h"
 
-struct _app_stats {
-    time_t started_at;
-    char *version;
-    long int ids;
-    long int waits;
-    long int seq_max;
-    int region_id;
-    int worker_id;
-    long int seq_cap;
-} app_stats;
-
-long int snowflake_id() {
+long int snowflake_id(struct _snowflake_state * state) {
     struct timeval tp;
     gettimeofday(&tp, NULL);
-    long int millisecs = tp.tv_sec * 1000 + tp.tv_usec / 1000 - SNOWFLAKE_EPOCH;
+    long int millisecs = tp.tv_sec * 1000 + tp.tv_usec / 1000 - state->epoch;
     long int id = 0L;
 
     // Catch NTP clock adjustment that rolls time backwards and sequence number overflow
-    if ((snowflake_global_state.seq > snowflake_global_state.seq_max ) || snowflake_global_state.time > millisecs) {
-        ++app_stats.waits;
-        while (snowflake_global_state.time >= millisecs) {
+    if ((state->seq > state->seq_max ) || state->time > millisecs) {
+        ++state->waits;
+        while (state->time >= millisecs) {
             gettimeofday(&tp, NULL);
-            millisecs = tp.tv_sec * 1000 + tp.tv_usec / 1000 - SNOWFLAKE_EPOCH;
+            millisecs = tp.tv_sec * 1000 + tp.tv_usec / 1000 - state->epoch;
         }
     }
 
-    if (snowflake_global_state.time < millisecs) {
-        snowflake_global_state.time = millisecs;
-        snowflake_global_state.seq = 0L;
+    if (state->time < millisecs) {
+        state->time = millisecs;
+        state->seq = 0L;
     }
     
     
-    id = (millisecs << snowflake_global_state.time_shift_bits) 
-            | (snowflake_global_state.region_id << snowflake_global_state.region_shift_bits) 
-            | (snowflake_global_state.worker_id << snowflake_global_state.worker_shift_bits) 
-            | (snowflake_global_state.seq++); 
+    id = (millisecs << state->time_shift_bits) 
+            | (state->region_id << state->region_shift_bits) 
+            | (state->worker_id << state->worker_shift_bits) 
+            | (state->seq++); 
 
-    if (app_stats.seq_max < snowflake_global_state.seq)
-        app_stats.seq_max = snowflake_global_state.seq;
+    if (state->seq_max < state->seq)
+        state->seq_max = state->seq;
     
-    ++app_stats.ids;
+    ++state->ids;
     return id;
 }
 
-int snowflake_init(int region_id, int worker_id) {
-    int max_region_id = (1 << SNOWFLAKE_REGIONID_BITS) - 1;
+int snowflake_init(struct _snowflake_state * state, 
+long int epoch, int time_bits, int region_id_bits, int worker_id_bits, int sequence_bits, 
+int region_id, int worker_id) 
+{
+    if(state->inited){
+        printf("snowflake state allready inited.\n");
+        return -1;
+    }
+    if(time_bits+region_id_bits+worker_id_bits+sequence_bits != 63){
+        printf("time_bits+region_id_bits+worker_id_bits+sequence_bits!=63\n");
+        return -1;
+    }
+    int max_region_id = (1 << region_id_bits) - 1;
     if(region_id < 0 || region_id > max_region_id){
         printf("Region ID must be in the range : 0-%d\n", max_region_id);
         return -1;
     }
-    int max_worker_id = (1 << SNOWFLAKE_WORKERID_BITS) - 1;
+    int max_worker_id = (1 << worker_id_bits) - 1;
     if(worker_id < 0 || worker_id > max_worker_id){
         printf("Worker ID must be in the range: 0-%d\n", max_worker_id);
         return -1;
     }
     
-    snowflake_global_state.time_shift_bits   = SNOWFLAKE_REGIONID_BITS + SNOWFLAKE_WORKERID_BITS + SNOWFLAKE_SEQUENCE_BITS;
-    snowflake_global_state.region_shift_bits = SNOWFLAKE_WORKERID_BITS + SNOWFLAKE_SEQUENCE_BITS;
-    snowflake_global_state.worker_shift_bits = SNOWFLAKE_SEQUENCE_BITS;
+    state->epoch = epoch;
+    state->time_bits = time_bits;
+    state->region_id_bits = region_id_bits;
+    state->worker_id_bits = worker_id_bits;
+    state->sequence_bits = sequence_bits;
+
+    state->time_shift_bits   = region_id_bits + worker_id_bits + sequence_bits;
+    state->region_shift_bits = worker_id_bits + sequence_bits;
+    state->worker_shift_bits = sequence_bits;
     
-    snowflake_global_state.worker_id    = worker_id;
-    snowflake_global_state.region_id    = region_id;
-    snowflake_global_state.seq_max      = (1L << SNOWFLAKE_SEQUENCE_BITS) - 1;
-    snowflake_global_state.seq          = 0L;
-    snowflake_global_state.time         = 0L;
-    app_stats.seq_cap                   = snowflake_global_state.seq_max;
-    app_stats.waits                     = 0L;
-    app_stats.seq_max                   = 0L;
-    app_stats.ids                       = 0L;
-    app_stats.region_id                 = region_id;
-    app_stats.worker_id                 = worker_id;
-    return 1;
+    state->worker_id    = worker_id;
+    state->region_id    = region_id;
+    state->seq_max      = (1L << sequence_bits) - 1;
+    state->seq          = 0L;
+    state->time         = 0L;
+
+    state->seq_cap      = state->seq_max;
+    state->waits        = 0L;
+    state->seq_max      = 0L;
+    state->ids          = 0L;
+
+    return 0;
 }
