@@ -25,6 +25,7 @@ void logger_set_udata(void *udata);
 void logger_set_lock(logger_lock_func fn);
 void logger_set_fp(FILE *fp);
 void logger_set_level(int level);
+void logger_set_level_by_name(const char* level);
 void logger_set_quiet(int enable);
 
 void logger_log(int level, const char *file, int line, const char *fmt, ...);

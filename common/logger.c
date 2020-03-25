@@ -64,6 +64,25 @@ void logger_set_level(int level) {
   L.level = level;
 }
 
+#define STR_IS_EQUALS(a,b) memcmp(a,b, strlen(b))==0
+void logger_set_level_by_name(const char* level)
+{
+    if(STR_IS_EQUALS( level, "trace")){
+      logger_set_level(LOG_TRACE);
+    }else if(STR_IS_EQUALS( level, "debug")){
+      logger_set_level(LOG_DEBUG);
+    }else if(STR_IS_EQUALS( level, "info")){
+      logger_set_level(LOG_INFO);
+    }else if(STR_IS_EQUALS( level, "warn")){
+      logger_set_level(LOG_WARN);
+    }else if(STR_IS_EQUALS( level, "error")){
+      logger_set_level(LOG_ERROR);
+    }else if(STR_IS_EQUALS( level, "fatal")){
+      logger_set_level(LOG_FATAL);
+    }else if(STR_IS_EQUALS( level, "none")){
+      logger_set_level(LOG_NONE);
+    }
+}
 
 void logger_set_quiet(int enable) {
   L.quiet = enable ? 1 : 0;
