@@ -50,7 +50,7 @@
 
 // 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
 // 建议按字母顺序编写
-static char* short_opts = "c:d:e:f:h";
+static char* short_opts = "c:d:e:f:hl:";
 // 长选项字符串, 
 // {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
 // 建议按长选项字母顺序编写
@@ -549,7 +549,10 @@ static struct cmd_context s_context;
 
 static void signal_handler(int sig_num) 
 {
+//     printf("\n Cannot be terminated using Ctrl+C \n"); 
+//     fflush(stdout); 
     signal(sig_num, signal_handler);
+    // signal(sig_num, SIG_IGN);
     s_context.signal = sig_num;
 }
 
@@ -939,15 +942,24 @@ int execute_crontab()
 {
   int rc = 0;
 
-  if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
-      fprintf(stderr, "Cannot open DB [%s]\n", s_context.sqlite_path);
-      return rc;
+  if(s_context.sqlite_path!=NULL){
+    if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
+        logger_fatal("Cannot open DB [%s]", s_context.sqlite_path);
+        return rc;
+    }else{
+      logger_info("Open DB [%s] success.", s_context.sqlite_path);
+    }
   }
 
   crontab_thread_proc(NULL);
 
   if(s_context.sqlite!=NULL){
-    sqlite3_close(s_context.sqlite);
+    if ((rc=sqlite3_close(s_context.sqlite)) ) {
+      logger_fatal("Cannot close DB [%s]", s_context.sqlite_path);
+      return rc;
+    }else{
+      logger_info("Close DB [%s] success.", s_context.sqlite_path);
+    }
   }
 
   return rc;
@@ -957,15 +969,24 @@ int execute_script()
 {
   int rc = 0;
 
-  if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
-      fprintf(stderr, "Cannot open DB [%s]: %d\n", s_context.sqlite_path, rc);
-      return rc;
+  if(s_context.sqlite_path!=NULL){
+    if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
+        logger_fatal("Cannot open DB [%s]", s_context.sqlite_path);
+        return rc;
+    }else{
+      logger_info("Open DB [%s] success.", s_context.sqlite_path);
+    }
   }
 
   rc = js_execute_script(s_context.execute_script_path);
 
   if(s_context.sqlite!=NULL){
-    sqlite3_close(s_context.sqlite);
+    if ((rc=sqlite3_close(s_context.sqlite)) ) {
+      logger_fatal("Cannot close DB [%s]", s_context.sqlite_path);
+      return rc;
+    }else{
+      logger_info("Close DB [%s] success.", s_context.sqlite_path);
+    }
   }
 
   return rc;
@@ -2471,6 +2492,7 @@ free:
     crontab_free(crontab);
 
   logger_info("the crontab service stoped.");
+  fflush(stdout);
   return NULL;
 }
 
