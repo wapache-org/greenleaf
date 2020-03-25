@@ -34,8 +34,12 @@
 #include "common/str_builder.h"
 #include "common/array_list.h"
 #include "common/hash_map.h"
+#include "common/thread_pool.h"
 
 #include "yaml.h"
+
+#include "sqlite3.h"
+
 
 // #endregion include area
 // ////////////////////////////////////////////////////////////////////////////
@@ -46,15 +50,17 @@
 
 // 短选项字符串, 一个字母表示一个短参数, 如果字母后带有冒号, 表示这个参数必须带有参数
 // 建议按字母顺序编写
-static char* short_opts = "c:e:f:h";
+static char* short_opts = "c:d:e:f:h";
 // 长选项字符串, 
 // {长选项名字, 0:没有参数|1:有参数|2:参数可选, flags, 短选项名字}
 // 建议按长选项字母顺序编写
 static const struct option long_options[] = {
 		{"crontab",1,NULL,'c'},
+		{"database",1,NULL,'d'},
 		{"execute",1,NULL,'e'},
 		{"file"   ,1,NULL,'f'},
-		{"help"   ,0,NULL,'h'}
+		{"help"   ,0,NULL,'h'},
+		{"log-level"   ,1,NULL,'l'}
 };
 // 打印选项说明
 static void usage(int argc, char* argv[])
@@ -64,10 +70,12 @@ static void usage(int argc, char* argv[])
   printf("    %s -e qjs-modules/hello.js\n", argv[0]);
   printf("    %s -f conf/%s.yml\n", argv[0], argv[0]);
   printf("Options:\n");
-  printf("    [-%s, --%s]     %s\n", "c","crontab","the contab json file, e.g. conf/crontab.json");
-  printf("    [-%s, --%s]     %s\n", "e","execute","execute script");
-  printf("    [-%s, --%s]     %s\n", "f","file"   ,"the config file, default is conf/greenleaf.yml");
-  printf("    [-%s, --%s]     %s\n", "h","help"   ,"print this message");
+  printf("    [-%s, --%s]     %s\n", "c", "crontab  ", "the contab json file, e.g. conf/crontab.json");
+  printf("    [-%s, --%s]     %s\n", "d", "database ", "the embed database file, e.g. data/sqlite.db");
+  printf("    [-%s, --%s]     %s\n", "e", "execute  ", "execute the script");
+  printf("    [-%s, --%s]     %s\n", "f", "file     ", "the config file, default is conf/greenleaf.yml");
+  printf("    [-%s, --%s]     %s\n", "h", "help     ", "print this message");
+  printf("    [-%s, --%s]     %s\n", "l", "log-level", "set log level: trace,debug,info,warn,fatal,none");
 }
 
 // 解析选项
@@ -373,6 +381,10 @@ static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 // ////////////////////////////////////////////////////////
 // #region sqlite declare area
 
+// static JSValue js_sqlite_open(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+// static JSValue js_sqlite_close(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
 // #endregion sqlite declare area
 // ////////////////////////////////////////////////////////
 // #region postgres declare area
@@ -430,7 +442,12 @@ void * crontab_thread_proc(void *param);
 struct conf_file_options
 {
   map_t* config;
-  map_t* storage;
+  struct 
+  {
+    char* path;
+    char* sqlite;
+    map_t* properties;
+  } storage;
 
   struct 
   {
@@ -502,6 +519,10 @@ struct admin_context
 // 命令行上下文
 struct cmd_context {
 
+  char * log_level;
+
+  char * sqlite_path;
+
   char * execute_script_path;
 
   char * crontab_file_path;
@@ -519,7 +540,7 @@ struct cmd_context {
   int group_count;
   struct multicast_context* multicast_contexts[32];
 
-  void * sqlite_handle;
+  sqlite3 * sqlite;
 
 };
 
@@ -535,8 +556,10 @@ static void signal_handler(int sig_num)
 static void parse_cmd_options(int argc, char* argv[])
 {
   // 先设置默认值
-
+  s_context.sqlite_path = NULL;
   s_context.execute_script_path = NULL;
+  s_context.sqlite = NULL;
+  s_context.log_level = "none";
 
   s_context.conf_file_path = "conf/greenleaf.yml";
   struct conf_file_options* conf = &s_context.conf_file_options;
@@ -557,6 +580,9 @@ static void parse_cmd_options(int argc, char* argv[])
     case 'c':
       s_context.crontab_file_path = optarg;
       break;
+    case 'd':
+      s_context.sqlite_path = optarg;
+      break;
     case 'e':
       s_context.execute_script_path = optarg;
       break;
@@ -566,6 +592,9 @@ static void parse_cmd_options(int argc, char* argv[])
     case 'h':
       usage(argc, argv);
       exit(EXIT_SUCCESS);
+      break;
+    case 'l':
+      s_context.log_level = optarg;
       break;
     default:
       usage(argc, argv);
@@ -662,7 +691,7 @@ int parse_conf_file()
           map = conf->config = hashmap_new();
         } else
         if( STR_IS_EQUALS(level_2_key,"storage") ) {
-          map = conf->storage = hashmap_new();
+          map = conf->storage.properties = hashmap_new();
         } else
         if( STR_IS_EQUALS(level_2_key,"logger") ) {
           map = conf->logger.loggers = hashmap_new();
@@ -724,6 +753,15 @@ int parse_conf_file()
               }else
               if( STR_IS_EQUALS(map_key,"level") ) {
                 conf->logger.level = new_string(value);
+              }
+            }
+
+            if( STR_IS_EQUALS(level_2_key,"storage") ) {
+              if( STR_IS_EQUALS(map_key,"path") ) {
+                conf->storage.path = new_string(value);
+              }else
+              if( STR_IS_EQUALS(map_key,"sqlite") ) {
+                conf->storage.sqlite = new_string(value);
               }
             }
             
@@ -836,6 +874,8 @@ int parse_conf_file()
 
 void start_admin_process();
 int start_main_loop();
+int execute_script();
+int execute_crontab();
 
 /**
  * 
@@ -845,21 +885,20 @@ int main(int argc, char *argv[])
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
 
-  logger_set_level(LOG_NONE);
-  cs_log_set_level(LL_INFO); // _LL_MAX
-
   // 解析命令行参数
   parse_cmd_options(argc,argv);
 
+  logger_set_level_by_name(s_context.log_level);
+  cs_log_set_level(LL_INFO); // _LL_MAX
+
   // 如果只是执行脚本, 执行并退出
   if (s_context.execute_script_path!=NULL) {
-    exit(js_execute_script(s_context.execute_script_path));
+    return execute_script();
   }
 
   // 如果只是执行定时任务, 执行并退出
   if (s_context.crontab_file_path!=NULL) {
-    crontab_thread_proc(NULL);
-    exit(EXIT_SUCCESS);
+    return execute_crontab();
   }
 
   // 如果是读取配置文件, 解析并执行
@@ -870,19 +909,7 @@ int main(int argc, char *argv[])
   struct conf_file_options* conf = &s_context.conf_file_options;
   // 设置日志
   if(conf->logger.enabled){
-    if(STR_IS_EQUALS( conf->logger.level, "trace")){
-      logger_set_level(LOG_TRACE);
-    }else if(STR_IS_EQUALS( conf->logger.level, "debug")){
-      logger_set_level(LOG_DEBUG);
-    }else if(STR_IS_EQUALS( conf->logger.level, "info")){
-      logger_set_level(LOG_INFO);
-    }else if(STR_IS_EQUALS( conf->logger.level, "warn")){
-      logger_set_level(LOG_WARN);
-    }else if(STR_IS_EQUALS( conf->logger.level, "error")){
-      logger_set_level(LOG_ERROR);
-    }else if(STR_IS_EQUALS( conf->logger.level, "fatal")){
-      logger_set_level(LOG_FATAL);
-    }
+    logger_set_level_by_name(conf->logger.level);
   }else{
     logger_set_level(LOG_NONE);
   }
@@ -905,6 +932,43 @@ int main(int argc, char *argv[])
   start_main_loop();
 
   return 0;
+}
+
+
+int execute_crontab()
+{
+  int rc = 0;
+
+  if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
+      fprintf(stderr, "Cannot open DB [%s]\n", s_context.sqlite_path);
+      return rc;
+  }
+
+  crontab_thread_proc(NULL);
+
+  if(s_context.sqlite!=NULL){
+    sqlite3_close(s_context.sqlite);
+  }
+
+  return rc;
+}
+
+int execute_script()
+{
+  int rc = 0;
+
+  if ((rc=sqlite3_open(s_context.sqlite_path, &s_context.sqlite)) ) {
+      fprintf(stderr, "Cannot open DB [%s]: %d\n", s_context.sqlite_path, rc);
+      return rc;
+  }
+
+  rc = js_execute_script(s_context.execute_script_path);
+
+  if(s_context.sqlite!=NULL){
+    sqlite3_close(s_context.sqlite);
+  }
+
+  return rc;
 }
 
 void start_admin_process(){
@@ -939,6 +1003,21 @@ void start_admin_process(){
   }
   mg_opts->auth_domain = gl_opts->admin.auth_domain;
 
+  if(gl_opts->storage.sqlite!=NULL && strlen(gl_opts->storage.sqlite)>0 ){
+
+    char path[256]={0};
+    snprintf(path, sizeof(path), "%s/%s",
+      gl_opts->storage.path,
+      gl_opts->storage.sqlite
+    );
+    
+    if (sqlite3_open(path, &s_context.sqlite) ) {
+      fprintf(stderr, "Cannot open DB [%s]\n", path);
+      exit(EXIT_FAILURE);
+    }
+
+  }
+
   // 初始化libssh运行环境
   ssh_init();
 
@@ -965,7 +1044,9 @@ void start_admin_process(){
   // 释放libssh运行环境资源
   ssh_finalize();
 
-  // if(s_options.sqlite_handle) db_close(&s_options.sqlite_handle);
+  if (s_context.sqlite) {
+    sqlite3_close(s_context.sqlite);
+  }
 
 }
 
@@ -975,12 +1056,6 @@ int start_main_loop()
   struct mg_mgr* mgr = &s_context.event_loop_manager;
   
   struct conf_file_options* gl_opts = &s_context.conf_file_options;
-
-  /* Open database */
-  // if ((s_options.sqlite_handle = db_open(s_db_path)) == NULL) {
-  //     fprintf(stderr, "Cannot open DB [%s]\n", s_db_path);
-  //     exit(EXIT_FAILURE);
-  // }
 
   // 启动定时任务, 如果不运行管理服务, 则在主线程运行, 否则新开一个线程执行
   if(gl_opts->crontab.enabled){
@@ -1881,6 +1956,7 @@ static JSContext* qjs_context_init(JSRuntime* runtime)
 
   JSValue grobal = JS_GetGlobalObject(context);
   JS_SetPropertyStr(context, grobal, "pg_connect_db", JS_NewCFunction(context, js_PQconnectdb, NULL, 0));
+  JS_SetPropertyStr(context, grobal, "sqlite_exec", JS_NewCFunction(context, js_sqlite_exec, NULL, 0));
   JS_FreeValue(context, grobal);
 
   return context;
@@ -2325,7 +2401,9 @@ static int js_execute_script(const char* script_file){
     js_init_module_os(ctx, "os");
 
     JSValue g = JS_GetGlobalObject(ctx);
+    // 是不是可以直接: JS_NewCFunction(ctx, js_PQconnectdb, "pg_connect_db", 0) ???
     JS_SetPropertyStr(ctx, g, "pg_connect_db", JS_NewCFunction(ctx, js_PQconnectdb, NULL, 0));
+    JS_SetPropertyStr(ctx, g, "sqlite_exec", JS_NewCFunction(ctx, js_sqlite_exec, NULL, 0));
     JS_FreeValue(ctx, g);
 
     if (eval_file(ctx, script_file, -1))
@@ -2346,7 +2424,8 @@ static int js_execute_script(const char* script_file){
 // ////////////////////////////////////////////////////////
 // #region crontab implement area
 
-
+static threadpool crontab_thread_pool = NULL;
+int crontab_job_trigger_callback( crontab_job* job, void *user_data);
 void * crontab_thread_proc(void *param) {
   // struct mg_mgr *mgr = (struct mg_mgr *) param;
   
@@ -2378,9 +2457,14 @@ void * crontab_thread_proc(void *param) {
   //     goto free;
   // }
 
+  int thread_count = crontab_get_job_count(crontab);
+  crontab_thread_pool = thpool_init("crontab", thread_count*2);
   while (s_context.signal == 0) {
     sleep(1);
-    crontab_iterate(crontab, crontab_job_trigger_default, NULL);
+    crontab_iterate(crontab, crontab_job_trigger_callback, NULL);
+  }
+  if(crontab_thread_pool!=NULL){
+    thpool_destroy(crontab_thread_pool);
   }
 
 free:
@@ -2388,6 +2472,178 @@ free:
 
   logger_info("the crontab service stoped.");
   return NULL;
+}
+
+void execute_script_in_thread(void* script_file)
+{
+  js_execute_script((const char*)script_file);
+}
+
+// 自动调用fork,调用/bin/sh -c 执行cmd命令, 直到命令执行完后才返回
+int execute_cmd_by_system(const char *cmd)
+{
+  int rc = system(cmd);
+  return rc;
+}
+
+// 自动调用fork,调用/bin/sh -c 执行cmd命令并且建立管道, 可以读取命令执行的输出
+void execute_cmd_by_popen(const char *cmd, char *result)
+{
+  char buf_ps[1024];   
+  char ps[1024]={0};   
+  FILE *ptr;   
+  strcpy(ps, cmd);   
+  if((ptr=popen(ps, "r"))!=NULL)   
+  {   
+      while(fgets(buf_ps, 1024, ptr)!=NULL)   
+      {   
+          strcat(result, buf_ps);   
+          if(strlen(result)>1024)   
+              break;   
+      }   
+      pclose(ptr);   
+      ptr = NULL;   
+  }   
+  else  
+  {   
+      printf("popen %s error\n", ps);   
+  }   
+}
+
+// 如果要重定向输入和输出, 重定向1,2文件描述符
+void execute_cmd_by_execve(const char *path, char *const argv[], char *const envp[])   
+{
+  if(fork()==0)
+  {
+    int rc = execve(path,argv,envp);
+    exit(rc);
+  }
+}
+
+#define CRON_INVALID_INSTANT -1
+int crontab_job_trigger_callback( crontab_job* job, void *user_data){
+    time_t now; time(&now);
+
+    if(job->next_trigger_time==0){
+      if(job->trigger_on_load){
+        job->next_trigger_time = now;
+      }else{
+        job->next_trigger_time = (*job->timer)(job->cron_expr, now);
+      }
+    }
+
+    if(job->next_trigger_time==CRON_INVALID_INSTANT)
+    {
+      logger_error("");
+    }else{
+      logger_debug("diff=%d, now=%d, next_trigger_time=%d", (job->next_trigger_time-now), now, job->next_trigger_time);
+
+      if(now >= job->next_trigger_time){ // 如果当前时间>下一次执行时间, 那么触发执行
+          job->last_trigger_time = now;
+          job->next_trigger_time = (*job->timer)(job->cron_expr, job->last_trigger_time);
+
+          thpool_add_work(crontab_thread_pool, execute_script_in_thread, (void*)job->action);
+          // (*job->runner)(job->id,job->name,job->action,job->payload,user_data);
+      }
+    }
+
+    return 0;
+};
+
+// #endregion crontab implement area
+// ////////////////////////////////////////////////////////
+// #region misc implement area
+
+struct sqlite_result
+{
+  JSContext *ctx;
+
+  int rc;
+  char* errmsg;
+
+  int columnCount;
+  // js array
+  JSValue columns;
+
+  int rowCount;
+  // js array
+  JSValue rows;
+};
+
+int js_sqlite_callback(void* para, int columnCount, char** columnValue, char** columnName);
+static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+{
+  JSValue rs = JS_NewObject(ctx);
+
+  const char* sql = JS_ToCString(ctx, argv[0]);
+  struct sqlite_result result = {0};
+  result.ctx = ctx;
+  result.rc = sqlite3_exec(s_context.sqlite, sql, js_sqlite_callback, &result, &result.errmsg);
+  JS_FreeCString(ctx, sql);
+
+  JS_SetPropertyStr(ctx, rs, "code", JS_NewInt32(ctx, result.rc));
+  if( result.rc == SQLITE_OK ){
+    // fprintf(stdout, "Operation done successfully\n");
+
+    if(result.columnCount>0)
+    {
+      JS_SetPropertyStr(ctx, rs, "columnCount", JS_NewInt32(ctx, result.columnCount));
+      JS_SetPropertyStr(ctx, rs, "columns", result.columns);
+
+      JS_SetPropertyStr(ctx, rs, "rowCount", JS_NewInt32(ctx, result.rowCount));
+      JS_SetPropertyStr(ctx, rs, "rows", result.rows);
+
+      //  如果有callback function, 逐条调用, 如果没有, 则一次过返回结果
+      // JS_IsFunction();
+    }
+
+  }else{
+    JS_SetPropertyStr(ctx, rs, "errmsg", JS_NewString(ctx, result.errmsg));
+
+    JS_SetPropertyStr(ctx, rs, "columnCount", JS_NewInt32(ctx, 0));
+    JS_SetPropertyStr(ctx, rs, "rowCount", JS_NewInt32(ctx, 0));
+
+    sqlite3_free(result.errmsg);
+  }
+
+  // if(result.columnCount>0)
+  // {
+  //   JS_FreeValue(ctx, result.columns);
+  //   JS_FreeValue(ctx, result.rows);
+  // }
+
+  return rs;
+}
+
+int js_sqlite_callback(void* para, int columnCount, char** columnValue, char** columnName)
+{
+  int rc = 0;
+  struct sqlite_result* rs = para;
+  if(rs->columnCount==0){
+    rs->columnCount = columnCount;
+    rs->columns = JS_NewArray(rs->ctx);
+    rs->rows = JS_NewArray(rs->ctx);
+    for (size_t i = 0; i < columnCount; i++)
+    {
+      rc = JS_SetPropertyInt64(rs->ctx, rs->columns, i, JS_NewString(rs->ctx, columnName[i])) ==1 ? 0:1;
+      if(rc) goto clean;
+    }
+  }
+
+  JSValue row = JS_NewArray(rs->ctx);
+  for (size_t i = 0; i < columnCount; i++)
+  {
+    rc = JS_SetPropertyInt64(rs->ctx, row, i, JS_NewString(rs->ctx, columnValue[i])) ==1 ? 0:1;
+    if(rc) goto clean;
+  }
+  rc = JS_SetPropertyInt64(rs->ctx, rs->rows, rs->rowCount, row) ==1 ? 0:1;
+  if(rc) goto clean;
+  rs->rowCount++;
+
+clean:
+  // TODO 释放sqlite_result里的引用
+
+  return rc; // 返回0:继续执行, 非0:中断执行
 }
 
 // #endregion crontab implement area
