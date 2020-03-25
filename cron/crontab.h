@@ -277,6 +277,8 @@ void crontab_register_handler(
     void *userdata
 );
 
+int crontab_get_job_count(crontab* crontab);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

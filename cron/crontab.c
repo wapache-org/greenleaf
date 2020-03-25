@@ -131,7 +131,7 @@ int crontab_load(crontab* crontab)
     job->name = new_string(json_object_get_string(json_object_object_get(j, "name")));
     job->action = new_string(json_object_get_string(json_object_object_get(j, "action")));
     job->payload = new_string(json_object_get_string(json_object_object_get(j, "payload")));
-    job->cron_expr = cronexpr_parse(json_object_get_string(json_object_object_get(j, "cron_expr")), &err);
+    job->cron_expr = cronexpr_parse(json_object_get_string(json_object_object_get(j, "cron")), &err);
 
     if(crontab_add_job(crontab, job)){
         return 2;
@@ -277,4 +277,18 @@ void crontab_register_handler(
   void *userdata
 ){
   // 未实现
+}
+
+
+int crontab_get_job_count(crontab* crontab)
+{
+  int count;
+  for (size_t i = 0; i < crontab->job_size; i++)
+  {
+    crontab_job* job = crontab->jobs[i];
+    if(job) {
+      count++;
+    }
+  }
+  return count;
 }
