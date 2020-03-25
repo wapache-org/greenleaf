@@ -1,11 +1,16 @@
 [
 
 {
+    "cron":"0/3 * * * * *",
     "name":"heartbeat",
     "description":"",
-    "action":"heartbeat",
-    "payload":"",
-    "cron_expr":"0/3 * * * * *"
+    "type":"action/js/shell/python",
+    "mode":"main/thread/process",
+    "pwd":"",
+    "cmd":"",
+    "args":[],
+    "action":"quickjs_modules/sqlite_test.js",
+    "payload":""
 }
     
 ]
