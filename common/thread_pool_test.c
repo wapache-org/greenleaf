@@ -29,7 +29,7 @@ void task2(){
 int main(){
 	
 	puts("Making thread pool with 4 threads");
-	threadpool thpool = thpool_init(4);
+	threadpool thpool = thpool_init("thread-pool", 4);
 
 	puts("Adding 40 tasks to thread pool");
 	int i;
