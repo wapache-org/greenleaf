@@ -384,6 +384,7 @@ static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 // static JSValue js_sqlite_open(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 // static JSValue js_sqlite_close(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+static JSValue js_sqlite_exec2(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 // #endregion sqlite declare area
 // ////////////////////////////////////////////////////////
@@ -1978,6 +1979,7 @@ static JSContext* qjs_context_init(JSRuntime* runtime)
   JSValue grobal = JS_GetGlobalObject(context);
   JS_SetPropertyStr(context, grobal, "pg_connect_db", JS_NewCFunction(context, js_PQconnectdb, NULL, 0));
   JS_SetPropertyStr(context, grobal, "sqlite_exec", JS_NewCFunction(context, js_sqlite_exec, NULL, 0));
+  JS_SetPropertyStr(context, grobal, "sqlite_exec2", JS_NewCFunction(context, js_sqlite_exec2, NULL, 0));
   JS_FreeValue(context, grobal);
 
   return context;
@@ -2425,6 +2427,7 @@ static int js_execute_script(const char* script_file){
     // 是不是可以直接: JS_NewCFunction(ctx, js_PQconnectdb, "pg_connect_db", 0) ???
     JS_SetPropertyStr(ctx, g, "pg_connect_db", JS_NewCFunction(ctx, js_PQconnectdb, NULL, 0));
     JS_SetPropertyStr(ctx, g, "sqlite_exec", JS_NewCFunction(ctx, js_sqlite_exec, NULL, 0));
+    JS_SetPropertyStr(ctx, g, "sqlite_exec2", JS_NewCFunction(ctx, js_sqlite_exec2, NULL, 0));
     JS_FreeValue(ctx, g);
 
     if (eval_file(ctx, script_file, -1))
@@ -2590,6 +2593,8 @@ struct sqlite_result
   int rowCount;
   // js array
   JSValue rows;
+
+  int changeCount;
 };
 
 int js_sqlite_callback(void* para, int columnCount, char** columnValue, char** columnName);
@@ -2617,6 +2622,8 @@ static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, J
 
       //  如果有callback function, 逐条调用, 如果没有, 则一次过返回结果
       // JS_IsFunction();
+    }else{
+      JS_SetPropertyStr(ctx, rs, "changeCount", JS_NewInt32(ctx, result.changeCount));
     }
 
   }else{
@@ -2628,13 +2635,233 @@ static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, J
     sqlite3_free(result.errmsg);
   }
 
-  // if(result.columnCount>0)
-  // {
-  //   JS_FreeValue(ctx, result.columns);
-  //   JS_FreeValue(ctx, result.rows);
-  // }
+  return rs;
+}
+
+#define SQLITE_INTEGER  1
+#define SQLITE_FLOAT    2
+#define SQLITE_TEXT     3
+#define SQLITE_BLOB     4
+#define SQLITE_NULL     5
+static JSValue js_sqlite_exec2(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+{
+  JSValue rs = JS_NewObject(ctx);
+
+  const char* sql = JS_ToCString(ctx, argv[0]);
+  struct sqlite_result result = {0};
+  result.ctx = ctx;
+
+  int rc;
+  sqlite3_stmt* stmt;
+  const char *pztail;
+
+  rc=sqlite3_prepare(s_context.sqlite, sql, strlen(sql)+1, &stmt,&pztail);
+  if(rc==SQLITE_OK){
+    for (size_t i = 1; i < argc; i++)
+    {
+      JSValueConst value = argv[i];
+
+      if(JS_IsNull(value) || JS_IsUndefined(value)){
+        sqlite3_bind_null(stmt,i);
+      }else
+      if(JS_IsString(value)){
+        const char * v = JS_ToCString(ctx, value);
+        sqlite3_bind_text(stmt,i,v,-1,SQLITE_STATIC);
+        JS_FreeCString(ctx, v);
+      }else
+      if(JS_IsNumber(value)){
+          int64_t v;
+          JS_ToInt64(ctx, &v, value);
+          double v2;
+          JS_ToFloat64(ctx, &v2, value);
+        if(v==v2){
+          sqlite3_bind_int64(stmt, i, v);
+        }else{
+          sqlite3_bind_double(stmt, i, v2);
+        }
+      }else
+      if(JS_IsBool(value)){
+          sqlite3_bind_int(stmt, i, JS_ToBool(ctx, value));
+      // }else{
+      //   const char * type_name = JS_ToCString(ctx, type);
+
+      //   if(STR_IS_EQUALS(type_name,"int")){
+      //     int32_t v;
+      //     JS_Toint(ctx, &v, value);
+      //     sqlite3_bind_int(stmt, i, v);
+      //   }else
+      //   if(STR_IS_EQUALS(type_name,"double")){
+      //     double v;
+      //     JS_ToFloat64(ctx, &v, value);
+      //     sqlite3_bind_double(stmt, i, v);
+      //   }else
+      //   if(STR_IS_EQUALS(type_name,"bool")){
+      //     sqlite3_bind_int(stmt, i, JS_ToBool(ctx, value));
+      //   }else
+      //   if(STR_IS_EQUALS(type_name,"long")){
+      //     int64_t v;
+      //     JS_Toint64(ctx, &v, value);
+      //     sqlite3_bind_int64(stmt, i, v);
+      //   }
+        
+
+      }
+    }
+
+    int column_count = sqlite3_column_count(stmt); 
+    int done = 0;
+    while(!done){
+      rc = sqlite3_step(stmt);
+      switch(rc){
+        case SQLITE_ROW :
+
+          if(result.columnCount==0){
+            result.columnCount = column_count;
+            result.columns = JS_NewArray(ctx);
+            result.rows = JS_NewArray(ctx);
+            for (size_t i = 0; i < column_count; i++)
+            {
+              const char* column_name = sqlite3_column_name(stmt,i);
+              rc = JS_SetPropertyInt64(ctx, result.columns, i, JS_NewString(ctx, column_name)) ==1 ? 0:1;
+              if(rc) goto clean;
+            }
+            // JSValue json = JS_JSONStringify(ctx, result.columns, JS_NULL, JS_NULL);
+            // const char * str = JS_ToCString(ctx, json);
+            // logger_info(str);
+            // JS_FreeCString(ctx, str);
+            // JS_FreeValue(ctx, json);
+          }
+
+          JSValue row = JS_NewArray(ctx);
+          for (size_t i = 0; i < column_count; i++)
+          {
+            switch(sqlite3_column_type(stmt , i)){
+              case SQLITE_INTEGER:
+                rc = JS_SetPropertyInt64(ctx, row, i, JS_NewInt64(ctx, sqlite3_column_int64(stmt , i))) ==1 ? 0:1;
+                if(rc) goto clean;
+                break;
+              case SQLITE_FLOAT:
+                rc = JS_SetPropertyInt64(ctx, row, i, JS_NewFloat64(ctx, sqlite3_column_double(stmt , i))) ==1 ? 0:1;
+                if(rc) goto clean;
+                break;
+              case SQLITE_TEXT:
+                rc = JS_SetPropertyInt64(ctx, row, i, JS_NewString(ctx, sqlite3_column_text(stmt , i))) ==1 ? 0:1;
+                if(rc) goto clean;
+                break;
+              case SQLITE_BLOB:
+              case SQLITE_NULL:
+              default:
+                rc = JS_SetPropertyInt64(ctx, row, i, JS_NULL) ==1 ? 0:1;
+                if(rc) goto clean;
+                break;
+            }
+          }
+          rc = JS_SetPropertyInt64(ctx, result.rows, result.rowCount, row) ==1 ? 0:1;
+          if(rc) goto clean;
+          result.rowCount++;
+        break;
+        case SQLITE_DONE:
+          if(result.columnCount==0 && column_count>0){
+            result.columnCount = column_count;
+            result.columns = JS_NewArray(ctx);
+            for (size_t i = 0; i < column_count; i++)
+            {
+              const char* column_name = sqlite3_column_name(stmt,i);
+              rc = JS_SetPropertyInt64(ctx, result.columns, i, JS_NewString(ctx, column_name)) ==1 ? 0:1;
+              if(rc) goto clean;
+            }
+          }
+          result.changeCount = sqlite3_changes(s_context.sqlite);
+          done = 1;
+        break;
+        default:
+          done = 2;
+        break;
+      }
+    }
+
+  // boolean:  0:false,1:true  
+  clean:
+    sqlite3_finalize(stmt);
+  }
+// typedef struct sqlite3_stmt sqlite3_stmt;
+// int sqlite3_prepare(sqlite3, const char, int, sqlite3_stmt, const char);
+
+// int sqlite3_finalize(sqlite3_stmt*);
+
+
+// int sqlite3_bind_double(sqlite3_stmt*, int, double);
+ 
+// int sqlite3_bind_int(sqlite3_stmt*, int, int);
+// int sqlite3_bind_int64(sqlite3_stmt*, int, long long int);
+ 
+// int sqlite3_bind_null(sqlite3_stmt*, int);
+ 
+// int sqlite3_bind_text(sqlite3_stmt, int, const char, int n, void()(void));
+
+
+//    typeof(str)  //string
+//    typeof(num)  //number
+//    typeof(obj)  //object
+//    typeof(arr)  //object
+//    typeof(fn)  //function
+
+// new Date() instanceof Date
+
+// Number.isInteger
+
+// JS_IsBool
+
+
+// int sqlite3_column_count(sqlite3_stmt*);
+
+// int sqlite3_column_type(sqlite3_stmt*, int iCol);
+
+
+// const char sqlite3_column_name(sqlite3_stmt, int iCol);
+
+
+// int sqlite3_column_int(sqlite3_stmt*, int iCol);
+
+// long long int sqlite3_column_int64(sqlite3_stmt*, int iCol);
+ 
+// double sqlite3_column_double(sqlite3_stmt*, int iCol);
+ 
+// const unsigned char sqlite3_column_text(sqlite3_stmt, int iCol);
+
+
+  JS_FreeCString(ctx, sql);
+
+  JS_SetPropertyStr(ctx, rs, "code", JS_NewInt32(ctx, result.rc));
+  if( result.rc == SQLITE_OK ){
+    // fprintf(stdout, "Operation done successfully\n");
+
+    if(result.columnCount>0)
+    {
+      JS_SetPropertyStr(ctx, rs, "columnCount", JS_NewInt32(ctx, result.columnCount));
+      JS_SetPropertyStr(ctx, rs, "columns", result.columns);
+
+      JS_SetPropertyStr(ctx, rs, "rowCount", JS_NewInt32(ctx, result.rowCount));
+      JS_SetPropertyStr(ctx, rs, "rows", result.rows);
+
+      //  如果有callback function, 逐条调用, 如果没有, 则一次过返回结果
+      // JS_IsFunction();
+    }else{
+      JS_SetPropertyStr(ctx, rs, "changeCount", JS_NewInt32(ctx, result.changeCount));
+    }
+
+  }else{
+    JS_SetPropertyStr(ctx, rs, "errmsg", JS_NewString(ctx, result.errmsg));
+
+    JS_SetPropertyStr(ctx, rs, "changeCount", JS_NewInt32(ctx, result.changeCount));
+    JS_SetPropertyStr(ctx, rs, "columnCount", JS_NewInt32(ctx, 0));
+    JS_SetPropertyStr(ctx, rs, "rowCount", JS_NewInt32(ctx, 0));
+
+    sqlite3_free(result.errmsg);
+  }
 
   return rs;
+
 }
 
 int js_sqlite_callback(void* para, int columnCount, char** columnValue, char** columnName)
@@ -2655,12 +2882,14 @@ int js_sqlite_callback(void* para, int columnCount, char** columnValue, char** c
   JSValue row = JS_NewArray(rs->ctx);
   for (size_t i = 0; i < columnCount; i++)
   {
-    rc = JS_SetPropertyInt64(rs->ctx, row, i, JS_NewString(rs->ctx, columnValue[i])) ==1 ? 0:1;
+    rc = JS_SetPropertyInt64(rs->ctx, row, i, columnValue[i]==NULL ? JS_NULL : JS_NewString(rs->ctx, columnValue[i])) ==1 ? 0:1;
     if(rc) goto clean;
   }
   rc = JS_SetPropertyInt64(rs->ctx, rs->rows, rs->rowCount, row) ==1 ? 0:1;
   if(rc) goto clean;
   rs->rowCount++;
+  
+  rs->changeCount = sqlite3_changes(s_context.sqlite);
 
 clean:
   // TODO 释放sqlite_result里的引用
