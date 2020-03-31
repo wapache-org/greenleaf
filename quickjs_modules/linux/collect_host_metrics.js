@@ -69,7 +69,7 @@ rs = sqlite_exec2(`INSERT OR REPLACE INTO ${table_name} VALUES (?, ?, ?, ?, ?, ?
 if(rs.code) console.log("INSERT", JSON.stringify(rs, undefined, 2));
 
 let query = `
-SELECT id, end_time - start_time as duration, cpu, memory, disk, network
+SELECT id, datetime(id, 'unixepoch') as collect_time, end_time - start_time as duration, cpu, memory, disk, network
 FROM metrics_host_20200331
 order by id desc;
 `;
