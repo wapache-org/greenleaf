@@ -26,6 +26,8 @@ typedef void *any_t;
  */
 typedef int (*PFany)(any_t, any_t);
 
+typedef int (*iteration_fn)(any_t context, const char* key, any_t value);
+
 /*
  * map_t is a pointer to an internally maintained data structure.
  * Clients of this package do not need to know how hashmaps are
@@ -39,28 +41,33 @@ typedef any_t map_t;
 extern map_t hashmap_new();
 
 /*
- * Iteratively call f with argument (item, data) for
- * each element data in the hashmap. The function must
- * return a map status code. If it returns anything other
- * than MAP_OK the traversal is terminated. f must
- * not reenter any hashmap functions, or deadlock may arise.
+ * Iteratively call f with argument (item, data) for each element data in the hashmap.
+ * The function must return a map status code.
+ * If it returns anything other than MAP_OK the traversal is terminated.
+ * f must not reenter any hashmap functions, or deadlock may arise.
+ * 
+ * @param in
+ * @param f 迭代函数, 函数原型是 int f(context, key, value), 继续迭代返回 MAP_OK, 否则返回其他
+ * @param context 额外参数, 传递给f的第一个参数
  */
 extern int hashmap_iterate(map_t in, PFany f, any_t item);
+
+extern int hashmap_foreach(map_t in, iteration_fn f, any_t context);
 
 /*
  * Add an element to the hashmap. Return MAP_OK or MAP_OMEM.
  */
-extern int hashmap_put(map_t in, char* key, any_t value);
+extern int hashmap_put(map_t in, const char* key, any_t value);
 
 /*
  * Get an element from the hashmap. Return MAP_OK or MAP_MISSING.
  */
-extern int hashmap_get(map_t in, char* key, any_t *arg);
+extern int hashmap_get(map_t in, const char* key, any_t *arg);
 
 /*
  * Remove an element from the hashmap. Return MAP_OK or MAP_MISSING.
  */
-extern int hashmap_remove(map_t in, char* key);
+extern int hashmap_remove(map_t in, const char* key);
 
 /*
  * Get any element. Return MAP_OK or MAP_MISSING.
