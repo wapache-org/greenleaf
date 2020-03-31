@@ -12,12 +12,6 @@
 
 static const size_t str_builder_min_size = 32;
 
-struct str_builder {
-    char   *str;
-    size_t  alloced;
-    size_t  len;
-};
-
 /* - - - - */
 
 str_builder_t *str_builder_create(void)
@@ -74,6 +68,11 @@ static void str_builder_ensure_space(str_builder_t *sb, size_t add_len)
 
 /* - - - - */
 
+/**
+ * @param sb
+ * @param str
+ * @param len 传0代表取len=strlen(str);
+ */
 void str_builder_add_str(str_builder_t *sb, const char *str, size_t len)
 {
     if (sb == NULL || str == NULL || *str == '\0')

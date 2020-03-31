@@ -9,8 +9,11 @@
  *
  * @{
  */
-
-struct str_builder;
+struct str_builder {
+    char   *str;
+    size_t  alloced;
+    size_t  len;
+};
 typedef struct str_builder str_builder_t;
 
 /* - - - - */
