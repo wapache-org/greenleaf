@@ -16,20 +16,20 @@
 # 组件
 
 ```
-+--------------------------------------------------+
-|        Other Systemm    |      Browser           | 
-+--------------------------------------------------+
++------------------------------------------------+
+|        Other Systemm    |      Browser         | 
++------------------------------------------------+
                           | 
                           V  
-+--------------------------------------------------+
-|          RESTful API    |  WebSocket API         | <---- remote host/greenplum/postgresql/greenleaf
-+--------------------------------------------------+
-|      |             Web Server                    |
-+ cron |-------------------------------------------+
-|      |cgi engine | lua engine | js engine        | 
-+ tab  |-------------------------------------------+
-|      | local storage    |        ssh             | -----> (remote or local) host/greenplum/postgresql/greenleaf
-+--------------------------------------------------+
++------------------------------------------------+
+|          RESTful API    |  WebSocket API       | <-- remote host/greenplum/postgresql/greenleaf
++------------------------------------------------+
+|      |             Web Server                  |
++ cron |-----------------------------------------+
+|      |cgi engine | lua engine | js engine      | 
++ tab  |-----------------------------------------+
+|      | local storage    |        ssh           | --> (remote or local) host/greenplum/postgresql/greenleaf
++------------------------------------------------+
 ```
 
 # 依赖
@@ -96,12 +96,14 @@ make
 Usages: 
     greenleaf -c conf/crontab.json
     greenleaf -e qjs-modules/hello.js
-    greenleaf -f conf/greenleaf.yml
+    greenleaf -f conf/build/greenleaf.yml
 Options:
-    [-c, --crontab]     the contab json file, e.g. conf/crontab.json
-    [-e, --execute]     execute script
-    [-f, --file]     the config file, default is conf/greenleaf.yml
-    [-h, --help]     print this message
+    [-c, --crontab  ]     the contab json file, e.g. conf/crontab.json
+    [-d, --database ]     the embed database file, e.g. data/sqlite.db
+    [-e, --execute  ]     execute the script
+    [-f, --file     ]     the config file, default is conf/greenleaf.yml
+    [-h, --help     ]     print this message
+    [-l, --log-level]     set log level: trace,debug,info,warn,fatal,none
 ```
 
 * `-c, --crontab`定时执行指定crontab文件里的job.
@@ -113,6 +115,17 @@ webssh体验:
 2. `build/greenleaf -q quickjs_modules/api_request_handler.js`启动服务器
 3. 浏览器访问`http://localhost:8000/xterm/index.html`
 4. 稍等片刻即可通过网页访问后端的ssh
+
+收集主机统计信息:
+
+统计信息包括: CPU使用率/内存使用率/磁盘IO/网络IO等4个方面
+收集到的信息保存在数据库的`metrics_host_${年月日}`表中.
+
+```
+build/greenleaf -d data/sqlite.db -c conf/crontab.json -l debug
+```
+
+详见 [quickjs_modules/linux/README.md](quickjs_modules/linux/README.md)
 
 ## examples/cgi_example
 
@@ -195,3 +208,5 @@ build/examples/sqlite_example
 2020-03-16 00:18:24 截止至今日, 只能用席卷全球来形容了!
 
 2020-03-22 23:47:03 截止至今日, 支援武汉的医护人员已经完成使命了, 国内基本无新增病例, 可是国外疫情却越来越糟糕了!
+
+2020-04-01 00:36:37 截止至今日, 国外疫情依然没有好转的迹象!
