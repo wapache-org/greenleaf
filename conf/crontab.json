@@ -1,7 +1,7 @@
 [
 
 {
-    "cron":"0/3 * * * * *",
+    "cron":"0/1 * * * * *",
     "name":"heartbeat",
     "description":"",
     "type":"action/js/shell/python",
@@ -9,7 +9,7 @@
     "pwd":"",
     "cmd":"",
     "args":[],
-    "action":"quickjs_modules/sqlite_test.js",
+    "action":"quickjs_modules/linux/collect_host_metrics.js",
     "payload":""
 }
     
