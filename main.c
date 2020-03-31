@@ -14,6 +14,7 @@
 #include <assert.h>
 
 #include <sys/prctl.h>
+#include <sys/time.h>
 
 // header for postgresql
 #include "libpq-fe.h"
@@ -385,6 +386,36 @@ static JSValue js_PQclear(JSContext *ctx, JSValueConst this_val, int argc, JSVal
 // static JSValue js_sqlite_close(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_sqlite_exec(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 static JSValue js_sqlite_exec2(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
+static JSValue js_get_physical_network_interface_io_speed(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
+int callback_fn_get_physical_nic(any_t map_context, const char* key, any_t value);
+
+int load_physical_network_interfaces();
+int update_physical_network_interface_io_rate();
+void* thread_fn_update_physical_network_interface_io_rate(void* ctx);
+
+
+// 网卡列表 Map<网卡名称, struct nic_stat*>
+map_t nic_map = NULL;
+
+struct nic 
+{
+	struct timeval ts;
+	long rx_bytes;
+	long tx_bytes;
+};
+
+struct nic_stat
+{
+	char* name;
+	long read; // B/s
+	long write; // B/s
+
+	struct nic* n0; //    指向 n1 或者 n2
+	struct nic n1;
+	struct nic n2;
+};
 
 // #endregion sqlite declare area
 // ////////////////////////////////////////////////////////
@@ -1146,6 +1177,8 @@ int start_main_loop()
     logger_info("multicast group %s: joined on %s", conf->name, group_address);
   }
 
+  mg_start_thread(thread_fn_update_physical_network_interface_io_rate, NULL);
+
   logger_info("Start main event loop");
   while (s_context.signal == 0) {
     mg_mgr_poll(mgr, 1000);
@@ -1156,6 +1189,18 @@ int start_main_loop()
   logger_info("Exiting main event loop on signal %d", s_context.signal);
 
   return 0;
+}
+
+void* thread_fn_update_physical_network_interface_io_rate(void* ctx)
+{
+  logger_debug("Start update_physical_network_interface thread");
+  load_physical_network_interfaces();
+  while (s_context.signal == 0) {
+    update_physical_network_interface_io_rate();
+    sleep(1);
+  }
+  logger_debug("Stop update_physical_network_interface thread");
+  return NULL;
 }
 
 static void multicast_event_handler(struct mg_connection *nc, int ev, void *p) {
@@ -1980,6 +2025,7 @@ static JSContext* qjs_context_init(JSRuntime* runtime)
   JS_SetPropertyStr(context, grobal, "pg_connect_db", JS_NewCFunction(context, js_PQconnectdb, NULL, 0));
   JS_SetPropertyStr(context, grobal, "sqlite_exec", JS_NewCFunction(context, js_sqlite_exec, NULL, 0));
   JS_SetPropertyStr(context, grobal, "sqlite_exec2", JS_NewCFunction(context, js_sqlite_exec2, NULL, 0));
+  JS_SetPropertyStr(context, grobal, "sys_get_pni_speed", JS_NewCFunction(context, js_get_physical_network_interface_io_speed, NULL, 0));
   JS_FreeValue(context, grobal);
 
   return context;
@@ -2428,6 +2474,7 @@ static int js_execute_script(const char* script_file){
     JS_SetPropertyStr(ctx, g, "pg_connect_db", JS_NewCFunction(ctx, js_PQconnectdb, NULL, 0));
     JS_SetPropertyStr(ctx, g, "sqlite_exec", JS_NewCFunction(ctx, js_sqlite_exec, NULL, 0));
     JS_SetPropertyStr(ctx, g, "sqlite_exec2", JS_NewCFunction(ctx, js_sqlite_exec2, NULL, 0));
+    JS_SetPropertyStr(ctx, g, "sys_get_pni_speed", JS_NewCFunction(ctx, js_get_physical_network_interface_io_speed, NULL, 0));
     JS_FreeValue(ctx, g);
 
     if (eval_file(ctx, script_file, -1))
@@ -2481,10 +2528,13 @@ void * crontab_thread_proc(void *param) {
   //     goto free;
   // }
 
+  load_physical_network_interfaces();
+
   int thread_count = crontab_get_job_count(crontab);
   crontab_thread_pool = thpool_init("crontab", thread_count*2);
   while (s_context.signal == 0) {
     sleep(1);
+    update_physical_network_interface_io_rate();
     crontab_iterate(crontab, crontab_job_trigger_callback, NULL);
   }
   if(crontab_thread_pool!=NULL){
@@ -2512,27 +2562,23 @@ int execute_cmd_by_system(const char *cmd)
 }
 
 // 自动调用fork,调用/bin/sh -c 执行cmd命令并且建立管道, 可以读取命令执行的输出
-void execute_cmd_by_popen(const char *cmd, char *result)
+void execute_cmd_by_popen(const char *cmd, struct str_builder *sb)
 {
-  char buf_ps[1024];   
-  char ps[1024]={0};   
-  FILE *ptr;   
-  strcpy(ps, cmd);   
-  if((ptr=popen(ps, "r"))!=NULL)   
-  {   
+  char buf_ps[1024];
+  FILE *ptr;
+  if((ptr=popen(cmd, "r"))!=NULL)   
+  {
       while(fgets(buf_ps, 1024, ptr)!=NULL)   
-      {   
-          strcat(result, buf_ps);   
-          if(strlen(result)>1024)   
-              break;   
-      }   
+      {
+        str_builder_add_str(sb, buf_ps, 0);  
+      }
       pclose(ptr);   
       ptr = NULL;   
   }   
   else  
   {   
-      printf("popen %s error\n", ps);   
-  }   
+      printf("popen `%s` error\n", cmd);   
+  }
 }
 
 // 如果要重定向输入和输出, 重定向1,2文件描述符
@@ -2902,5 +2948,201 @@ clean:
 // #region misc implement area
 
 
+
+int load_physical_network_interfaces()
+{
+  if(nic_map!=NULL){
+    return 0;
+  }
+  nic_map = hashmap_new();
+
+  str_builder_t * sb = str_builder_create();
+  const char* cmd = "ls /sys/class/net | egrep -v \"`ls /sys/devices/virtual/net | awk 'BEGIN {print \\\"^&\\\"}{print \\\"|\\\"$0 }' | tr -d '\\n'`\"";
+  logger_debug("cmd is %s", cmd);
+  execute_cmd_by_popen(cmd, sb);
+  size_t last = 0;
+  for (size_t i = 0; i < sb->len; i++)
+  {
+    if(sb->str[i]=='\n'){
+      if(i-last>1){
+        char* name = calloc(i-last+1, sizeof(char));
+        strncpy(name, sb->str+last, i-last);
+        struct nic_stat *ns = malloc(sizeof(struct nic_stat));
+        ns->name = name;
+        ns->n0 = NULL;
+
+        hashmap_put(nic_map, name, ns);
+      }
+      last = i+1;
+    }
+  }
+  str_builder_destroy(sb);
+}
+
+int get_physical_network_interface_io_rate(const char *name, long * rx, long * tx)
+{
+  struct nic_stat *stat;
+  if(hashmap_get(nic_map, name, (void**)&stat) == MAP_OK){
+    *rx = stat->read;
+    *tx = stat->write;
+    return 0;
+  }else{
+    *rx = -1;
+    *tx = -1;
+    return -1;
+  }
+}
+
+struct hashmap_callback_context
+{
+  JSContext *ctx;
+  JSValue *info;
+};
+
+
+int set_physical_nic(JSContext *ctx, JSValue info, struct nic_stat *stat);;;;;;;
+static JSValue js_get_physical_network_interface_io_speed(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+{
+  JSValue info = JS_NewObject(ctx);
+  
+  if(argc==1)
+  {
+    const char *name = JS_ToCString(ctx, argv[1]);
+    struct nic_stat *stat;
+    if(hashmap_get(nic_map, name, (void**)&stat) == MAP_OK){
+      set_physical_nic(ctx, info, stat);
+    }else{
+      set_physical_nic(ctx, info, NULL);
+    }
+    JS_FreeCString(ctx, name);
+
+  }else{
+    // all
+    struct hashmap_callback_context context;
+    context.ctx = ctx;
+    context.info = &info;
+    hashmap_foreach(nic_map, callback_fn_get_physical_nic, &context);
+  }
+
+  return info;
+}
+
+int callback_fn_get_physical_nic(any_t map_context, const char* key, any_t value)
+{
+  struct hashmap_callback_context *context = map_context;
+  JSContext *ctx = context->ctx;
+  struct nic_stat *stat = value;
+
+  JSValue info = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, *(context->info), key, info);
+  set_physical_nic(ctx, info, stat);
+
+  return 0;
+}
+
+int set_physical_nic(JSContext *ctx, JSValue info, struct nic_stat *stat)
+{
+  JS_SetPropertyStr(ctx, info, "read", JS_NewInt64(ctx, stat==NULL ? -1 : stat->read));
+  JS_SetPropertyStr(ctx, info, "write", JS_NewInt64(ctx, stat==NULL ? -1 : stat->write));
+
+  // JS_SetPropertyStr(ctx, info, "rx_bytes", JS_NewInt64(ctx, stat==NULL ? -1 : stat->n0->rx_bytes));
+  // JS_SetPropertyStr(ctx, info, "tx_bytes", JS_NewInt64(ctx, stat==NULL ? -1 : stat->n0->tx_bytes));
+}
+
+
+int get_file_content(const char* file, struct str_builder *sb);
+int callback_fn_update_physical_nic_io_rate(any_t context, const char* key, any_t value);
+int update_physical_network_interface_io_rate()
+{
+  // 循环网卡, 逐个更新速度
+  hashmap_foreach(nic_map, callback_fn_update_physical_nic_io_rate, NULL);
+}
+
+int callback_fn_update_physical_nic_io_rate(any_t context, const char* key, any_t value)
+{
+  struct nic_stat *stat = value;
+
+  struct nic *curr = stat->n0 != &stat->n2 ? &stat->n1 : &stat->n2;
+  struct nic *next = stat->n0 == &stat->n2 ? &stat->n1 : &stat->n2;
+
+  gettimeofday(&next->ts, NULL );  
+
+  char path[512];
+  str_builder_t *sb = str_builder_create();
+
+  sprintf(path, "/sys/class/net/%s/statistics/rx_bytes", key);
+  get_file_content(path, sb);
+  next->rx_bytes = sb->len > 0 ? atol(sb->str) : 0;
+
+  str_builder_clear(sb);
+
+  sprintf(path, "/sys/class/net/%s/statistics/tx_bytes", key);
+  get_file_content(path, sb);
+  next->tx_bytes = sb->len > 0 ? atol(sb->str) : 0;
+
+  logger_debug("curr: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
+    curr->ts.tv_sec, curr->ts.tv_usec, curr->rx_bytes, curr->tx_bytes, stat->read, stat->write);
+  if(stat->n0!=NULL){
+    double duration = (double)((next->ts.tv_sec - curr->ts.tv_sec)*1000000 + next->ts.tv_usec - curr->ts.tv_usec) / 1000000;
+    stat->read = (long)((double)(next->rx_bytes - curr->rx_bytes) / duration + 0.5);
+    stat->write = (long)((double)(next->tx_bytes - curr->tx_bytes) / duration + 0.5);
+  }else{
+    stat->read = -1;
+    stat->write = -1;
+  }
+  logger_debug("next: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
+    next->ts.tv_sec, next->ts.tv_usec, next->rx_bytes, next->tx_bytes, stat->read, stat->write);
+
+  stat->n0 = next; // 切换当前值
+
+  str_builder_destroy(sb);
+}
+
+int get_file_content(const char* file, struct str_builder *sb)
+{
+
+  char buf_ps[1024];
+  FILE *ptr;
+  if((ptr=fopen(file, "r"))!=NULL)   
+  {
+      while(fgets(buf_ps, 1024, ptr)!=NULL)   
+      {
+        str_builder_add_str(sb, buf_ps, 0);  
+      }
+      pclose(ptr);   
+      ptr = NULL;   
+  }   
+  else  
+  {   
+      printf("get_file_content `%s` error\n", file);   
+      return -1;
+  }
+
+  return 0;
+}
+
 // #endregion misc implement area
 // ////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef WIN32
+#include <windows.h>
+#elif _POSIX_C_SOURCE >= 199309L
+#include <time.h>   // for nanosleep
+#else
+#include <unistd.h> // for usleep
+#endif
+
+void sleep_ms(int milliseconds) // cross-platform sleep function
+{
+#ifdef WIN32
+    Sleep(milliseconds);
+#elif _POSIX_C_SOURCE >= 199309L
+    struct timespec ts;
+    ts.tv_sec = milliseconds / 1000;
+    ts.tv_nsec = (milliseconds % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#else
+    usleep(milliseconds * 1000);
+#endif
+}
