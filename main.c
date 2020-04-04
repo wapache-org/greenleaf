@@ -28,7 +28,16 @@
 
 // header for mongoose
 #include "mongoose.h"
+
+#ifndef GL_ENABLE_WEBSSH
+#define ENABLE_WEBSSH 0
+#else
+#define ENABLE_WEBSSH 1
+#endif
+
+#if ENABLE_WEBSSH
 #include "ssh/ssh_common.h"
+#endif
 
 #include "crontab.h"
 #include "common/logger.h"
@@ -36,11 +45,13 @@
 #include "common/array_list.h"
 #include "common/hash_map.h"
 #include "common/thread_pool.h"
+#include "common/snowflake.h"
 
 #include "yaml.h"
 
 #include "sqlite3.h"
 
+#include "json-c/json.h"
 
 // #endregion include area
 // ////////////////////////////////////////////////////////////////////////////
@@ -235,6 +246,9 @@ static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc,
 // #endregion-api declare area
 // ////////////////////////////////////////////////////////
 // #region websocket~ssh declare area
+
+#if ENABLE_WEBSSH
+
 #define WS_SSH_READ_BUF_SIZE 1024
 
 // This info is passed by the worker thread to mg_broadcast
@@ -314,6 +328,7 @@ static void free_ws_ssh_context(struct ws_ssh_context *context)
 
 static int ws_ssh_connect(struct ws_ssh_context *context);
 static int ssh_authenticate(ssh_session session, char* password);
+#endif
 
 extern void ssh_print_supported_auth_methods(int method_mark);
 extern void ssh_print_error(ssh_session session);
@@ -454,9 +469,6 @@ void print_call_stack(void) {
 // ////////////////////////////////////////////////////////
 // #region misc declare area
 
-// 心跳内容
-static char* heartbeat_content = "heartbeat.";
-
 // 事件处理器
 static void multicast_event_handler(struct mg_connection *nc, int ev, void *p);
 
@@ -528,9 +540,7 @@ struct conf_file_options
 // 对应greenpleaf配置文件中的groups配置项
 struct multicast_context
 {
-    int enabled;
-    char* name; 
-    int heartbeat;
+  struct group_conf *conf;
 
   // 组播"连接"
   struct mg_connection *sender;
@@ -551,6 +561,8 @@ struct admin_context
 // 命令行上下文
 struct cmd_context {
 
+  long int instance_id;
+
   char * log_level;
 
   char * sqlite_path;
@@ -567,6 +579,7 @@ struct cmd_context {
 
   struct mg_mgr event_loop_manager;
 
+  struct mg_mgr admin_mgr;
   struct admin_context admin_context;
 
   int group_count;
@@ -596,7 +609,7 @@ static void parse_cmd_options(int argc, char* argv[])
   s_context.sqlite = NULL;
   s_context.log_level = "none";
 
-  s_context.conf_file_path = "conf/greenleaf.yml";
+  s_context.conf_file_path = NULL; //"conf/greenleaf.yml";
   struct conf_file_options* conf = &s_context.conf_file_options;
 
   struct mg_serve_http_opts* opts = &s_context.admin_context.mg_options;
@@ -637,6 +650,15 @@ static void parse_cmd_options(int argc, char* argv[])
       break;
     }
   }
+
+  if(s_context.execute_script_path == NULL 
+  && s_context.conf_file_path      == NULL 
+  && s_context.crontab_file_path   == NULL 
+  ){
+      usage(argc, argv);
+      exit(EXIT_SUCCESS);
+  }
+
 }
 
 // TODO : yaml的api还不熟悉, 这个函数有内存泄漏, 逻辑也很混乱, 需要重写.
@@ -907,7 +929,7 @@ int parse_conf_file()
 // ////////////////////////////////////////////////////////
 // #region main function implement area
 
-void start_admin_process();
+void* start_admin_process(void *param);
 int start_main_loop();
 int execute_script();
 int execute_crontab();
@@ -919,6 +941,12 @@ int main(int argc, char *argv[])
 {
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
+  signal(SIGBUS, signal_handler);
+
+  if(snowflake_init_local()){
+      exit(EXIT_FAILURE);
+  }
+  s_context.instance_id = snowflake_id_local();
 
   // 解析命令行参数
   parse_cmd_options(argc,argv);
@@ -937,29 +965,34 @@ int main(int argc, char *argv[])
   }
 
   // 如果是读取配置文件, 解析并执行
-  if(parse_conf_file()){
-    exit(EXIT_FAILURE);
-  }
+  if (s_context.conf_file_path!=NULL) {
+    if(parse_conf_file()){
+      exit(EXIT_FAILURE);
+    }
 
-  struct conf_file_options* conf = &s_context.conf_file_options;
-  // 设置日志
-  if(conf->logger.enabled){
-    logger_set_level_by_name(conf->logger.level);
-  }else{
-    logger_set_level(LOG_NONE);
-  }
-
-  if(conf->admin.enabled) {
-    pid_t child_pid = fork(); // fork进程, 启动管理服务
-    if (child_pid == 0){
-			logger_info("This is child process, parent process id is: %d, child process id is: %d", getppid(), getpid());
-      // child process
-      start_admin_process();
-      exit(EXIT_SUCCESS);
+    struct conf_file_options* conf = &s_context.conf_file_options;
+    // 设置日志
+    if(conf->logger.enabled){
+      logger_set_level_by_name(conf->logger.level);
     }else{
-			logger_info("This is parent process, parent process id is: %d, child process id is: %d", getpid(), child_pid);
-      // parent process
-      prctl(PR_SET_PDEATHSIG,SIGHUP); // 防止父进程意外退出, 子进程成了野生进程
+      logger_set_level(LOG_NONE);
+    }
+
+    if(conf->admin.enabled) {
+      
+      mg_start_thread(start_admin_process, NULL);
+      // TODO: 如果用子进程, 需要进程间通信才能获取节点信息, 暂时改为用线程来启动.
+      // pid_t child_pid = fork(); // fork进程, 启动管理服务
+      // if (child_pid == 0){
+      //   logger_info("This is child process, parent process id is: %d, child process id is: %d", getppid(), getpid());
+      //   // child process
+      //   start_admin_process(NULL);
+      //   exit(EXIT_SUCCESS);
+      // }else{
+      //   logger_info("This is parent process, parent process id is: %d, child process id is: %d", getpid(), child_pid);
+      //   // parent process
+      //   prctl(PR_SET_PDEATHSIG,SIGHUP); // 防止父进程意外退出, 子进程成了野生进程
+      // }
     }
   }
 
@@ -1024,9 +1057,9 @@ int execute_script()
   return rc;
 }
 
-void start_admin_process(){
+void* start_admin_process(void *param){
 
-  struct mg_mgr* mgr = &s_context.event_loop_manager;
+  struct mg_mgr* mgr = &s_context.admin_mgr;
   struct admin_context* ctx = &s_context.admin_context;
 
   struct mg_serve_http_opts* mg_opts = &ctx->mg_options;
@@ -1037,7 +1070,7 @@ void start_admin_process(){
   struct mg_connection * nc = mg_bind(mgr, gl_opts->admin.bind_address, admin_event_handler);
   // {
     if (nc == NULL) {
-      logger_fatal("admin proces, binding failed: %s", gl_opts->admin.bind_address);
+      logger_fatal("admin process, binding failed: %s", gl_opts->admin.bind_address);
       exit(EXIT_FAILURE);
     }
     mg_set_protocol_http_websocket(nc);
@@ -1071,13 +1104,15 @@ void start_admin_process(){
 
   }
 
+#if ENABLE_WEBSSH
   // 初始化libssh运行环境
   ssh_init();
+#endif
 
   // 初始化quickjs运行环境
   qjs_runtime_init();
 
-  logger_info("Starting admin server on %s\r\n", gl_opts->admin.bind_address);
+  logger_info("Starting admin server on %s", gl_opts->admin.bind_address);
 
   /* 进入主事件循环, Run event loop until signal is received */
   while (s_context.signal == 0) {
@@ -1086,7 +1121,7 @@ void start_admin_process(){
     mg_mgr_poll(mgr, 100);
   }
 
-  logger_info("Exiting on signal %d\r\n", s_context.signal);
+  logger_info("Exiting on signal %d", s_context.signal);
 
   /* Cleanup */
   mg_mgr_free(mgr);
@@ -1094,14 +1129,37 @@ void start_admin_process(){
   // 释放quickjs运行环境资源
   qjs_runtime_free();
 
+#if ENABLE_WEBSSH
   // 释放libssh运行环境资源
   ssh_finalize();
+#endif
 
   if (s_context.sqlite) {
     sqlite3_close(s_context.sqlite);
   }
 
+  return NULL;
 }
+
+char node_myself[256] = {0};
+struct arraylist *node_list = NULL;
+
+struct greenleaf_node
+{
+  int64_t instance_id;
+  char *listen;
+  char *admin;
+  time_t online_time;
+  time_t update_time;
+  time_t offline_time;
+
+  struct mg_connection *sender;
+};
+
+int node_send_online(struct mg_connection *nc);
+int node_send_heartbeat(struct mg_connection *nc);
+int node_send_offline(struct mg_connection *nc);
+int node_send_ack(struct multicast_context* g, struct greenleaf_node * node, const struct json_object *obj);
 
 int start_main_loop() 
 {
@@ -1125,13 +1183,11 @@ int start_main_loop()
     struct group_conf* conf = &gl_opts->groups[i];
 
     struct multicast_context* ctx = calloc(1,sizeof(struct multicast_context));
-    ctx->enabled = conf->enabled;
-    ctx->name = conf->name;
-    ctx->heartbeat = conf->heartbeat;
+    ctx->conf = conf;
     
     s_context.multicast_contexts[i] = ctx;
 
-    if(!ctx->enabled) {
+    if(!conf->enabled) {
       logger_debug("multicast group %s is disabled, skip it.", conf->name);
       continue;
     } else {
@@ -1169,8 +1225,11 @@ int start_main_loop()
       logger_error("multicast group %s: sender cannot connect multicast address = %s", conf->name, group_address);
       continue;
     }
+    // 如果要使用指定的网卡发送, 需要设置setsockopt的SO_BINDTODEVICE, 绑定到指定网卡, 仅linux可用, windows需要通过设置路由的方式解决.
     ctx->sender->user_data = ctx;
     logger_debug("multicast group %s: sender connect on %s", conf->name, group_address);
+
+    node_send_online(ctx->sender);
 
     mg_set_timer(ctx->sender, mg_time() + conf->heartbeat);
 
@@ -1203,32 +1262,46 @@ void* thread_fn_update_physical_network_interface_io_rate(void* ctx)
   return NULL;
 }
 
+
+int node_receive(struct mg_connection *nc);
 static void multicast_event_handler(struct mg_connection *nc, int ev, void *p) {
   (void) p;
   switch (ev) {
     case MG_EV_TIMER: {// 定时发送心跳
       // if(group_sender == nc) {
         struct multicast_context* g = nc->user_data;
-        mg_send(nc, heartbeat_content, strlen(heartbeat_content));
-        mg_set_timer(nc, mg_time() + g->heartbeat);
+        // mg_send(nc, heartbeat_content, strlen(heartbeat_content));
+        node_send_heartbeat(nc);
+        mg_set_timer(nc, mg_time() + g->conf->heartbeat);
     }  // }
     break;
     case MG_EV_SEND: { // 心跳发送成功
       // if(group_sender == nc) {
         const char *peer = inet_ntoa(nc->sa.sin.sin_addr);
         uint16_t port = ntohs(nc->sa.sin.sin_port);
-        printf("%f Heartbeat Sended to %s:%d\n", mg_time(), peer, port);
+        logger_debug("udp sended to %s:%d", peer, port);
       // }
     }
     break;
     case MG_EV_RECV:{ // 接收心跳成功
-      const char *peer = inet_ntoa(nc->sa.sin.sin_addr);
-      uint16_t port = ntohs(nc->sa.sin.sin_port);
+      const char *sin_addr = inet_ntoa(nc->sa.sin.sin_addr);
+      uint16_t sin_port = ntohs(nc->sa.sin.sin_port);
+
       struct mbuf *io = &nc->recv_mbuf;
-      printf("%f Received (%zu bytes): '%.*s' from %s:%d\n", mg_time(), 
+
+      // logger_debug("udp received (%zu bytes) from %s:%d", 
+      //   io->len, sin_addr, sin_port
+      // );
+
+      logger_trace("udp received (%zu bytes): '%.*s' from %s:%d", 
         io->len, (int) io->len, io->buf, 
-        peer, port
+        sin_addr, sin_port
       );
+
+      if(io->len>0 && (io->buf[0]=='{') ){ //  || io->buf[0]=='['
+        node_receive(nc);
+      }
+
       mbuf_remove(io, io->len);
       nc->flags |= MG_F_SEND_AND_CLOSE; // udp没有连接, 接收到就是处理完, 就需要关闭了
     }
@@ -1245,6 +1318,190 @@ static void multicast_event_handler(struct mg_connection *nc, int ev, void *p) {
   }
 }
 
+
+int node_receive_ack(struct mg_connection *nc, struct json_object *obj)
+{
+  // TODO 处理响应包
+  logger_debug("received ack package, %s", json_object_to_json_string(obj));
+  return 0;
+}
+
+int node_receive(struct mg_connection *nc)
+{
+  int rc = 0;
+
+  const char *sin_addr = inet_ntoa(nc->sa.sin.sin_addr);
+  struct mbuf *io = &nc->recv_mbuf;
+
+  struct json_object *obj = json_tokener_parse(io->buf);
+  if(obj==NULL){
+    rc = -1;
+    return rc;
+  }
+
+  json_bool is_ack = json_object_get_boolean(json_object_object_get(obj,"ack"));
+  if(is_ack){
+    rc = node_receive_ack(nc, obj);
+    return rc;
+  }
+
+  struct multicast_context* g = nc->user_data;
+
+  int64_t       iid = json_object_get_int64(json_object_object_get(obj,"iid"));
+  int32_t      port = json_object_get_int(json_object_object_get(obj,"port"));
+  const char  *type = json_object_get_string(json_object_object_get(obj,"type"));
+
+  const char *admin = json_object_get_string(json_object_object_get(obj,"admin"));
+  char *admin2 = calloc(256, sizeof(char));
+  if(admin){
+    if(admin[0]==':'){
+      strcat(admin2, "http://");
+      strcat(admin2, sin_addr);
+    }
+    strcat(admin2, admin);
+  }
+
+  char *listen = calloc(128, sizeof(char));
+  sprintf(listen,"udp://%s:%d",sin_addr, port);
+
+  if(node_list==NULL){
+    node_list = arraylist_new(NULL);
+  }
+
+  struct greenleaf_node * node = NULL;
+  for (size_t i = 0; i < node_list->length; i++)
+  {
+    struct greenleaf_node *n = node_list->array[i];
+    if(STR_IS_EQUALS(listen, n->listen)){
+
+      if(n->instance_id!=iid){
+        n->instance_id = iid;
+      }
+
+      time(&n->update_time);
+      if(admin2) {
+        if(n->admin)
+          free(n->admin);
+        n->admin = admin2; // TODO : 释放原来的admin
+      }
+      logger_debug("update node: listen=%s, admin=%s",listen, admin2);
+      free(listen);
+      node = n;
+      break;
+    }
+  }
+  
+  if (node==NULL) {
+
+    node = calloc(1, sizeof(struct greenleaf_node));
+    node->instance_id = iid;
+    node->listen = listen;
+    node->admin = admin2;
+    time(&node->online_time);
+    time(&node->update_time);
+
+    logger_info("found node: node=%s, admin=%s",listen, admin2);
+
+    arraylist_add(node_list, node);
+
+  }
+
+  // 不是自己发送的数据包, 发送ACK
+  if(s_context.instance_id!=iid){
+    node_send_ack(g, node, obj);
+  }
+
+  json_object_put(obj);
+
+  return rc;
+}
+
+int node_send_ack(struct multicast_context* g, struct greenleaf_node * node, const struct json_object *obj)
+{
+
+  int64_t       pid = json_object_get_int64(json_object_object_get(obj,"pid"));
+  double       time = json_object_get_double(json_object_object_get(obj,"time"));
+  const char  *type = json_object_get_string(json_object_object_get(obj,"type"));
+
+  json_object *data = json_object_new_object();
+
+  json_object_object_add(data, "pid", json_object_new_int64(pid)); // package id
+  json_object_object_add(data, "type", json_object_new_string(type));
+  json_object_object_add(data, "ack", json_object_new_boolean(json_true));
+  json_object_object_add(data, "iid", json_object_new_int64(s_context.instance_id)); // instance id
+  json_object_object_add(data, "port", json_object_new_int(g->conf->port));
+  json_object_object_add(data, "time", json_object_new_double(time));
+
+  if(node->sender==NULL){
+    node->sender = mg_connect(&s_context.event_loop_manager, node->listen, multicast_event_handler);
+    // TODO 处理失败
+  }
+
+  const char *buf = json_object_to_json_string(data);
+  mg_send(node->sender, buf, strlen(buf));
+
+  json_object_put(data);
+
+}
+
+int node_send_heartbeat(struct mg_connection *nc)
+{
+  struct multicast_context* g = nc->user_data;
+
+  json_object *node = json_object_new_object();
+  json_object_object_add(node, "pid", json_object_new_int64(snowflake_id_local())); // package id
+  json_object_object_add(node, "iid", json_object_new_int64(s_context.instance_id)); // instance id
+  json_object_object_add(node, "type", json_object_new_string("heartbeat"));
+  json_object_object_add(node, "port", json_object_new_int(g->conf->port));
+  json_object_object_add(node, "time", json_object_new_double(mg_time()));
+
+  const char *buf = json_object_to_json_string(node);
+  mg_send(nc, buf, strlen(buf));
+
+  json_object_put(node);
+
+}
+
+int node_send_online(struct mg_connection *nc)
+{
+  struct multicast_context* g = nc->user_data;
+
+  struct conf_file_options* gl_opts = &s_context.conf_file_options;
+
+  json_object *node = json_object_new_object();
+  json_object_object_add(node, "pid", json_object_new_int64(snowflake_id_local())); // package id
+  json_object_object_add(node, "iid", json_object_new_int64(s_context.instance_id)); // instance id
+  json_object_object_add(node, "type", json_object_new_string("online"));
+  json_object_object_add(node, "port", json_object_new_int(g->conf->port));
+  if(gl_opts!=NULL && gl_opts->admin.enabled && gl_opts->admin.bind_address){
+    json_object_object_add(node, "admin", json_object_new_string(gl_opts->admin.bind_address));
+  }
+  json_object_object_add(node, "time", json_object_new_double(mg_time()));
+
+  const char * buf = json_object_to_json_string(node);
+  mg_send(nc, buf, strlen(buf));
+
+  json_object_put(node);
+}
+
+int node_send_offline(struct mg_connection *nc)
+{
+  struct multicast_context* g = nc->user_data;
+
+  json_object *node = json_object_new_object();
+  json_object_object_add(node, "pid", json_object_new_int64(snowflake_id_local())); // package id
+  json_object_object_add(node, "iid", json_object_new_int64(s_context.instance_id)); // instance id
+  json_object_object_add(node, "type", json_object_new_string("offline"));
+  json_object_object_add(node, "port", json_object_new_int(g->conf->port));
+  json_object_object_add(node, "time", json_object_new_double(mg_time()));
+
+  const char * buf = json_object_to_json_string(node);
+  mg_send(nc, buf, strlen(buf));
+
+  json_object_put(node);
+
+}
+
 // #endregion postgres declare area
 // ////////////////////////////////////////////////////////
 struct mg_str auth_mode_cookie = MG_MK_STR("cookie");
@@ -1255,22 +1512,28 @@ struct mg_str auth_mode_jwt = MG_MK_STR("jwt");
 // 
 
 char * clear_screen = "\x1B[2J";
-
+static const struct mg_str nodes_prefix = {"/nodes/", 7UL};
+static void handle_nodes_request(struct mg_connection *nc, struct http_message *hm);
 static void admin_event_handler(struct mg_connection *nc, int ev, void *ev_data) 
 {
     switch (ev) {
     case MG_EV_HTTP_REQUEST:{ // 接收到http请求
         struct http_message *hm = (struct http_message *) ev_data;
+        logger_info("handle %d ", mg_str_has_prefix(&hm->uri, &nodes_prefix));
         if (mg_str_has_prefix(&hm->uri, &api_prefix)) // 如果是API请求
         {
           if(check_authentication(nc, hm)==1){
             handle_api_request(nc, hm);
           }
+        } else if (mg_str_has_prefix(&hm->uri, &nodes_prefix)){
+            handle_nodes_request(nc, hm);
         } else {
             mg_serve_http(nc, hm, s_context.admin_context.mg_options); /* Serve static content */
         }
         break;
     }
+
+#if ENABLE_WEBSSH
     case MG_EV_WEBSOCKET_HANDSHAKE_REQUEST:{
       struct http_message *hm = (struct http_message *) ev_data;
       // TODO 
@@ -1384,7 +1647,47 @@ static void admin_event_handler(struct mg_connection *nc, int ev, void *ev_data)
         nc->user_data = NULL;
       }
     }
+#endif
   }
+}
+
+static void handle_nodes_request(struct mg_connection *nc, struct http_message *hm)
+{
+  json_object *nodes = json_object_new_array();
+  if(node_list){
+    for (size_t i = 0; i < node_list->length; i++)
+    {
+      struct greenleaf_node *n = node_list->array[i];
+      json_object *node = json_object_new_object();
+      json_object_object_add(node, "listen", json_object_new_string(n->listen));
+      json_object_object_add(node, "admin", json_object_new_string(n->admin));
+      json_object_object_add(node, "online_time", json_object_new_int64(n->online_time));
+      json_object_object_add(node, "offline_time", json_object_new_int64(n->offline_time));
+      json_object_object_add(node, "update_time", json_object_new_int64(n->update_time));
+      json_object_array_add(nodes, node);
+      logger_info("%s", json_object_to_json_string(nodes));
+    }
+  }else{
+      logger_info("node list is empty: %s", json_object_to_json_string(nodes));
+  }
+
+  int status = 200;
+  char* status_text = NULL;
+  char* headers = "";
+  const char* body = json_object_to_json_string(nodes);
+  
+  mg_printf(nc, 
+      "HTTP/1.0 %d %s\r\n" // response line
+      "Content-Length: %d\r\n"
+      "Content-Type: application/json;charset=utf-8\r\n"
+      "%s" // headers
+      "\r\n"
+      "%s", // body
+      status, status_text==NULL?"":status_text,
+      strlen(body),
+      headers,
+      body
+  );
 }
 
 // 1: 验证通过, 0: 不通过, -1: 不支持的认证方式
@@ -1424,6 +1727,7 @@ static int check_authentication(struct mg_connection *nc, struct http_message *h
   return rc;
 }
 
+#if ENABLE_WEBSSH
 static int ws_ssh_connect(struct ws_ssh_context *context)
 {
     int auth = 0;
@@ -1546,6 +1850,7 @@ static int ssh_authenticate(ssh_session session, char *password)
     return rc;
 }
 
+#endif
 // 判断连接是否是websocket连接
 static int is_websocket(const struct mg_connection *nc) {
   return nc->flags & MG_F_IS_WEBSOCKET;
@@ -1695,7 +2000,7 @@ static void qjs_handle_api_request(JSContext* context, struct mg_connection *nc,
 }
 
 static int mg_str_has_prefix(const struct mg_str *uri, const struct mg_str *prefix) {
-    return uri->len > prefix->len && memcmp(uri->p, prefix->p, prefix->len) == 0;
+    return uri->len >= prefix->len && memcmp(uri->p, prefix->p, prefix->len) == 0;
 }
 
 static int mg_str_is_equal(const struct mg_str *s1, const struct mg_str *s2) {
@@ -3080,7 +3385,7 @@ int callback_fn_update_physical_nic_io_rate(any_t context, const char* key, any_
   get_file_content(path, sb);
   next->tx_bytes = sb->len > 0 ? atol(sb->str) : 0;
 
-  logger_debug("curr: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
+  logger_trace("curr: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
     curr->ts.tv_sec, curr->ts.tv_usec, curr->rx_bytes, curr->tx_bytes, stat->read, stat->write);
   if(stat->n0!=NULL){
     double duration = (double)((next->ts.tv_sec - curr->ts.tv_sec)*1000000 + next->ts.tv_usec - curr->ts.tv_usec) / 1000000;
@@ -3090,7 +3395,7 @@ int callback_fn_update_physical_nic_io_rate(any_t context, const char* key, any_
     stat->read = -1;
     stat->write = -1;
   }
-  logger_debug("next: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
+  logger_trace("next: clock=%ld.%ld,rx_bytes=%ld,tx_bytes=%ld,read=%ld,write=%ld", 
     next->ts.tv_sec, next->ts.tv_usec, next->rx_bytes, next->tx_bytes, stat->read, stat->write);
 
   stat->n0 = next; // 切换当前值
