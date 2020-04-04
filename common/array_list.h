@@ -55,6 +55,9 @@ arraylist_bsearch(const void **key, struct arraylist *arr,
 extern int 
 arraylist_del_idx(struct arraylist *arr, size_t idx, size_t count);
 
+typedef int (*arraylist_iteration_fn)(void* context, int index, void* value);
+extern int arraylist_foreach(struct arraylist *arr, arraylist_iteration_fn f, void* context);
+
 #ifdef __cplusplus
 }
 #endif

@@ -59,13 +59,21 @@ target_link_libraries(greenleaf
   mongoose 
   json-c yaml
   crontab
-  ssh
-  ssh_common
   lua quickjs.a
   sqlite
   pq.a pgport.a pgcommon.a 
   m dl pthread
 )
+
+# libssh 依赖的glibc的版本太高, 在centos上运行不了
+if(false)
+add_definitions(-DGL_ENABLE_WEBSSH)
+target_link_libraries(greenleaf 
+  ssh
+  crypto
+  ssh_common
+)
+endif()
 
 # add file copy target
 FILE(GLOB QUICKJS_MODULE_FILES CONFIGURE_DEPENDS 

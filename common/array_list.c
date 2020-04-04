@@ -174,3 +174,14 @@ arraylist_toarray(struct arraylist *al)
   // }
   // return arr;
 }
+
+int arraylist_foreach(struct arraylist *arr, arraylist_iteration_fn f, void* context)
+{
+  for (size_t i = 0; i < arr->length; i++)
+  {
+    if(f(context, i, arr->array[i])){
+      return i;
+    }
+  }
+  return 0;
+}
