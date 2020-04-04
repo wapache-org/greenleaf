@@ -202,8 +202,8 @@ int mg_custom_check_digest_auth(
     mg_auth_get_user_htpasswd_fn mg_auth_get_user_htpasswd
 );
 
-static const char *s_login_url = "/api/user/login.json";
-static const char *s_logout_url = "/api/user/logout.json";
+static const char *s_login_url = "/login";
+static const char *s_logout_url = "/logout";
 static const char *s_login_user = "username";
 static const char *s_login_pass = "password";
 
@@ -1524,6 +1524,8 @@ static void admin_event_handler(struct mg_connection *nc, int ev, void *ev_data)
         {
           if(check_authentication(nc, hm)==1){
             handle_api_request(nc, hm);
+          }else{
+            // nc->flags |= MG_F_SEND_AND_CLOSE;
           }
         } else if (mg_str_has_prefix(&hm->uri, &nodes_prefix)){
             handle_nodes_request(nc, hm);
@@ -1719,8 +1721,8 @@ static int check_authentication(struct mg_connection *nc, struct http_message *h
     )){
       rc = 1;
     }else{
-        mg_http_send_digest_auth_request(nc, s_context.admin_context.mg_options.auth_domain);
-        rc = 0;
+      mg_http_send_digest_auth_request(nc, s_context.admin_context.mg_options.auth_domain);
+      rc = 0;
     }
   }
 
@@ -2098,9 +2100,14 @@ int mg_http_custom_is_authorized(
 
 
 static int send_cookie_auth_request(struct mg_connection *nc, char* message)
-{
-    mg_printf(nc, "HTTP/1.0 403 Unauthorized\r\n\r\n%s\r\n", message == NULL ? "Unauthorized." : message);
-    return 1;
+{  
+  mg_printf(nc,
+    "HTTP/1.1 403 %s\r\n"
+    "Content-Length: 0\r\n\r\n",
+    message == NULL ? "Unauthorized." : message
+  );
+  // mg_printf(nc, "HTTP/1.0 403 Unauthorized\r\n\r\n%s\r\n", message == NULL ? "Unauthorized." : message);
+  return 1;
 }
 
 static void login_handler(struct mg_connection *nc, int ev, void *p) 
