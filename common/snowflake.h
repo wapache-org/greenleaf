@@ -60,11 +60,14 @@ struct _snowflake_state {
 
 } snowflake_global_state;
 
+struct _snowflake_state snowflake_local_state;
+
 /**
  * 线程不安全
  */
 long int snowflake_id(struct _snowflake_state * state);
-#define snowflake_id_default()  snowflake_id(&snowflake_global_state);
+#define snowflake_id_default()  snowflake_id(&snowflake_global_state)
+#define snowflake_id_local()  snowflake_id(&snowflake_local_state)
 
 /**
  * return 0: suceess, other: failed
@@ -72,6 +75,9 @@ long int snowflake_id(struct _snowflake_state * state);
 int snowflake_init(struct _snowflake_state * state, long int epoch, int time_bits, int region_id_bits, int worker_id_bits, int sequence_bits, int region_id, int worker_id);
 
 #define snowflake_init_default(region_id, worker_id) snowflake_init(&snowflake_global_state, \
-SNOWFLAKE_EPOCH, SNOWFLAKE_TIME_BITS, SNOWFLAKE_REGIONID_BITS, SNOWFLAKE_WORKERID_BITS, SNOWFLAKE_SEQUENCE_BITS, region_id, worker_id);
+SNOWFLAKE_EPOCH, SNOWFLAKE_TIME_BITS, SNOWFLAKE_REGIONID_BITS, SNOWFLAKE_WORKERID_BITS, SNOWFLAKE_SEQUENCE_BITS, region_id, worker_id)
+
+#define snowflake_init_local() snowflake_init(&snowflake_local_state, \
+SNOWFLAKE_EPOCH, SNOWFLAKE_TIME_BITS, SNOWFLAKE_REGIONID_BITS, 0, SNOWFLAKE_WORKERID_BITS+SNOWFLAKE_SEQUENCE_BITS, 0, 0)
 
 #endif /* __SNOWFLAKE__ */
