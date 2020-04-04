@@ -149,6 +149,8 @@ struct json_object_iter
 typedef struct json_object_iter json_object_iter;
 
 typedef int json_bool;
+#define json_true 1
+#define json_false 0
 
 /**
  * @brief The core type for all type of JSON objects handled by json-c
