@@ -380,46 +380,32 @@ export class PlanService {
       const emptyLineMatches = new RegExp(emptyLineRegex).exec(line);
       const headerMatches = new RegExp(headerRegex).exec(line);
 
-      /*
-       * Groups
-       * 1: prefix
-       * 2: type
-       * 3: estimated_startup_cost
-       * 4: estimated_total_cost
-       * 5: estimated_rows
-       * 6: estimated_row_width
-       * 7: actual_time_first
-       * 8: actual_time_last
-       * 9: actual_rows
-       * 10: actual_loops
-       * 11: actual_rows_
-       * 12: actual_loops_
-       * 13: never_executed
-       * 14: estimated_startup_cost
-       * 15: estimated_total_cost
-       * 16: estimated_rows
-       * 17: estimated_row_width
-       * 18: actual_time_first
-       * 19: actual_time_last
-       * 20: actual_rows
-       * 21: actual_loops
-       */
-      const nodeRegex = new RegExp(
-        prefixRegex +
-        typeRegex +
-        '\\s*' +
-        nonCapturingGroupOpen +
-          (nonCapturingGroupOpen + estimationRegex + '\\s+' +
-           openParenthesisRegex + actualRegex + closeParenthesisRegex +
-           nonCapturingGroupClose) +
-          '|' +
-          nonCapturingGroupOpen + estimationRegex + nonCapturingGroupClose +
-          '|' +
-          nonCapturingGroupOpen + openParenthesisRegex + actualRegex + closeParenthesisRegex + nonCapturingGroupClose +
-        nonCapturingGroupClose + '*' +
-        '\\s*$',
-        'gm',
-      );
+      const segmentRegex = '(\\d+:\\d+)';
+      const sliceRegex = '(?:(slice\\d+); segments: (\\d+))';
+
+      const nodeRegexStr = prefixRegex + // 前缀, 有箭头或者没有箭头
+      typeRegex +   // 节点类型
+      '\\s*' +
+      segmentRegex + '?' +
+      '\\s*' +
+      nonCapturingGroupOpen + openParenthesisRegex + sliceRegex + closeParenthesisRegex + nonCapturingGroupClose + '?' +
+      '\\s*' +
+      nonCapturingGroupOpen +
+        // cost + actual
+        (nonCapturingGroupOpen +
+          estimationRegex + '\\s+' +
+          openParenthesisRegex + actualRegex + closeParenthesisRegex +
+        nonCapturingGroupClose
+        ) +
+        '|' +
+        // or only cost
+        nonCapturingGroupOpen + estimationRegex + nonCapturingGroupClose +
+        '|' +
+        // or only actual
+        nonCapturingGroupOpen + openParenthesisRegex + actualRegex + closeParenthesisRegex + nonCapturingGroupClose +
+      nonCapturingGroupClose + '*' +
+      '\\s*$';
+      const nodeRegex = new RegExp(nodeRegexStr, 'gm');
       const nodeMatches = nodeRegex.exec(line);
 
       // tslint:disable-next-line:max-line-length
@@ -471,23 +457,73 @@ export class PlanService {
       if (emptyLineMatches || headerMatches) {
         return;
       } else if (nodeMatches && !cteMatches && !subMatches) {
-        const prefix = nodeMatches[1];
-        const neverExecuted = nodeMatches[13];
-        const newNode: Node = new Node(nodeMatches[2]);
-        if (nodeMatches[3] && nodeMatches[4] || nodeMatches[14] && nodeMatches[15]) {
-          newNode[NodeProp.STARTUP_COST] = parseFloat(nodeMatches[3] || nodeMatches[14]);
-          newNode[NodeProp.TOTAL_COST] = parseFloat(nodeMatches[4] || nodeMatches[15]);
-          newNode[NodeProp.PLAN_ROWS] = parseInt(nodeMatches[5] || nodeMatches[16], 0);
+        // reg group index
+        const groupIndex = {
+          prefix: 1,
+          type: 2,
+          motion_from_to: 3,
+          motion_slice: 4,
+          motion_segments: 5,
+          estimated_startup_cost: 3 + 3,
+          estimated_total_cost: 4 + 3,
+          estimated_rows: 5 + 3,
+          estimated_row_width: 6 + 3,
+          actual_time_first: 7 + 3,
+          actual_time_last: 8 + 3,
+          actual_rows: 9 + 3,
+          actual_loops: 10 + 3,
+          actual_rows_2: 11 + 3,
+          actual_loops_2: 12 + 3,
+          never_executed: 13 + 3,
+          estimated_startup_cost_2: 14 + 3,
+          estimated_total_cost_2: 15 + 3,
+          estimated_rows_2: 16 + 3,
+          estimated_row_width_2: 17 + 3,
+          actual_time_first_2: 18 + 3,
+          actual_time_last_2: 19 + 3,
+          actual_rows_3: 20 + 3,
+          actual_loops_3: 21 + 3,
+        };
+        const prefix = nodeMatches[groupIndex.prefix];
+        const neverExecuted = nodeMatches[groupIndex.never_executed];
+        const newNode: Node = new Node(nodeMatches[groupIndex.type]);
+
+        if (nodeMatches[groupIndex.motion_from_to]) {
+          newNode[NodeProp.MOTION_FROM_TO] = nodeMatches[groupIndex.motion_from_to];
         }
-        if (nodeMatches[7] && nodeMatches[8] || nodeMatches[18] && nodeMatches[19]) {
-          newNode[NodeProp.ACTUAL_STARTUP_TIME] = parseFloat(nodeMatches[7] || nodeMatches[18]);
-          newNode[NodeProp.ACTUAL_TOTAL_TIME] = parseFloat(nodeMatches[8] || nodeMatches[19]);
+        if (nodeMatches[groupIndex.motion_slice]) {
+          newNode[NodeProp.SLICE]          = nodeMatches[groupIndex.motion_slice];
+        }
+        if (nodeMatches[groupIndex.motion_segments]) {
+          newNode[NodeProp.SEGMENTS]       = nodeMatches[groupIndex.motion_segments];
+        }
+        if (nodeMatches[groupIndex.estimated_startup_cost]   && nodeMatches[groupIndex.estimated_total_cost] ||
+            nodeMatches[groupIndex.estimated_startup_cost_2] && nodeMatches[groupIndex.estimated_total_cost_2]
+        ) {
+          newNode[NodeProp.STARTUP_COST] = parseFloat(
+            nodeMatches[groupIndex.estimated_startup_cost] || nodeMatches[groupIndex.estimated_startup_cost_2]);
+          newNode[NodeProp.TOTAL_COST] = parseFloat(
+            nodeMatches[groupIndex.estimated_total_cost] || nodeMatches[groupIndex.estimated_total_cost_2]);
+          newNode[NodeProp.PLAN_ROWS] = parseInt(
+            nodeMatches[groupIndex.estimated_rows] || nodeMatches[groupIndex.estimated_rows_2], 0);
+        }
+        if (nodeMatches[groupIndex.actual_time_first] && nodeMatches[groupIndex.actual_time_last] ||
+            nodeMatches[groupIndex.actual_time_first_2] && nodeMatches[groupIndex.actual_time_last_2]
+        ) {
+          newNode[NodeProp.ACTUAL_STARTUP_TIME] = parseFloat(
+            nodeMatches[groupIndex.actual_time_first] || nodeMatches[groupIndex.actual_time_first_2]);
+          newNode[NodeProp.ACTUAL_TOTAL_TIME] = parseFloat(
+            nodeMatches[groupIndex.actual_time_last] || nodeMatches[groupIndex.actual_time_last_2]);
         }
 
-        if (nodeMatches[9] && nodeMatches[10] || nodeMatches[11] && nodeMatches[12] ||
-            nodeMatches[20] && nodeMatches[21]) {
-          newNode[NodeProp.ACTUAL_ROWS] = parseInt(nodeMatches[9] || nodeMatches[11] || nodeMatches[20], 0);
-          newNode[NodeProp.ACTUAL_LOOPS] = parseInt(nodeMatches[10] || nodeMatches[12] || nodeMatches[21], 0);
+        if (nodeMatches[groupIndex.actual_rows]   && nodeMatches[groupIndex.actual_loops] ||
+            nodeMatches[groupIndex.actual_rows_2] && nodeMatches[groupIndex.actual_loops_2] ||
+            nodeMatches[groupIndex.actual_rows_3] && nodeMatches[groupIndex.actual_loops_3]
+        ) {
+          newNode[NodeProp.ACTUAL_ROWS] = parseInt(nodeMatches[groupIndex.actual_rows] ||
+            nodeMatches[groupIndex.actual_rows_2] || nodeMatches[groupIndex.actual_rows_3], 0);
+          newNode[NodeProp.ACTUAL_LOOPS] = parseInt(nodeMatches[groupIndex.actual_loops] ||
+            nodeMatches[groupIndex.actual_loops_2] || nodeMatches[groupIndex.actual_loops_3], 0);
         }
 
         if (neverExecuted) {
@@ -626,6 +662,10 @@ export class PlanService {
           return;
         }
 
+        if (this.parseMotionKey(extraMatches[2], element)) {
+          return;
+        }
+
         if (this.parseBuffers(extraMatches[2], element)) {
           return;
         }
@@ -660,6 +700,21 @@ export class PlanService {
       throw new Error('Unable to parse plan');
     }
     return root;
+  }
+
+  private parseMotionKey(text: string, el: Node | Worker): boolean {
+    /*
+     * Groups
+     * 2: Key Type
+     * 3: Key Value
+     */
+    const sortRegex = /^(\s*)(Merge|Hash) Key:\s+(.*)$/g;
+    const sortMatches = sortRegex.exec(text);
+    if (sortMatches) {
+      el[ sortMatches[2] === 'Merge' ? NodeProp.MERGE_KEY : NodeProp.HASH_KEY ] = sortMatches[3].trim();
+      return true;
+    }
+    return false;
   }
 
   private parseSort(text: string, el: Node | Worker): boolean {

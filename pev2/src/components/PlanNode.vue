@@ -41,6 +41,12 @@
             <span class="text-muted">by</span> {{node[nodeProps.GROUP_KEY] | keysToString | truncate(250, '…') }}</div>
           <div v-if="node[nodeProps.SORT_KEY]">
             <span class="text-muted">by</span> {{node[nodeProps.SORT_KEY] | keysToString | truncate(250, '…') }}</div>
+
+          <div v-if="node[nodeProps.MERGE_KEY]">
+            <span class="text-muted">merge by</span> {{node[nodeProps.MERGE_KEY] | keysToString | truncate(250, '…') }}</div>
+          <div v-if="node[nodeProps.HASH_KEY]">
+            <span class="text-muted">hash by</span> {{node[nodeProps.HASH_KEY] | keysToString | truncate(250, '…') }}</div>
+
           <div v-if="node[nodeProps.JOIN_TYPE]">{{node[nodeProps.JOIN_TYPE] | keysToString | truncate(250, '…') }}
             <span class="text-muted">join</span></div>
           <div v-if="node[nodeProps.INDEX_NAME]"><span class="text-muted">

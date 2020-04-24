@@ -94,6 +94,12 @@ export class NodeProp {
   public static IO_READ_TIME: string = 'I/O Read Time';
   public static IO_WRITE_TIME: string = 'I/O Write Time';
 
+  public static MERGE_KEY: string = 'Merge Key';
+  public static HASH_KEY: string = 'Hash Key';
+  public static MOTION_FROM_TO: string = 'Motion(from:to)';
+  public static SLICE: string = 'Slice';
+  public static SEGMENTS: string = 'Segments';
+
   // computed by pev
   public static COSTLIEST_NODE: string = '*Costiest Node (by cost)';
   public static LARGEST_NODE: string = '*Largest Node (by rows)';
