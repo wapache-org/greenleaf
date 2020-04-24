@@ -1,5 +1,9 @@
 <template>
   <div class="container">
+    <p>
+      本软件基于[dalibo](https://dalibo.com)的[pev2](https://github.com/dalibo/pev2)修改而成, 主要是增加了Greenplum数据库节点类型的支持。
+    </p>
+    <p>以下为原版pev2的About内容</p>
     <h2>
       Disclaimer
     </h2>
