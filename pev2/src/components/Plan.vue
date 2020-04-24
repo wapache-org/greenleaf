@@ -91,7 +91,7 @@
               <i class="fa fa-close"></i>
             </button>
             <h3>Triggers</h3>
-            <div v-for="(trigger, index) in plan.planStats.triggers">
+            <div v-for="(trigger, index) in plan.planStats.triggers" :key='index'>
               {{ trigger['Trigger Name'] }}
               <br>
               <span class="text-muted">Called</span> {{ trigger['Calls'] }}<span class="text-muted">&times</span>
@@ -195,7 +195,7 @@
               </li>
             </ul>
             <ul class="init-plans">
-              <li v-for="node in plan.ctes">
+              <li v-for="node in plan.ctes" :key='node'>
                 <plan-node :node="node" :plan="plan" :viewOptions="viewOptions" :showCTE="showCTE" ref="root"/>
               </li>
             </ul>

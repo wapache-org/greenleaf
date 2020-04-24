@@ -17,7 +17,7 @@
             Sample Plans
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-            <a v-for="(sample, index) in samples" class="dropdown-item" v-on:click.prevent="loadSample(sample)" href>
+            <a v-for="(sample, index) in samples" class="dropdown-item" v-on:click.prevent="loadSample(sample)" href :key="index">
               {{ sample[0] }}
             </a>
           </div>

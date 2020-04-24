@@ -3,7 +3,7 @@
     <h4 v-if="node[nodeProps.SUBPLAN_NAME]">{{ node[nodeProps.SUBPLAN_NAME] }}</h4>
     <div :class="['text-left plan-node', {'detailed': showDetails, 'never-executed': isNeverExecuted, 'parallel': workersCount}]">
       <div class="workers text-muted py-0 px-1" v-if="workersCount">
-        <div v-for="index in workersCountReversed" :style="'top: ' + (1 + index * 2)  + 'px; left: ' + (1 + (index + 1) * 3) + 'px;'">
+        <div v-for="index in workersCountReversed" :style="'top: ' + (1 + index * 2)  + 'px; left: ' + (1 + (index + 1) * 3) + 'px;'" :key='index'>
         </div>
       </div>
       <div class="collapse-handle" v-if="hasChildren">
@@ -110,15 +110,17 @@
             <span class="node-type">{{node[nodeProps.NODE_TYPE]}} Node</span>&nbsp;<span v-html="getNodeTypeDescription()"></span>
           </div>
           <table class="table table-sm prop-list">
-            <tr v-for="prop in props" v-if="shouldShowProp(prop.key, prop.value)">
+            <template v-for="(prop, index) in props">
+            <tr v-if="shouldShowProp(prop.key, prop.value)" :key='index'>
               <td width="40%">{{prop.key}}</td>
               <td v-html="$options.filters.formatNodeProp(prop.key, prop.value, true)"></td>
             </tr>
+            </template>
           </table>
           <div v-if="workersCount">
             <div class="accordion" :id="'accordion-' + _uid" v-if="lodash.isArray(node[nodeProps.WORKERS])">
               <template v-for="(worker, index) in node[nodeProps.WORKERS]">
-                <div class="card">
+                <div class="card" :key='index'>
                   <div class="card-header p-0">
                     <button class="btn btn-link btn-sm text-secondary" type="button" data-toggle="collapse" :data-target="'#collapse-' + _uid + '-' + index" style="font-size: inherit;">
                       <i class="fa fa-chevron-right fa-fw"></i>
@@ -130,10 +132,12 @@
                   <div :id="'collapse-' + _uid + '-' + index" class="collapse" :data-parent="'#accordion-' + _uid">
                     <div class="card-body p-0">
                       <table class="table table-sm prop-list mb-0">
-                        <tr v-for="(value, key) in worker" v-if="shouldShowProp(key, value)">
+                        <template v-for="(value, key) in worker">
+                        <tr v-if="shouldShowProp(key, value)" :key='key'>
                           <td width="40%">{{key}}</td>
                           <td v-html="$options.filters.formatNodeProp(key, value, true)"></td>
                         </tr>
+                        </template>
                       </table>
                     </div>
                   </div>
@@ -152,7 +156,7 @@
       </div>
     </div>
     <ul v-if="plans" :class="['node-children', {'collapsed': collapsed}]">
-      <li v-for="subnode in plans">
+      <li v-for="(subnode, index) in plans" :key='index'>
         <plan-node :node="subnode" :plan="plan" :viewOptions="viewOptions" :showCTE="showCTE"/>
       </li>
     </ul>
