@@ -1,0 +1,86 @@
+{
+  "jdbcUrl": "jdbc:h2:./data/tpch_h2sf1",
+  "jdbcUser": "sa",
+  "jdbcPwd": "",
+  "jdbcDriver": "org.h2.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "report/tpch/h2sf1_load",
+  "querySlices": [
+    {
+      "id": "h2sf1-load-id4",
+      "sql": "insert into supplier select * from CSVREAD('data/tpch/h2sf1/supplier/supplier-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-supplier",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id5",
+      "sql": "insert into partsupp select * from CSVREAD('data/tpch/h2sf1/partsupp/partsupp-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-partsupp",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id6",
+      "sql": "insert into customer select * from CSVREAD('data/tpch/h2sf1/customer/customer-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-customer",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id7",
+      "sql": "insert into nation select * from CSVREAD('data/tpch/h2sf1/nation/nation-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-nation",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id8",
+      "sql": "insert into region select * from CSVREAD('data/tpch/h2sf1/region/region-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-region",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id9",
+      "sql": "insert into part select * from CSVREAD('data/tpch/h2sf1/part/part-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-part",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id10",
+      "sql": "insert into lineitem select * from CSVREAD('data/tpch/h2sf1/lineitem/lineitem-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-lineitem",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "h2sf1-load-id11",
+      "sql": "insert into orders select * from CSVREAD('data/tpch/h2sf1/orders/orders-part-1.dat', null, 'charset=UTF-8 fieldSeparator=|')",
+      "type": "h2sf1-load-orders",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    }
+  ]
+}

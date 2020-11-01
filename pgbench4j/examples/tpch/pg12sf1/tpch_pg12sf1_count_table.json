@@ -1,0 +1,79 @@
+{
+  "jdbcUrl": "jdbc:postgresql://localhost:5432/postgres",
+  "jdbcUser": "postgres",
+  "jdbcPwd": "postgres",
+  "jdbcDriver": "org.postgresql.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "report/tpch/pg12sf1_query",
+  "connInitQuery": "",
+  "querySlices": [
+    {
+      "id": "pg12sf1-count-id01",
+      "sql": "select count(*) from LINEITEM",
+      "type": "pg12sf1-count-lineitem",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id02",
+      "sql": "select count(*) from SUPPLIER",
+      "type": "pg12sf1-count-supplier",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id03",
+      "sql": "select count(*) from PARTSUPP",
+      "type": "pg12sf1-count-partsupp",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id04",
+      "sql": "select count(*) from CUSTOMER",
+      "type": "pg12sf1-count-customer",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id05",
+      "sql": "select count(*) from NATION",
+      "type": "pg12sf1-count-nation",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id06",
+      "sql": "select count(*) from REGION",
+      "type": "pg12sf1-count-region",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id07",
+      "sql": "select count(*) from PART",
+      "type": "pg12sf1-count-part",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "pg12sf1-count-id08",
+      "sql": "select count(*) from ORDERS",
+      "type": "pg12sf1-count-orders",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    }
+  ]
+}

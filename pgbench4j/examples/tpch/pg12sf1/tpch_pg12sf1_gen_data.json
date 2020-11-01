@@ -1,0 +1,45 @@
+{
+  "targetDirectory": "data/tpch/pg12sf1",
+  "tableGenModels": [
+    {
+      "tpchTableName": "customer",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "orders",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "lineitem",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "part",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "partsupp",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "supplier",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "nation",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    },
+    {
+      "tpchTableName": "region",
+      "scaleupFactor": 0.01,
+      "filePartCnt": 1
+    }
+  ]
+}

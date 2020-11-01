@@ -1,0 +1,86 @@
+{
+  "jdbcUrl": "jdbc:postgresql://localhost:5432/postgres",
+  "jdbcUser": "postgres",
+  "jdbcPwd": "postgres",
+  "jdbcDriver": "org.postgresql.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "",
+  "querySlices": [
+    {
+      "id": "drop-pg12sf1-id4",
+      "sql": "drop table if exists supplier",
+      "type": "pg12sf1-drop-supplier",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id5",
+      "sql": "drop table if exists partsupp",
+      "type": "pg12sf1-drop-partsupp",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id6",
+      "sql": "drop table if exists customer",
+      "type": "pg12sf1-drop-customer",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id7",
+      "sql": "drop table if exists nation",
+      "type": "pg12sf1-drop-nation",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id8",
+      "sql": "drop table if exists region",
+      "type": "pg12sf1-drop-region",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id9",
+      "sql": "drop table if exists part",
+      "type": "pg12sf1-drop-part",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id10",
+      "sql": "drop table if exists lineitem",
+      "type": "pg12sf1-drop-lineitem",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-pg12sf1-id11",
+      "sql": "drop table if exists orders",
+      "type": "pg12sf1-drop-orders",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "jdbcUrl": "jdbc:postgresql://ubuntu.wsl:5432/postgres",
+  "jdbcUser": "postgres",
+  "jdbcPwd": "postgres",
+  "jdbcDriver": "org.postgresql.Driver",
+  "jdbcPoolSize": 3,
+  "execIteration": 2,
+  "execInterval": 1,
+  "execConcurrentSize": 2,
+  "shuffleExecute": true,
+  "reportStore": "test_report_out",
+  "connInitQuery": "",
+  "querySlices": [
+    {
+      "id": "id1",
+      "sql": "select version()",
+      "type": "type1",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "id2",
+      "sql": "select 1",
+      "type": "type2",
+      "threads": 5,
+      "isConsumeResult": true,
+      "isCountInStatistics": true
+    }
+  ]
+}

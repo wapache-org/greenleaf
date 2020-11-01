@@ -1,0 +1,34 @@
+{
+  "dataGen": {
+    "preProcessScript": "",
+    "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_gen_data.json",
+    "postProcessScript": ""
+  },
+  "sqlExec": [
+    {
+      "preProcessScript": "",
+      "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_drop_table.json",
+      "postProcessScript": ""
+    },
+    {
+      "preProcessScript": "",
+      "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_create_table.json",
+      "postProcessScript": ""
+    },
+    {
+      "preProcessScript": "",
+      "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_load_data.json",
+      "postProcessScript": ""
+    },
+    {
+      "preProcessScript": "",
+      "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_query_table.json",
+      "postProcessScript": ""
+    },
+    {
+      "preProcessScript": "",
+      "processMetaFilePath": "examples/tpch/h2sf1/tpch_h2sf1_count_table.json",
+      "postProcessScript": ""
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "jdbcUrl": "jdbc:postgresql://localhost:5432/postgres",
+  "jdbcUser": "postgres",
+  "jdbcPwd": "postgres",
+  "jdbcDriver": "org.postgresql.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "report/tpch/pg12sf1_load",
+  "querySlices": [
+    {
+      "id": "pg12sf1-load-id4",
+      "sql": "copy supplier from 'data/tpch/pg12sf1/supplier/supplier-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-supplier",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id5",
+      "sql": "copy partsupp from 'data/tpch/pg12sf1/partsupp/partsupp-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-partsupp",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id6",
+      "sql": "copy customer from 'data/tpch/pg12sf1/customer/customer-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-customer",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id7",
+      "sql": "copy nation from 'data/tpch/pg12sf1/nation/nation-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-nation",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id8",
+      "sql": "copy region from 'data/tpch/pg12sf1/region/region-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-region",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id9",
+      "sql": "copy part from 'data/tpch/pg12sf1/part/part-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-part",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id10",
+      "sql": "copy lineitem from 'data/tpch/pg12sf1/lineitem/lineitem-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-lineitem",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    },
+    {
+      "id": "pg12sf1-load-id11",
+      "sql": "copy orders from 'data/tpch/pg12sf1/orders/orders-part-1.dat' with CSV DELIMITER '|'",
+      "type": "pg12sf1-load-orders",
+      "threads": 1,
+      "isCopyQuery": true,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": true
+    }
+  ]
+}

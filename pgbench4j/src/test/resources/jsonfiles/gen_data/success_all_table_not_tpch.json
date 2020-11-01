@@ -1,0 +1,15 @@
+{
+  "targetDirectory": "test_gen_out",
+  "tableGenModels": [
+    {
+      "tpchTableName": "unsupported1",
+      "scaleupFactor": 0.1,
+      "filePartCnt": 2
+    },
+    {
+      "tpchTableName": "unsupported2",
+      "scaleupFactor": 0.1,
+      "filePartCnt": 2
+    }
+  ]
+}

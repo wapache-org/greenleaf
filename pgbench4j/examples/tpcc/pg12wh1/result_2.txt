@@ -1,0 +1,196 @@
+D:>tpcc_pg12wh1.bat
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties -DcommandFile=examples/tpcc/pg12wh1/tpcc-pg12wh1-schema.sql tpcc.jdbc.ExecJDBC
+执行第 1 条SQL, 耗时 8 毫秒
+执行第 2 条SQL, 耗时 5 毫秒
+执行第 3 条SQL, 耗时 4 毫秒
+执行第 4 条SQL, 耗时 27 毫秒
+执行第 5 条SQL, 耗时 7 毫秒
+执行第 6 条SQL, 耗时 9 毫秒
+执行第 7 条SQL, 耗时 6 毫秒
+执行第 8 条SQL, 耗时 9 毫秒
+执行第 9 条SQL, 耗时 5 毫秒
+执行第 10 条SQL, 耗时 6 毫秒
+执行第 11 条SQL, 耗时 7 毫秒
+执行第 12 条SQL, 耗时 11 毫秒
+执行第 13 条SQL, 耗时 20 毫秒
+执行第 14 条SQL, 耗时 6 毫秒
+执行第 15 条SQL, 耗时 5 毫秒
+执行第 16 条SQL, 耗时 7 毫秒
+执行第 17 条SQL, 耗时 6 毫秒
+执行第 18 条SQL, 耗时 8 毫秒
+执行第 19 条SQL, 耗时 7 毫秒
+执行第 20 条SQL, 耗时 6 毫秒
+执行第 21 条SQL, 耗时 13 毫秒
+执行第 22 条SQL, 耗时 17 毫秒
+执行第 23 条SQL, 耗时 17 毫秒
+执行第 24 条SQL, 耗时 16 毫秒
+执行第 25 条SQL, 耗时 19 毫秒
+执行第 26 条SQL, 耗时 12 毫秒
+执行第 27 条SQL, 耗时 13 毫秒
+执行第 28 条SQL, 耗时 11 毫秒
+执行第 29 条SQL, 耗时 32 毫秒
+执行第 30 条SQL, 耗时 11 毫秒
+执行SQL总耗时: 354 毫秒, 文件: examples/tpcc/pg12wh1/tpcc-pg12wh1-schema.sql
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties tpcc.data.LoadData numwarehouses 1 filelocation data/tpcc/pg12wh1
+Starting BenchmarkSQL LoadData
+----------------- Initialization -------------------
+numwarehouses
+1
+filelocation
+data/tpcc/pg12wh1
+
+------------- LoadData StartTime = Fri Oct 30 23:04:27 CST 2020-------------
+
+Start Whse Load for 1 Whses @ Fri Oct 30 23:04:27 CST 2020 ...
+Writing Warehouse file to: data/tpcc/pg12wh1\warehouse.csv
+Elasped Time(ms): 0.008
+End Whse Load @  Fri Oct 30 23:04:27 CST 2020
+
+Start Item Load for 100000 Items @ Fri Oct 30 23:04:27 CST 2020 ...
+Writing Item file to: data/tpcc/pg12wh1\item.csv
+  Elasped Time(ms): 0.192       Writing record 10000 of 100000
+  Elasped Time(ms): 0.103       Writing record 20000 of 100000
+  Elasped Time(ms): 0.09        Writing record 30000 of 100000
+  Elasped Time(ms): 0.111       Writing record 40000 of 100000
+  Elasped Time(ms): 0.099       Writing record 50000 of 100000
+  Elasped Time(ms): 0.105       Writing record 60000 of 100000
+  Elasped Time(ms): 0.112       Writing record 70000 of 100000
+  Elasped Time(ms): 0.079       Writing record 80000 of 100000
+  Elasped Time(ms): 0.082       Writing record 90000 of 100000
+  Elasped Time(ms): 0.078       Writing record 100000 of 100000
+  Elasped Time(ms): 0.0         Writing final records 100000 of 100000
+End Item Load @  Fri Oct 30 23:04:28 CST 2020
+
+Start Stock Load for 100000 units @ Fri Oct 30 23:04:28 CST 2020 ...
+Writing Stock file to: data/tpcc/pg12wh1\stock.csv
+  Elasped Time(ms): 0.378       Writing record 10000 of 100000
+  Elasped Time(ms): 0.406       Writing record 20000 of 100000
+  Elasped Time(ms): 0.371       Writing record 30000 of 100000
+  Elasped Time(ms): 0.367       Writing record 40000 of 100000
+  Elasped Time(ms): 0.362       Writing record 50000 of 100000
+  Elasped Time(ms): 0.4         Writing record 60000 of 100000
+  Elasped Time(ms): 0.46        Writing record 70000 of 100000
+  Elasped Time(ms): 0.323       Writing record 80000 of 100000
+  Elasped Time(ms): 0.317       Writing record 90000 of 100000
+  Elasped Time(ms): 0.339       Writing record 100000 of 100000
+  Elasped Time(ms): 0.001       Writing final records 100000 of 100000
+End Stock Load @  Fri Oct 30 23:04:32 CST 2020
+
+Writing District file to: data/tpcc/pg12wh1\district.csv
+Start District Data for 10 Dists @ Fri Oct 30 23:04:32 CST 2020 ...
+  Elasped Time(ms): 0.005       Writing record 10 of 10
+End District Load @  Fri Oct 30 23:04:32 CST 2020
+
+Writing Customer file to: data/tpcc/pg12wh1\customer.csv
+Writing Customer History file to: data/tpcc/pg12wh1\cust-hist.csv
+Start Cust-Hist Load for 60000 Cust-Hists @ Fri Oct 30 23:04:32 CST 2020 ...
+  Elasped Time(ms): 0.586       Writing record 10000 of 60000
+  Elasped Time(ms): 0.535       Writing record 20000 of 60000
+  Elasped Time(ms): 0.483       Writing record 30000 of 60000
+  Elasped Time(ms): 0.458       Writing record 40000 of 60000
+  Elasped Time(ms): 0.459       Writing record 50000 of 60000
+  Elasped Time(ms): 0.507       Writing record 60000 of 60000
+  Elasped Time(ms): 0.001       Writing record 60000 of 60000
+End Cust-Hist Data Load @  Fri Oct 30 23:04:35 CST 2020
+
+Writing Order file to: data/tpcc/pg12wh1\order.csv
+Writing OrderLine file to: data/tpcc/pg12wh1\order-line.csv
+Writing NewOrder file to: data/tpcc/pg12wh1\new-order.csv
+whse=1, dist=10, cust=3000
+Start Order-Line-New Load for approx 340000 rows @ Fri Oct 30 23:04:35 CST 2020 ...
+  Elasped Time(ms): 0.13        Writing record 10000 of 340000
+  Elasped Time(ms): 0.1         Writing record 20000 of 340000
+  Elasped Time(ms): 0.205       Writing record 40000 of 340000
+  Elasped Time(ms): 0.107       Writing record 50000 of 340000
+  Elasped Time(ms): 0.105       Writing record 60000 of 340000
+  Elasped Time(ms): 0.107       Writing record 70000 of 340000
+  Elasped Time(ms): 0.166       Writing record 90000 of 340000
+  Elasped Time(ms): 0.08        Writing record 100000 of 340000
+  Elasped Time(ms): 0.082       Writing record 110000 of 340000
+  Elasped Time(ms): 0.075       Writing record 120000 of 340000
+  Elasped Time(ms): 0.074       Writing record 130000 of 340000
+  Elasped Time(ms): 0.081       Writing record 140000 of 340000
+  Elasped Time(ms): 0.072       Writing record 150000 of 340000
+  Elasped Time(ms): 0.066       Writing record 160000 of 340000
+  Elasped Time(ms): 0.062       Writing record 170000 of 340000
+  Elasped Time(ms): 0.069       Writing record 180000 of 340000
+  Elasped Time(ms): 0.078       Writing record 190000 of 340000
+  Elasped Time(ms): 0.127       Writing record 210000 of 340000
+  Elasped Time(ms): 0.05        Writing record 220000 of 340000
+  Elasped Time(ms): 0.048       Writing record 230000 of 340000
+  Elasped Time(ms): 0.05        Writing record 240000 of 340000
+  Elasped Time(ms): 0.05        Writing record 250000 of 340000
+  Elasped Time(ms): 0.053       Writing record 260000 of 340000
+  Elasped Time(ms): 0.048       Writing record 270000 of 340000
+  Elasped Time(ms): 0.05        Writing record 280000 of 340000
+  Elasped Time(ms): 0.046       Writing record 290000 of 340000
+  Elasped Time(ms): 0.04        Writing record 300000 of 340000
+  Elasped Time(ms): 0.076       Writing record 320000 of 340000
+  Elasped Time(ms): 0.041       Writing record 330000 of 340000
+  Writing final records 338488 of 340000
+End Orders Load @  Fri Oct 30 23:04:37 CST 2020
+
+------------- LoadJDBC Statistics --------------------
+     Start Time = Fri Oct 30 23:04:27 CST 2020
+       End Time = Fri Oct 30 23:04:37 CST 2020
+       Run Time = 10 Seconds
+    Rows Loaded = 598499 Rows
+Rows Per Second = 59849 Rows/Sec
+------------------------------------------------------
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties -DcommandFile=examples/tpcc/pg12wh1/tpcc-pg12wh1-data.sql tpcc.jdbc.ExecJDBC
+执行第 1 条SQL, 耗时 20 毫秒
+执行第 2 条SQL, 耗时 13 毫秒
+执行第 3 条SQL, 耗时 11 毫秒
+执行第 4 条SQL, 耗时 14 毫秒
+执行第 5 条SQL, 耗时 49 毫秒
+执行第 6 条SQL, 耗时 6 毫秒
+执行第 7 条SQL, 耗时 31 毫秒
+执行第 8 条SQL, 耗时 14 毫秒
+执行第 9 条SQL, 耗时 18 毫秒
+执行第 10 条SQL, 耗时 19 毫秒, 读取行数耗时 87 毫秒, 行数 1 行, 每秒处理 52 行
+执行第 11 条SQL, 耗时 848 毫秒, 读取行数耗时 105 毫秒, 行数 100000 行, 每秒处理 117924 行
+执行第 12 条SQL, 耗时 1977 毫秒, 读取行数耗时 109 毫秒, 行数 100000 行, 每秒处理 50581 行
+执行第 13 条SQL, 耗时 12 毫秒, 读取行数耗时 0 毫秒, 行数 10 行, 每秒处理 833 行
+执行第 14 条SQL, 耗时 1134 毫秒, 读取行数耗时 56 毫秒, 行数 30000 行, 每秒处理 26455 行
+执行第 15 条SQL, 耗时 199 毫秒, 读取行数耗时 6 毫秒, 行数 30000 行, 每秒处理 150753 行
+执行第 16 条SQL, 耗时 368 毫秒, 读取行数耗时 4 毫秒, 行数 30000 行, 每秒处理 81521 行
+执行第 17 条SQL, 耗时 2885 毫秒, 读取行数耗时 83 毫秒, 行数 299488 行, 每秒处理 103808 行
+执行第 18 条SQL, 耗时 77 毫秒, 读取行数耗时 1 毫秒, 行数 9000 行, 每秒处理 116883 行
+执行SQL总耗时: 8163 毫秒, 文件: examples/tpcc/pg12wh1/tpcc-pg12wh1-data.sql
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties tpcc.jTPCC
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,      BenchmarkSQL v4.1.1
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2003, Raul Barbosa
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2004-2016, Denis Lussier
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2016, Jan Wieck
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, driver=org.postgresql.Driver
+[main] INFO tpcc.jTPCC - Term-00, conn=jdbc:postgresql://localhost:5432/tpccdb?reWriteBatchedInserts=true
+[main] INFO tpcc.jTPCC - Term-00, user=postgres
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, warehouses=1
+[main] INFO tpcc.jTPCC - Term-00, terminals=10
+[main] INFO tpcc.jTPCC - Term-00, runMins=1
+[main] INFO tpcc.jTPCC - Term-00, limitTxnsPerMin=0
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, newOrderWeight=45
+[main] INFO tpcc.jTPCC - Term-00, paymentWeight=43
+[main] INFO tpcc.jTPCC - Term-00, orderStatusWeight=4
+[main] INFO tpcc.jTPCC - Term-00, deliveryWeight=4
+[main] INFO tpcc.jTPCC - Term-00, stockLevelWeight=4
+[main] INFO tpcc.jTPCC - Term-00,
+Term-00, Running Average tpmTOTAL: 5636.71    Current tpmTOTAL: 38268    Memory Usage: 29MB / 235MB
+[Thread-7] INFO tpcc.jTPCC - Term-00,
+[Thread-7] INFO tpcc.jTPCC - Term-00,
+[Thread-7] INFO tpcc.jTPCC - Term-00, Measured tpmC (NewOrders) = 2529.09
+[Thread-7] INFO tpcc.jTPCC - Term-00, Measured tpmTOTAL = 5639.51
+[Thread-7] INFO tpcc.jTPCC - Term-00, Session Start     = 2020-10-30 23:04:47
+[Thread-7] INFO tpcc.jTPCC - Term-00, Session End       = 2020-10-30 23:05:47
+[Thread-7] INFO tpcc.jTPCC - Term-00, Transaction Count = 5645

@@ -1,0 +1,354 @@
+Microsoft Windows [版本 10.0.19041.572]
+(c) 2020 Microsoft Corporation. 保留所有权利。
+
+D:\benchmark>tpch_h2sf1.bat
+
+D:\benchmark>java -Xmx8g -cp lib/* tpch.cli.CliTool -c tpch -f examples/tpch/h2sf1/tpch_h2sf1.json
+[main] INFO tpch.cli.e2e.TpchExecutor - Load tpch model: examples/tpch/h2sf1/tpch_h2sf1.json
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process dataGen ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_gen_data.json', postProcessScript=''}
+[main] INFO tpch.cli.datagen.DataGenerator - 加载配置文件: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_gen_data.json
+[main] INFO tpch.cli.datagen.DataGenerator - 解析配置文件: DataGenModel{targetDirectory='data/tpch/h2sf1', tableGenModels=[TableGenModel{tpchTableName='customer', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='orders', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='lineitem', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='part', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='partsupp', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='supplier', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='nation', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='region', scaleupFactor=0.01, filePartCnt=1}]}
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成8个表的数据
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: customer
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: customer
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: orders
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: orders
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: lineitem
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: lineitem
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: part
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: part
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: partsupp
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: partsupp
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: supplier
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: supplier
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: nation
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: nation
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: region
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: region
+[pool-1-thread-8] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\region\region-part-1.dat
+[pool-1-thread-4] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\part\part-part-1.dat
+[pool-1-thread-5] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\partsupp\partsupp-part-1.dat
+[pool-1-thread-6] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\supplier\supplier-part-1.dat
+[pool-1-thread-1] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\customer\customer-part-1.dat
+[pool-1-thread-7] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\nation\nation-part-1.dat
+[pool-1-thread-2] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\orders\orders-part-1.dat
+[pool-1-thread-3] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/h2sf1\lineitem\lineitem-part-1.dat
+[pool-1-thread-8] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\region\region-part-1.dat
+[pool-1-thread-7] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\nation\nation-part-1.dat
+[pool-1-thread-6] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\supplier\supplier-part-1.dat
+[pool-1-thread-1] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\customer\customer-part-1.dat
+[pool-1-thread-4] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\part\part-part-1.dat
+[pool-1-thread-5] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\partsupp\partsupp-part-1.dat
+[pool-1-thread-2] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\orders\orders-part-1.dat
+[pool-1-thread-3] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/h2sf1\lineitem\lineitem-part-1.dat
+[main] INFO tpch.cli.datagen.DataGenerator - 生成8个表的数据成功
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process sqlExec [ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_drop_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_create_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_load_data.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_query_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_count_table.json', postProcessScript=''}]
+[main] INFO tpch.cli.jdbc.QueryClient - Load sql execution model: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_drop_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1603550529533
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Original query sequence: drop-h2sf1-id4,drop-h2sf1-id5,drop-h2sf1-id6,drop-h2sf1-id7,drop-h2sf1-id8,drop-h2sf1-id9,drop-h2sf1-id10,drop-h2sf1-id11
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-2-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Time taken sequence(ms): 5,20,5,1,1,5,51,10
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id4 with type h2sf1-drop-supplier
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id5 with type h2sf1-drop-partsupp
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id6 with type h2sf1-drop-customer
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id7 with type h2sf1-drop-nation
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id8 with type h2sf1-drop-region
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id9 with type h2sf1-drop-part
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id10 with type h2sf1-drop-lineitem
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query drop-h2sf1-id11 with type h2sf1-drop-orders
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 8 results for statistic in iteration 1 due to execlusion or failure
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic in iteration 1 due to empty results
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - End2End time(ms): 131
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 conn0: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process sqlExec [ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_drop_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_create_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_load_data.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_query_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_count_table.json', postProcessScript=''}]
+[main] INFO tpch.cli.jdbc.QueryClient - Load sql execution model: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_create_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1603550529983
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Original query sequence: create-h2sf1-id4,create-h2sf1-id5,create-h2sf1-id6,create-h2sf1-id7,create-h2sf1-id8,create-h2sf1-id9,create-h2sf1-id10,create-h2sf1-id11
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-3-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Time taken sequence(ms): 2,1,1,1,5,1,1,0
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id4 with type h2sf1-create-supplier
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id5 with type h2sf1-create-partsupp
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id6 with type h2sf1-create-customer
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id7 with type h2sf1-create-nation
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id8 with type h2sf1-create-region
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id9 with type h2sf1-create-part
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id10 with type h2sf1-create-lineitem
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query create-h2sf1-id11 with type h2sf1-create-orders
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 8 results for statistic in iteration 1 due to execlusion or failure
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic in iteration 1 due to empty results
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - End2End time(ms): 34
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 conn1: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process sqlExec [ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_drop_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_create_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_load_data.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_query_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_count_table.json', postProcessScript=''}]
+[main] INFO tpch.cli.jdbc.QueryClient - Load sql execution model: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_load_data.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1603550530124
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Original query sequence: h2sf1-load-id4,h2sf1-load-id5,h2sf1-load-id6,h2sf1-load-id7,h2sf1-load-id8,h2sf1-load-id9,h2sf1-load-id10,h2sf1-load-id11
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-4-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Time taken sequence(ms): 20,314,38,2,2,61,1354,115
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id4 with type h2sf1-load-supplier
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id5 with type h2sf1-load-partsupp
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id6 with type h2sf1-load-customer
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id7 with type h2sf1-load-nation
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id8 with type h2sf1-load-region
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id9 with type h2sf1-load-part
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id10 with type h2sf1-load-lineitem
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-load-id11 with type h2sf1-load-orders
+[main] INFO tpch.cli.report.HistogramReporter - Test reports are generated in path D:\benchmark\report\tpch\h2sf1_load\306712144833800_rpt.json and D:\benchmark\report\tpch\h2sf1_load\306712144833800_rpt.txt
+[main] INFO tpch.cli.jdbc.QueryClient - Query statistics(ms) for iteration 1:
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+|        query        |   avg  | size | total |  min |  max |  25% |  50% |  75% |  90% |  95% |
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+|         ALL         |  238.3 |   8  |  1906 |   2  | 1354 |  20  |  61  |  314 | 1354 | 1354 |
+| h2sf1-load-customer |  38.0  |   1  |   38  |  38  |  38  |  38  |  38  |  38  |  38  |  38  |
+| h2sf1-load-lineitem | 1354.0 |   1  |  1354 | 1354 | 1354 | 1354 | 1354 | 1354 | 1354 | 1354 |
+|  h2sf1-load-nation  |   2.0  |   1  |   2   |   2  |   2  |   2  |   2  |   2  |   2  |   2  |
+|  h2sf1-load-orders  |  115.0 |   1  |  115  |  115 |  115 |  115 |  115 |  115 |  115 |  115 |
+|   h2sf1-load-part   |  61.0  |   1  |   61  |  61  |  61  |  61  |  61  |  61  |  61  |  61  |
+| h2sf1-load-partsupp |  314.0 |   1  |  314  |  314 |  314 |  314 |  314 |  314 |  314 |  314 |
+|  h2sf1-load-region  |   2.0  |   1  |   2   |   2  |   2  |   2  |   2  |   2  |   2  |   2  |
+| h2sf1-load-supplier |  20.0  |   1  |   20  |  20  |  20  |  20  |  20  |  20  |  20  |  20  |
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+
+[main] INFO tpch.cli.jdbc.QueryClient - Query statistics(ms) for iteration 1:
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+|        query        |   avg  | size | total |  min |  max |  25% |  50% |  75% |  90% |  95% |
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+|         ALL         |  238.3 |   8  |  1906 |   2  | 1354 |  20  |  61  |  314 | 1354 | 1354 |
+| h2sf1-load-customer |  38.0  |   1  |   38  |  38  |  38  |  38  |  38  |  38  |  38  |  38  |
+| h2sf1-load-lineitem | 1354.0 |   1  |  1354 | 1354 | 1354 | 1354 | 1354 | 1354 | 1354 | 1354 |
+|  h2sf1-load-nation  |   2.0  |   1  |   2   |   2  |   2  |   2  |   2  |   2  |   2  |   2  |
+|  h2sf1-load-orders  |  115.0 |   1  |  115  |  115 |  115 |  115 |  115 |  115 |  115 |  115 |
+|   h2sf1-load-part   |  61.0  |   1  |   61  |  61  |  61  |  61  |  61  |  61  |  61  |  61  |
+| h2sf1-load-partsupp |  314.0 |   1  |  314  |  314 |  314 |  314 |  314 |  314 |  314 |  314 |
+|  h2sf1-load-region  |   2.0  |   1  |   2   |   2  |   2  |   2  |   2  |   2  |   2  |   2  |
+| h2sf1-load-supplier |  20.0  |   1  |   20  |  20  |  20  |  20  |  20  |  20  |  20  |  20  |
++---------------------+--------+------+-------+------+------+------+------+------+------+------+
+
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - End2End time(ms): 2048
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 conn2: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process sqlExec [ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_drop_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_create_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_load_data.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_query_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_count_table.json', postProcessScript=''}]
+[main] INFO tpch.cli.jdbc.QueryClient - Load sql execution model: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_query_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1603550532637
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Original query sequence: h2sf1-query-q01,h2sf1-query-q02,h2sf1-query-q03,h2sf1-query-q04,h2sf1-query-q05,h2sf1-query-q06,h2sf1-query-q07,h2sf1-query-q08,h2sf1-query-q09,h2sf1-query-q10,h2sf1-query-q11,h2sf1-query-q12,h2sf1-query-q13,h2sf1-query-q14,h2sf1-query-q15-cv,h2sf1-query-q15,h2sf1-query-q15-dv,h2sf1-query-q16,h2sf1-query-q17,h2sf1-query-q18,h2sf1-query-q19,h2sf1-query-q20,h2sf1-query-q21,h2sf1-query-q22
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-5-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Time taken sequence(ms): 353,1757,91254,3188,2298220,20,39402,42790,219413,6988,61,1964,3504,293,1,1280,1,751,1,160,1901,838,612268,272
+[main] INFO tpch.cli.jdbc.QueryClient - returns 4 records for query h2sf1-query-q01 with type h2sf1-query-q01
+[main] INFO tpch.cli.jdbc.QueryClient - returns 4 records for query h2sf1-query-q02 with type h2sf1-query-q02
+[main] INFO tpch.cli.jdbc.QueryClient - returns 10 records for query h2sf1-query-q03 with type h2sf1-query-q03
+[main] INFO tpch.cli.jdbc.QueryClient - returns 5 records for query h2sf1-query-q04 with type h2sf1-query-q04
+[main] INFO tpch.cli.jdbc.QueryClient - returns 5 records for query h2sf1-query-q05 with type h2sf1-query-q05
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q06 with type h2sf1-query-q06
+[main] INFO tpch.cli.jdbc.QueryClient - returns 4 records for query h2sf1-query-q07 with type h2sf1-query-q07
+[main] INFO tpch.cli.jdbc.QueryClient - returns 2 records for query h2sf1-query-q08 with type h2sf1-query-q08
+[main] INFO tpch.cli.jdbc.QueryClient - returns 166 records for query h2sf1-query-q09 with type h2sf1-query-q09
+[main] INFO tpch.cli.jdbc.QueryClient - returns 20 records for query h2sf1-query-q10 with type h2sf1-query-q10
+[main] INFO tpch.cli.jdbc.QueryClient - returns 359 records for query h2sf1-query-q11 with type h2sf1-query-q11
+[main] INFO tpch.cli.jdbc.QueryClient - returns 2 records for query h2sf1-query-q12 with type h2sf1-query-q12
+[main] INFO tpch.cli.jdbc.QueryClient - returns 33 records for query h2sf1-query-q13 with type h2sf1-query-q13
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q14 with type h2sf1-query-q14
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-query-q15-cv with type h2sf1-query-q15-cv
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q15 with type h2sf1-query-q15
+[main] INFO tpch.cli.jdbc.QueryClient - returns -1 records for query h2sf1-query-q15-dv with type h2sf1-query-q15-dv
+[main] INFO tpch.cli.jdbc.QueryClient - returns 296 records for query h2sf1-query-q16 with type h2sf1-query-q16
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q17 with type h2sf1-query-q17
+[main] INFO tpch.cli.jdbc.QueryClient - returns 2 records for query h2sf1-query-q18 with type h2sf1-query-q18
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q19 with type h2sf1-query-q19
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q20 with type h2sf1-query-q20
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-query-q21 with type h2sf1-query-q21
+[main] INFO tpch.cli.jdbc.QueryClient - returns 7 records for query h2sf1-query-q22 with type h2sf1-query-q22
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 2 results for statistic in iteration 1 due to execlusion or failure
+[main] INFO tpch.cli.report.HistogramReporter - Test reports are generated in path D:\benchmark\report\tpch\h2sf1_query\310039460161100_rpt.json and D:\benchmark\report\tpch\h2sf1_query\310039460161100_rpt.txt
+[main] INFO tpch.cli.jdbc.QueryClient - Query statistics(ms) for iteration 1:
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+|      query      |    avg    | size |  total  |   min   |   max   |   25%   |   50%   |   75%   |   90%   |   95%   |
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+|       ALL       |  151212.6 |  22  | 3326678 |    1    | 2298220 |   293   |   1901  |  39402  |  219413 |  612268 |
+| h2sf1-query-q01 |   353.0   |   1  |   353   |   353   |   353   |   353   |   353   |   353   |   353   |   353   |
+| h2sf1-query-q02 |   1757.0  |   1  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |
+| h2sf1-query-q03 |  91254.0  |   1  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |
+| h2sf1-query-q04 |   3188.0  |   1  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |
+| h2sf1-query-q05 | 2298220.0 |   1  | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 |
+| h2sf1-query-q06 |    20.0   |   1  |    20   |    20   |    20   |    20   |    20   |    20   |    20   |    20   |
+| h2sf1-query-q07 |  39402.0  |   1  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |
+| h2sf1-query-q08 |  42790.0  |   1  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |
+| h2sf1-query-q09 |  219413.0 |   1  |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |
+| h2sf1-query-q10 |   6988.0  |   1  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |
+| h2sf1-query-q11 |    61.0   |   1  |    61   |    61   |    61   |    61   |    61   |    61   |    61   |    61   |
+| h2sf1-query-q12 |   1964.0  |   1  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |
+| h2sf1-query-q13 |   3504.0  |   1  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |
+| h2sf1-query-q14 |   293.0   |   1  |   293   |   293   |   293   |   293   |   293   |   293   |   293   |   293   |
+| h2sf1-query-q15 |   1280.0  |   1  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |
+| h2sf1-query-q16 |   751.0   |   1  |   751   |   751   |   751   |   751   |   751   |   751   |   751   |   751   |
+| h2sf1-query-q17 |    1.0    |   1  |    1    |    1    |    1    |    1    |    1    |    1    |    1    |    1    |
+| h2sf1-query-q18 |   160.0   |   1  |   160   |   160   |   160   |   160   |   160   |   160   |   160   |   160   |
+| h2sf1-query-q19 |   1901.0  |   1  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |
+| h2sf1-query-q20 |   838.0   |   1  |   838   |   838   |   838   |   838   |   838   |   838   |   838   |   838   |
+| h2sf1-query-q21 |  612268.0 |   1  |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |
+| h2sf1-query-q22 |   272.0   |   1  |   272   |   272   |   272   |   272   |   272   |   272   |   272   |   272   |
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+
+[main] INFO tpch.cli.jdbc.QueryClient - Query statistics(ms) for iteration 1:
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+|      query      |    avg    | size |  total  |   min   |   max   |   25%   |   50%   |   75%   |   90%   |   95%   |
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+|       ALL       |  151212.6 |  22  | 3326678 |    1    | 2298220 |   293   |   1901  |  39402  |  219413 |  612268 |
+| h2sf1-query-q01 |   353.0   |   1  |   353   |   353   |   353   |   353   |   353   |   353   |   353   |   353   |
+| h2sf1-query-q02 |   1757.0  |   1  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |   1757  |
+| h2sf1-query-q03 |  91254.0  |   1  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |  91254  |
+| h2sf1-query-q04 |   3188.0  |   1  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |   3188  |
+| h2sf1-query-q05 | 2298220.0 |   1  | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 | 2298220 |
+| h2sf1-query-q06 |    20.0   |   1  |    20   |    20   |    20   |    20   |    20   |    20   |    20   |    20   |
+| h2sf1-query-q07 |  39402.0  |   1  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |  39402  |
+| h2sf1-query-q08 |  42790.0  |   1  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |  42790  |
+| h2sf1-query-q09 |  219413.0 |   1  |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |  219413 |
+| h2sf1-query-q10 |   6988.0  |   1  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |   6988  |
+| h2sf1-query-q11 |    61.0   |   1  |    61   |    61   |    61   |    61   |    61   |    61   |    61   |    61   |
+| h2sf1-query-q12 |   1964.0  |   1  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |   1964  |
+| h2sf1-query-q13 |   3504.0  |   1  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |   3504  |
+| h2sf1-query-q14 |   293.0   |   1  |   293   |   293   |   293   |   293   |   293   |   293   |   293   |   293   |
+| h2sf1-query-q15 |   1280.0  |   1  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |   1280  |
+| h2sf1-query-q16 |   751.0   |   1  |   751   |   751   |   751   |   751   |   751   |   751   |   751   |   751   |
+| h2sf1-query-q17 |    1.0    |   1  |    1    |    1    |    1    |    1    |    1    |    1    |    1    |    1    |
+| h2sf1-query-q18 |   160.0   |   1  |   160   |   160   |   160   |   160   |   160   |   160   |   160   |   160   |
+| h2sf1-query-q19 |   1901.0  |   1  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |   1901  |
+| h2sf1-query-q20 |   838.0   |   1  |   838   |   838   |   838   |   838   |   838   |   838   |   838   |   838   |
+| h2sf1-query-q21 |  612268.0 |   1  |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |  612268 |
+| h2sf1-query-q22 |   272.0   |   1  |   272   |   272   |   272   |   272   |   272   |   272   |   272   |   272   |
++-----------------+-----------+------+---------+---------+---------+---------+---------+---------+---------+---------+
+
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - End2End time(ms): 3326864
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 conn3: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.e2e.TpchExecutor - Begin to process sqlExec [ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_drop_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_create_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_load_data.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_query_table.json', postProcessScript=''}, ModelWrapper{preProcessScript='', processMetaFilePath='examples/tpch/h2sf1/tpch_h2sf1_count_table.json', postProcessScript=''}]
+[main] INFO tpch.cli.jdbc.QueryClient - Load sql execution model: D:\benchmark\examples\tpch\h2sf1\tpch_h2sf1_count_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1603553859580
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Original query sequence: h2sf1-count-id01,h2sf1-count-id02,h2sf1-count-id03,h2sf1-count-id04,h2sf1-count-id05,h2sf1-count-id06,h2sf1-count-id07,h2sf1-count-id08
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[pool-6-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA
+[main] INFO tpch.cli.jdbc.QueryClient - Time taken sequence(ms): 0,0,0,0,0,1,0,0
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id01 with type h2sf1-count-lineitem
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id02 with type h2sf1-count-supplier
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id03 with type h2sf1-count-partsupp
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id04 with type h2sf1-count-customer
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id05 with type h2sf1-count-nation
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id06 with type h2sf1-count-region
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id07 with type h2sf1-count-part
+[main] INFO tpch.cli.jdbc.QueryClient - returns 1 records for query h2sf1-count-id08 with type h2sf1-count-orders
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 8 results for statistic in iteration 1 due to execlusion or failure
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic in iteration 1 due to empty results
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - End2End time(ms): 20
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 conn4: url=jdbc:h2:./data/tpch_h2sf1 user=SA

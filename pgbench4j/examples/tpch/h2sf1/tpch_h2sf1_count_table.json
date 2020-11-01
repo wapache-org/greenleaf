@@ -1,0 +1,79 @@
+{
+  "jdbcUrl": "jdbc:h2:./data/tpch_h2sf1",
+  "jdbcUser": "sa",
+  "jdbcPwd": "",
+  "jdbcDriver": "org.h2.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "report/tpch/h2sf1_query",
+  "connInitQuery": "",
+  "querySlices": [
+    {
+      "id": "h2sf1-count-id01",
+      "sql": "select count(*) from LINEITEM",
+      "type": "h2sf1-count-lineitem",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id02",
+      "sql": "select count(*) from SUPPLIER",
+      "type": "h2sf1-count-supplier",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id03",
+      "sql": "select count(*) from PARTSUPP",
+      "type": "h2sf1-count-partsupp",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id04",
+      "sql": "select count(*) from CUSTOMER",
+      "type": "h2sf1-count-customer",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id05",
+      "sql": "select count(*) from NATION",
+      "type": "h2sf1-count-nation",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id06",
+      "sql": "select count(*) from REGION",
+      "type": "h2sf1-count-region",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id07",
+      "sql": "select count(*) from PART",
+      "type": "h2sf1-count-part",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "h2sf1-count-id08",
+      "sql": "select count(*) from ORDERS",
+      "type": "h2sf1-count-orders",
+      "threads": 1,
+      "isConsumeResult": true,
+      "isCountInStatistics": false
+    }
+  ]
+}

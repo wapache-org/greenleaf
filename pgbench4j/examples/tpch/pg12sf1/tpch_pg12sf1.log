@@ -1,0 +1,254 @@
+D:\benchmark>java -cp lib/* tpch.cli.CliTool -c gen_data -f examples/tpch/pg12sf1/tpch_pg12sf1_gen_data.json
+[main] INFO tpch.cli.datagen.DataGenerator - 加载配置文件: D:\benchmark\examples\tpch\pg12sf1\tpch_pg12sf1_gen_data.json
+[main] INFO tpch.cli.datagen.DataGenerator - 解析配置文件: DataGenModel{targetDirectory='data/tpch/pg12sf1', tableGenModels=[TableGenModel{tpchTableName='customer', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='orders', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='lineitem', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='part', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='partsupp', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='supplier', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='nation', scaleupFactor=0.01, filePartCnt=1}, TableGenModel{tpchTableName='region', scaleupFactor=0.01, filePartCnt=1}]}
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成8个表的数据
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: customer
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: customer
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: orders
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: orders
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: lineitem
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: lineitem
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: part
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: part
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: partsupp
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: partsupp
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: supplier
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: supplier
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: nation
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: nation
+[main] INFO tpch.cli.datagen.DataGenerator - 开始生成表数据: region
+[main] INFO tpch.cli.datagen.DataGenerator - 生成表数据成功: region
+[pool-1-thread-2] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\orders\orders-part-1.dat
+[pool-1-thread-7] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\nation\nation-part-1.dat
+[pool-1-thread-4] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\part\part-part-1.dat
+[pool-1-thread-3] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\lineitem\lineitem-part-1.dat
+[pool-1-thread-1] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\customer\customer-part-1.dat
+[pool-1-thread-6] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\supplier\supplier-part-1.dat
+[pool-1-thread-5] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\partsupp\partsupp-part-1.dat
+[pool-1-thread-8] INFO tpch.cli.datagen.AirliftTpchUtil - 开始生成数据文件: data/tpch/pg12sf1\region\region-part-1.dat
+[pool-1-thread-8] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\region\region-part-1.dat
+[pool-1-thread-7] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\nation\nation-part-1.dat
+[pool-1-thread-6] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\supplier\supplier-part-1.dat
+[pool-1-thread-1] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\customer\customer-part-1.dat
+[pool-1-thread-4] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\part\part-part-1.dat
+[pool-1-thread-5] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\partsupp\partsupp-part-1.dat
+[pool-1-thread-2] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\orders\orders-part-1.dat
+[pool-1-thread-3] INFO tpch.cli.datagen.AirliftTpchUtil - 生成数据文件成功: data/tpch/pg12sf1\lineitem\lineitem-part-1.dat
+[main] INFO tpch.cli.datagen.DataGenerator - 生成8个表的数据成功
+
+D:\benchmark>java -cp lib/* tpch.cli.CliTool -c exec_sql -f examples/tpch/pg12sf1/tpch_pg12sf1_drop_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 开始执行查询: examples/tpch/pg12sf1/tpch_pg12sf1_drop_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 加载配置文件: D:\benchmark\examples\tpch\pg12sf1\tpch_pg12sf1_drop_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1604226347334
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[main] INFO tpch.cli.jdbc.QueryClient - SQL语句执行耗时(ms): 21,21,8,4,6,10,229,256
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 8 results for statistic in iteration 1 due to execlusion or failure
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic in iteration 1 due to empty results
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - 执行查询(examples/tpch/pg12sf1/tpch_pg12sf1_drop_table.json)总耗时(ms): 659
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 org.postgresql.jdbc.PgConnection@6fffcba5
+
+D:\benchmark>java -cp lib/* tpch.cli.CliTool -c exec_sql -f examples/tpch/pg12sf1/tpch_pg12sf1_create_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 开始执行查询: examples/tpch/pg12sf1/tpch_pg12sf1_create_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 加载配置文件: D:\benchmark\examples\tpch\pg12sf1\tpch_pg12sf1_create_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1604226356826
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[main] INFO tpch.cli.jdbc.QueryClient - SQL语句执行耗时(ms): 21,5,7,7,6,6,5,5
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 8 results for statistic in iteration 1 due to execlusion or failure
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic in iteration 1 due to empty results
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - 执行查询(examples/tpch/pg12sf1/tpch_pg12sf1_create_table.json)总耗时(ms): 168
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 org.postgresql.jdbc.PgConnection@6fffcba5
+
+D:\benchmark>java -cp lib/* tpch.cli.CliTool -c exec_sql -f examples/tpch/pg12sf1/tpch_pg12sf1_load_data.json
+[main] INFO tpch.cli.jdbc.QueryClient - 开始执行查询: examples/tpch/pg12sf1/tpch_pg12sf1_load_data.json
+[main] INFO tpch.cli.jdbc.QueryClient - 加载配置文件: D:\benchmark\examples\tpch\pg12sf1\tpch_pg12sf1_load_data.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1604226366944
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY supplier  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY partsupp  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY customer  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY nation  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY region  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY part  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY lineitem  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@6fffcba5
+[pool-1-thread-1] INFO tpcc.jdbc.ExecJDBC - 执行COPY语句: COPY orders  FROM STDIN with CSV DELIMITER '|'
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@6fffcba5
+[main] INFO tpch.cli.jdbc.QueryClient - SQL语句执行耗时(ms): 17,59,16,6,9,20,450,70
+[main] INFO tpch.cli.report.HistogramReporter - Test reports are generated in path D:\benchmark\report\tpch\pg12sf1_load\982544401431800_rpt.json and D:\benchmark\report\tpch\pg12sf1_load\982544401431800_rpt.txt
+[main] INFO tpch.cli.jdbc.QueryClient - 查询统计汇总(ms), 第1轮的统计结果:
++-----------------------+-------+------+-------+-----+-----+-----+-----+-----+-----+-----+
+|         query         |  avg  | size | total | min | max | 25% | 50% | 75% | 90% | 95% |
++-----------------------+-------+------+-------+-----+-----+-----+-----+-----+-----+-----+
+|          ALL          |  80.9 |   8  |  647  |  6  | 450 |  16 |  20 |  70 | 450 | 450 |
+| pg12sf1-load-customer |  16.0 |   1  |   16  |  16 |  16 |  16 |  16 |  16 |  16 |  16 |
+| pg12sf1-load-lineitem | 450.0 |   1  |  450  | 450 | 450 | 450 | 450 | 450 | 450 | 450 |
+|  pg12sf1-load-nation  |  6.0  |   1  |   6   |  6  |  6  |  6  |  6  |  6  |  6  |  6  |
+|  pg12sf1-load-orders  |  70.0 |   1  |   70  |  70 |  70 |  70 |  70 |  70 |  70 |  70 |
+|   pg12sf1-load-part   |  20.0 |   1  |   20  |  20 |  20 |  20 |  20 |  20 |  20 |  20 |
+| pg12sf1-load-partsupp |  59.0 |   1  |   59  |  59 |  59 |  59 |  59 |  59 |  59 |  59 |
+|  pg12sf1-load-region  |  9.0  |   1  |   9   |  9  |  9  |  9  |  9  |  9  |  9  |  9  |
+| pg12sf1-load-supplier |  17.0 |   1  |   17  |  17 |  17 |  17 |  17 |  17 |  17 |  17 |
++-----------------------+-------+------+-------+-----+-----+-----+-----+-----+-----+-----+
+
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - 执行查询(examples/tpch/pg12sf1/tpch_pg12sf1_load_data.json)总耗时(ms): 759
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 org.postgresql.jdbc.PgConnection@6fffcba5
+
+D:\benchmark>java -cp lib/* tpch.cli.CliTool -c exec_sql -f examples/tpch/pg12sf1/tpch_pg12sf1_query_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 开始执行查询: examples/tpch/pg12sf1/tpch_pg12sf1_query_table.json
+[main] INFO tpch.cli.jdbc.QueryClient - 加载配置文件: D:\benchmark\examples\tpch\pg12sf1\tpch_pg12sf1_query_table.json
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接: 时间戳=1604226378443
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 创建连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 申请链接 org.postgresql.jdbc.PgConnection@2aafb23c
+[pool-1-thread-1] INFO tpch.cli.jdbc.ConnectionMgr - 归还连接 org.postgresql.jdbc.PgConnection@2aafb23c
+[main] INFO tpch.cli.jdbc.QueryClient - SQL语句执行耗时(ms): 93,146,20,39,68,14,3223,9968,39,30,9,35,21,19,6,34,5,11,7,155,30,54391,377,9
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q01.pg12sf1-query-q01 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q02.pg12sf1-query-q02 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q03.pg12sf1-query-q03 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q04.pg12sf1-query-q04 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q05.pg12sf1-query-q05 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q06.pg12sf1-query-q06 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q07.pg12sf1-query-q07 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q08.pg12sf1-query-q08 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q09.pg12sf1-query-q09 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q10.pg12sf1-query-q10 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q11.pg12sf1-query-q11 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q12.pg12sf1-query-q12 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q13.pg12sf1-query-q13 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q14.pg12sf1-query-q14 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q15.pg12sf1-query-q15 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q16.pg12sf1-query-q16 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q17.pg12sf1-query-q17 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q18.pg12sf1-query-q18 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q19.pg12sf1-query-q19 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q20.pg12sf1-query-q20 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q21.pg12sf1-query-q21 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - 查询语句 pg12sf1-query-q22.pg12sf1-query-q22 返回了 -1 条记录
+[main] INFO tpch.cli.jdbc.QueryClient - Skip 2 results for statistic in iteration 1 due to execlusion or failure
+[main] INFO tpch.cli.report.HistogramReporter - Test reports are generated in path D:\benchmark\report\tpch\pg12sf1_query\982624089416600_rpt.json and D:\benchmark\report\tpch\pg12sf1_query\982624089416600_rpt.txt
+[main] INFO tpch.cli.jdbc.QueryClient - 查询统计汇总(ms), 第1轮的统计结果:
++-------------------+---------+------+-------+-------+-------+-------+-------+-------+-------+-------+
+|       query       |   avg   | size | total |  min  |  max  |  25%  |  50%  |  75%  |  90%  |  95%  |
++-------------------+---------+------+-------+-------+-------+-------+-------+-------+-------+-------+
+|        ALL        |  3124.5 |  22  | 68738 |   7   | 54391 |   19  |   35  |  146  |  3223 |  9968 |
+| pg12sf1-query-q01 |   93.0  |   1  |   93  |   93  |   93  |   93  |   93  |   93  |   93  |   93  |
+| pg12sf1-query-q02 |  146.0  |   1  |  146  |  146  |  146  |  146  |  146  |  146  |  146  |  146  |
+| pg12sf1-query-q03 |   20.0  |   1  |   20  |   20  |   20  |   20  |   20  |   20  |   20  |   20  |
+| pg12sf1-query-q04 |   39.0  |   1  |   39  |   39  |   39  |   39  |   39  |   39  |   39  |   39  |
+| pg12sf1-query-q05 |   68.0  |   1  |   68  |   68  |   68  |   68  |   68  |   68  |   68  |   68  |
+| pg12sf1-query-q06 |   14.0  |   1  |   14  |   14  |   14  |   14  |   14  |   14  |   14  |   14  |
+| pg12sf1-query-q07 |  3223.0 |   1  |  3223 |  3223 |  3223 |  3223 |  3223 |  3223 |  3223 |  3223 |
+| pg12sf1-query-q08 |  9968.0 |   1  |  9968 |  9968 |  9968 |  9968 |  9968 |  9968 |  9968 |  9968 |
+| pg12sf1-query-q09 |   39.0  |   1  |   39  |   39  |   39  |   39  |   39  |   39  |   39  |   39  |
+| pg12sf1-query-q10 |   30.0  |   1  |   30  |   30  |   30  |   30  |   30  |   30  |   30  |   30  |
+| pg12sf1-query-q11 |   9.0   |   1  |   9   |   9   |   9   |   9   |   9   |   9   |   9   |   9   |
+| pg12sf1-query-q12 |   35.0  |   1  |   35  |   35  |   35  |   35  |   35  |   35  |   35  |   35  |
+| pg12sf1-query-q13 |   21.0  |   1  |   21  |   21  |   21  |   21  |   21  |   21  |   21  |   21  |
+| pg12sf1-query-q14 |   19.0  |   1  |   19  |   19  |   19  |   19  |   19  |   19  |   19  |   19  |
+| pg12sf1-query-q15 |   34.0  |   1  |   34  |   34  |   34  |   34  |   34  |   34  |   34  |   34  |
+| pg12sf1-query-q16 |   11.0  |   1  |   11  |   11  |   11  |   11  |   11  |   11  |   11  |   11  |
+| pg12sf1-query-q17 |   7.0   |   1  |   7   |   7   |   7   |   7   |   7   |   7   |   7   |   7   |
+| pg12sf1-query-q18 |  155.0  |   1  |  155  |  155  |  155  |  155  |  155  |  155  |  155  |  155  |
+| pg12sf1-query-q19 |   30.0  |   1  |   30  |   30  |   30  |   30  |   30  |   30  |   30  |   30  |
+| pg12sf1-query-q20 | 54391.0 |   1  | 54391 | 54391 | 54391 | 54391 | 54391 | 54391 | 54391 | 54391 |
+| pg12sf1-query-q21 |  377.0  |   1  |  377  |  377  |  377  |  377  |  377  |  377  |  377  |  377  |
+| pg12sf1-query-q22 |   9.0   |   1  |   9   |   9   |   9   |   9   |   9   |   9   |   9   |   9   |
++-------------------+---------+------+-------+-------+-------+-------+-------+-------+-------+-------+
+
+[main] WARN tpch.cli.jdbc.QueryClient - Skip statistic for all iterations due to empty query results
+[main] INFO tpch.cli.jdbc.QueryClient - 执行查询(examples/tpch/pg12sf1/tpch_pg12sf1_query_table.json)总耗时(ms): 68897
+[main] INFO tpch.cli.jdbc.ConnectionMgr - 关闭连接 org.postgresql.jdbc.PgConnection@2aafb23c

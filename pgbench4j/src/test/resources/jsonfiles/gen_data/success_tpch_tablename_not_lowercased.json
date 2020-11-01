@@ -1,0 +1,10 @@
+{
+  "targetDirectory": "test_gen_out",
+  "tableGenModels": [
+    {
+      "tpchTableName": "NaTion",
+      "scaleupFactor": 0.1,
+      "filePartCnt": 2
+    }
+  ]
+}

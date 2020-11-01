@@ -1,0 +1,9 @@
+insert into warehouse select * from CSVREAD('data/tpcc/h2wh1/warehouse.csv', null, 'charset=UTF-8');
+insert into item select * from CSVREAD('data/tpcc/h2wh1/item.csv', null, 'charset=UTF-8');
+insert into stock select * from CSVREAD('data/tpcc/h2wh1/stock.csv', null, 'charset=UTF-8');
+insert into district select * from CSVREAD('data/tpcc/h2wh1/district.csv', null, 'charset=UTF-8');
+insert into customer select * from CSVREAD('data/tpcc/h2wh1/customer.csv', null, 'charset=UTF-8');
+insert into history select * from CSVREAD('data/tpcc/h2wh1/cust-hist.csv', null, 'charset=UTF-8');
+insert into oorder select * from CSVREAD('data/tpcc/h2wh1/order.csv', null, 'charset=UTF-8');
+insert into order_line select * from CSVREAD('data/tpcc/h2wh1/order-line.csv', null, 'charset=UTF-8');
+insert into new_order select * from CSVREAD('data/tpcc/h2wh1/new-order.csv', null, 'charset=UTF-8');

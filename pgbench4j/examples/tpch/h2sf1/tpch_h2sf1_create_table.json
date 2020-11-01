@@ -1,0 +1,86 @@
+{
+  "jdbcUrl": "jdbc:h2:./data/tpch_h2sf1",
+  "jdbcUser": "sa",
+  "jdbcPwd": "",
+  "jdbcDriver": "org.h2.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "",
+  "querySlices": [
+    {
+      "id": "create-h2sf1-id4",
+      "sql": "CREATE TABLE supplier\n(\n    s_suppkey     BIGINT not null,\n    s_name        CHAR(25) not null,\n    s_address     VARCHAR(40) not null,\n    s_nationkey   INTEGER not null,\n    s_phone       CHAR(15) not null,\n    s_acctbal     DOUBLE PRECISION not null,\n    s_comment     VARCHAR(101) not null\n)",
+      "type": "h2sf1-create-supplier",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id5",
+      "sql": "CREATE TABLE partsupp\n(\n    ps_partkey     BIGINT not null,\n    ps_suppkey     BIGINT not null,\n    ps_availqty    BIGINT not null,\n    ps_supplycost  DOUBLE PRECISION  not null,\n    ps_comment     VARCHAR(199) not null\n)",
+      "type": "h2sf1-create-partsupp",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id6",
+      "sql": "CREATE TABLE customer\n(\n    c_custkey     BIGINT not null,\n    c_name        VARCHAR(25) not null,\n    c_address     VARCHAR(40) not null,\n    c_nationkey   INTEGER not null,\n    c_phone       CHAR(15) not null,\n    c_acctbal     DOUBLE PRECISION   not null,\n    c_mktsegment  CHAR(10) not null,\n    c_comment     VARCHAR(117) not null\n)",
+      "type": "h2sf1-create-customer",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id7",
+      "sql": "CREATE TABLE nation\n(\n    n_nationkey  INTEGER not null,\n    n_name       CHAR(25) not null,\n    n_regionkey  INTEGER not null,\n    n_comment    VARCHAR(152)\n)",
+      "type": "h2sf1-create-nation",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id8",
+      "sql": "CREATE TABLE region\n(\n    r_regionkey  INTEGER not null,\n    r_name       CHAR(25) not null,\n    r_comment    VARCHAR(152)\n)",
+      "type": "h2sf1-create-region",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id9",
+      "sql": "CREATE TABLE part\n(\n    p_partkey     BIGINT not null,\n    p_name        VARCHAR(55) not null,\n    p_mfgr        CHAR(25) not null,\n    p_brand       CHAR(10) not null,\n    p_type        VARCHAR(25) not null,\n    p_size        INTEGER not null,\n    p_container   CHAR(10) not null,\n    p_retailprice DOUBLE PRECISION not null,\n    p_comment     VARCHAR(23) not null\n)",
+      "type": "h2sf1-create-part",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id10",
+      "sql": "CREATE TABLE lineitem\n(\n    l_orderkey    BIGINT not null,\n    l_partkey     BIGINT not null,\n    l_suppkey     BIGINT not null,\n    l_linenumber  BIGINT not null,\n    l_quantity    DOUBLE PRECISION not null,\n    l_extendedprice  DOUBLE PRECISION not null,\n    l_discount    DOUBLE PRECISION not null,\n    l_tax         DOUBLE PRECISION not null,\n    l_returnflag  CHAR(1) not null,\n    l_linestatus  CHAR(1) not null,\n    l_shipdate    DATE not null,\n    l_commitdate  DATE not null,\n    l_receiptdate DATE not null,\n    l_shipinstruct CHAR(25) not null,\n    l_shipmode     CHAR(10) not null,\n    l_comment      VARCHAR(44) not null\n)",
+      "type": "h2sf1-create-lineitem",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "create-h2sf1-id11",
+      "sql": "CREATE TABLE orders\n(\n    o_orderkey       BIGINT not null,\n    o_custkey        BIGINT not null,\n    o_orderstatus    CHAR(1) not null,\n    o_totalprice     DOUBLE PRECISION not null,\n    o_orderdate      DATE not null,\n    o_orderpriority  CHAR(15) not null,\n    o_clerk          CHAR(15) not null,\n    o_shippriority   INTEGER not null,\n    o_comment        VARCHAR(79) not null\n)",
+      "type": "h2sf1-create-orders",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    }
+  ]
+}

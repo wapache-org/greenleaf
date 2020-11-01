@@ -1,0 +1,86 @@
+{
+  "jdbcUrl": "jdbc:h2:./data/tpch_h2sf1",
+  "jdbcUser": "sa",
+  "jdbcPwd": "",
+  "jdbcDriver": "org.h2.Driver",
+  "jdbcPoolSize": 1,
+  "execIteration": 1,
+  "execInterval": 0,
+  "execConcurrentSize": 1,
+  "shuffleExecute": false,
+  "reportStore": "",
+  "querySlices": [
+    {
+      "id": "drop-h2sf1-id4",
+      "sql": "drop table if exists supplier",
+      "type": "h2sf1-drop-supplier",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id5",
+      "sql": "drop table if exists partsupp",
+      "type": "h2sf1-drop-partsupp",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id6",
+      "sql": "drop table if exists customer",
+      "type": "h2sf1-drop-customer",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id7",
+      "sql": "drop table if exists nation",
+      "type": "h2sf1-drop-nation",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id8",
+      "sql": "drop table if exists region",
+      "type": "h2sf1-drop-region",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id9",
+      "sql": "drop table if exists part",
+      "type": "h2sf1-drop-part",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id10",
+      "sql": "drop table if exists lineitem",
+      "type": "h2sf1-drop-lineitem",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    },
+    {
+      "id": "drop-h2sf1-id11",
+      "sql": "drop table if exists orders",
+      "type": "h2sf1-drop-orders",
+      "threads": 1,
+      "isSelectQuery": false,
+      "isConsumeResult": false,
+      "isCountInStatistics": false
+    }
+  ]
+}

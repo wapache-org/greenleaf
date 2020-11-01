@@ -1,0 +1,41 @@
+[
+  {
+    "query": "ALL",
+    "size": 6,
+    "total": 11,
+    "min": 1,
+    "max": 2,
+    "avg": 1.8,
+    "quarter": 2,
+    "half": 2,
+    "three_quarters": 2,
+    "ninety": 2,
+    "ninety_five": 2
+  },
+  {
+    "query": "type1",
+    "size": 1,
+    "total": 1,
+    "min": 1,
+    "max": 1,
+    "avg": 1.0,
+    "quarter": 1,
+    "half": 1,
+    "three_quarters": 1,
+    "ninety": 1,
+    "ninety_five": 1
+  },
+  {
+    "query": "type2",
+    "size": 5,
+    "total": 10,
+    "min": 2,
+    "max": 2,
+    "avg": 2.0,
+    "quarter": 2,
+    "half": 2,
+    "three_quarters": 2,
+    "ninety": 2,
+    "ninety_five": 2
+  }
+]

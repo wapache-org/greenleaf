@@ -1,0 +1,278 @@
+Starting BenchmarkSQL LoadData
+----------------- Initialization -------------------
+numwarehouses
+1
+prop={password=postgres, limitTxnsPerMin=0, schemaSql=tpcc-pg12wh1-schema.sql, conn=jdbc:postgresql://localhost:5432/tpccdb, generateDataFile=true, terminals=10, driver=org.postgresql.Driver, warehouses=1, stockLevelWeight=4, schema=, orderStatusWeight=4, newOrderWeight=45, deliveryWeight=4, paymentWeight=43, runTxnsPerTerminal=0, runMins=1, dataSql=tpcc-pg12wh1-data.sql, user=postgres}
+driver=org.postgresql.Driver
+conn=jdbc:postgresql://localhost:5432/tpccdb
+user=postgres
+password=******
+schema=
+
+------------- LoadData StartTime = Fri Oct 30 20:16:40 CST 2020-------------
+
+Start Whse Load for 1 Whses @ Fri Oct 30 20:16:40 CST 2020 ...
+Elasped Time(ms): 0.015
+End Whse Load @  Fri Oct 30 20:16:40 CST 2020
+
+Start Item Load for 100000 Items @ Fri Oct 30 20:16:40 CST 2020 ...
+  Elasped Time(ms): 0.136       Writing record 10000 of 100000
+  Elasped Time(ms): 0.561       Writing record 20000 of 100000
+  Elasped Time(ms): 0.479       Writing record 30000 of 100000
+  Elasped Time(ms): 0.433       Writing record 40000 of 100000
+  Elasped Time(ms): 0.371       Writing record 50000 of 100000
+  Elasped Time(ms): 0.377       Writing record 60000 of 100000
+  Elasped Time(ms): 0.363       Writing record 70000 of 100000
+  Elasped Time(ms): 0.315       Writing record 80000 of 100000
+  Elasped Time(ms): 0.351       Writing record 90000 of 100000
+  Elasped Time(ms): 0.316       Writing record 100000 of 100000
+  Elasped Time(ms): 0.27        Writing final records 100000 of 100000
+End Item Load @  Fri Oct 30 20:16:44 CST 2020
+
+Start Stock Load for 100000 units @ Fri Oct 30 20:16:44 CST 2020 ...
+  Elasped Time(ms): 0.342       Writing record 10000 of 100000
+  Elasped Time(ms): 0.829       Writing record 20000 of 100000
+  Elasped Time(ms): 1.037       Writing record 30000 of 100000
+  Elasped Time(ms): 0.898       Writing record 40000 of 100000
+  Elasped Time(ms): 0.737       Writing record 50000 of 100000
+  Elasped Time(ms): 0.786       Writing record 60000 of 100000
+  Elasped Time(ms): 0.805       Writing record 70000 of 100000
+  Elasped Time(ms): 0.838       Writing record 80000 of 100000
+  Elasped Time(ms): 0.81        Writing record 90000 of 100000
+  Elasped Time(ms): 0.742       Writing record 100000 of 100000
+  Elasped Time(ms): 0.494       Writing final records 100000 of 100000
+End Stock Load @  Fri Oct 30 20:16:53 CST 2020
+
+Start District Data for 10 Dists @ Fri Oct 30 20:16:53 CST 2020 ...
+  Elasped Time(ms): 0.013       Writing record 10 of 10
+End District Load @  Fri Oct 30 20:16:53 CST 2020
+
+Start Cust-Hist Load for 60000 Cust-Hists @ Fri Oct 30 20:16:53 CST 2020 ...
+  Elasped Time(ms): 0.55        Writing record 10000 of 60000
+  Elasped Time(ms): 0.939       Writing record 20000 of 60000
+  Elasped Time(ms): 0.998       Writing record 30000 of 60000
+  Elasped Time(ms): 0.821       Writing record 40000 of 60000
+  Elasped Time(ms): 1.142       Writing record 50000 of 60000
+  Elasped Time(ms): 0.805       Writing record 60000 of 60000
+  Elasped Time(ms): 0.497       Writing record 60000 of 60000
+End Cust-Hist Data Load @  Fri Oct 30 20:16:58 CST 2020
+
+whse=1, dist=10, cust=3000
+Start Order-Line-New Load for approx 340000 rows @ Fri Oct 30 20:16:58 CST 2020 ...
+  Elasped Time(ms): 0.041       Writing record 10000 of 340000
+  Elasped Time(ms): 0.459       Writing record 20000 of 340000
+  Elasped Time(ms): 0.341       Writing record 30000 of 340000
+  Elasped Time(ms): 0.478       Writing record 40000 of 340000
+  Elasped Time(ms): 0.343       Writing record 50000 of 340000
+  Elasped Time(ms): 0.418       Writing record 60000 of 340000
+  Elasped Time(ms): 0.373       Writing record 70000 of 340000
+  Elasped Time(ms): 0.414       Writing record 80000 of 340000
+  Elasped Time(ms): 0.373       Writing record 90000 of 340000
+  Elasped Time(ms): 0.373       Writing record 100000 of 340000
+  Elasped Time(ms): 0.369       Writing record 110000 of 340000
+  Elasped Time(ms): 0.524       Writing record 120000 of 340000
+  Elasped Time(ms): 0.479       Writing record 130000 of 340000
+  Elasped Time(ms): 0.377       Writing record 140000 of 340000
+  Elasped Time(ms): 0.355       Writing record 150000 of 340000
+  Elasped Time(ms): 0.394       Writing record 160000 of 340000
+  Elasped Time(ms): 0.368       Writing record 170000 of 340000
+  Elasped Time(ms): 0.361       Writing record 180000 of 340000
+  Elasped Time(ms): 0.328       Writing record 190000 of 340000
+  Elasped Time(ms): 0.438       Writing record 200000 of 340000
+  Elasped Time(ms): 0.358       Writing record 210000 of 340000
+  Elasped Time(ms): 0.386       Writing record 220000 of 340000
+  Elasped Time(ms): 0.358       Writing record 230000 of 340000
+  Elasped Time(ms): 0.351       Writing record 240000 of 340000
+  Elasped Time(ms): 0.38        Writing record 250000 of 340000
+  Elasped Time(ms): 0.409       Writing record 280000 of 340000
+  Elasped Time(ms): 0.969       Writing record 290000 of 340000
+  Elasped Time(ms): 0.362       Writing record 300000 of 340000
+  Elasped Time(ms): 0.351       Writing record 310000 of 340000
+  Elasped Time(ms): 0.438       Writing record 320000 of 340000
+  Elasped Time(ms): 0.399       Writing record 330000 of 340000
+  Writing final records 338697 of 340000
+End Orders Load @  Fri Oct 30 20:17:11 CST 2020
+
+------------- LoadJDBC Statistics --------------------
+     Start Time = Fri Oct 30 20:16:40 CST 2020
+       End Time = Fri Oct 30 20:17:11 CST 2020
+       Run Time = 31 Seconds
+    Rows Loaded = 598708 Rows
+Rows Per Second = 19313 Rows/Sec
+------------------------------------------------------
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties tpcc.jTPCC
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,      BenchmarkSQL v4.1.1
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2003, Raul Barbosa
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2004-2016, Denis Lussier
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2016, Jan Wieck
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, driver=org.postgresql.Driver
+[main] INFO tpcc.jTPCC - Term-00, conn=jdbc:postgresql://localhost:5432/tpccdb
+[main] INFO tpcc.jTPCC - Term-00, user=postgres
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, warehouses=1
+[main] INFO tpcc.jTPCC - Term-00, terminals=10
+[main] INFO tpcc.jTPCC - Term-00, runMins=1
+[main] INFO tpcc.jTPCC - Term-00, limitTxnsPerMin=0
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, newOrderWeight=45
+[main] INFO tpcc.jTPCC - Term-00, paymentWeight=43
+[main] INFO tpcc.jTPCC - Term-00, orderStatusWeight=4
+[main] INFO tpcc.jTPCC - Term-00, deliveryWeight=4
+[main] INFO tpcc.jTPCC - Term-00, stockLevelWeight=4
+[main] INFO tpcc.jTPCC - Term-00,
+Term-00, Running Average tpmTOTAL: 10253.48    Current tpmTOTAL: 69696    Memory Usage: 14MB / 227MB
+[Thread-9] INFO tpcc.jTPCC - Term-00,
+[Thread-9] INFO tpcc.jTPCC - Term-00,
+[Thread-9] INFO tpcc.jTPCC - Term-00, Measured tpmC (NewOrders) = 4517.39
+[Thread-9] INFO tpcc.jTPCC - Term-00, Measured tpmTOTAL = 10243.75
+[Thread-9] INFO tpcc.jTPCC - Term-00, Session Start     = 2020-10-30 20:17:12
+[Thread-9] INFO tpcc.jTPCC - Term-00, Session End       = 2020-10-30 20:18:12
+[Thread-9] INFO tpcc.jTPCC - Term-00, Transaction Count = 10260
+
+===========================================================================================================
+
+Starting BenchmarkSQL LoadData
+----------------- Initialization -------------------
+numwarehouses
+1
+prop={password=postgres, limitTxnsPerMin=0, schemaSql=tpcc-pg12wh1-schema.sql, conn=jdbc:postgresql://localhost:5432/tpccdb?reWriteBatchedInserts=true, generateDataFile=true, terminals=10, driver=org.postgresql.Driver, warehouses=1, stockLevelWeight=4, schema=, orderStatusWeight=4, newOrderWeight=45, deliveryWeight=4, paymentWeight=43, runTxnsPerTerminal=0, runMins=1, dataSql=tpcc-pg12wh1-data.sql, user=postgres}
+driver=org.postgresql.Driver
+conn=jdbc:postgresql://localhost:5432/tpccdb?reWriteBatchedInserts=true
+user=postgres
+password=******
+schema=
+
+------------- LoadData StartTime = Fri Oct 30 20:41:28 CST 2020-------------
+
+Start Whse Load for 1 Whses @ Fri Oct 30 20:41:28 CST 2020 ...
+Elasped Time(ms): 0.011
+End Whse Load @  Fri Oct 30 20:41:28 CST 2020
+
+Start Item Load for 100000 Items @ Fri Oct 30 20:41:28 CST 2020 ...
+  Elasped Time(ms): 0.137       Writing record 10000 of 100000
+  Elasped Time(ms): 0.325       Writing record 20000 of 100000
+  Elasped Time(ms): 0.39        Writing record 30000 of 100000
+  Elasped Time(ms): 0.279       Writing record 40000 of 100000
+  Elasped Time(ms): 0.215       Writing record 50000 of 100000
+  Elasped Time(ms): 0.176       Writing record 60000 of 100000
+  Elasped Time(ms): 0.193       Writing record 70000 of 100000
+  Elasped Time(ms): 0.202       Writing record 80000 of 100000
+  Elasped Time(ms): 0.194       Writing record 90000 of 100000
+  Elasped Time(ms): 0.203       Writing record 100000 of 100000
+  Elasped Time(ms): 0.111       Writing final records 100000 of 100000
+End Item Load @  Fri Oct 30 20:41:30 CST 2020
+
+Start Stock Load for 100000 units @ Fri Oct 30 20:41:30 CST 2020 ...
+  Elasped Time(ms): 0.318       Writing record 10000 of 100000
+  Elasped Time(ms): 0.669       Writing record 20000 of 100000
+  Elasped Time(ms): 0.586       Writing record 30000 of 100000
+  Elasped Time(ms): 0.56        Writing record 40000 of 100000
+  Elasped Time(ms): 0.705       Writing record 50000 of 100000
+  Elasped Time(ms): 0.604       Writing record 60000 of 100000
+  Elasped Time(ms): 0.665       Writing record 70000 of 100000
+  Elasped Time(ms): 0.632       Writing record 80000 of 100000
+  Elasped Time(ms): 0.579       Writing record 90000 of 100000
+  Elasped Time(ms): 0.603       Writing record 100000 of 100000
+  Elasped Time(ms): 0.278       Writing final records 100000 of 100000
+End Stock Load @  Fri Oct 30 20:41:36 CST 2020
+
+Start District Data for 10 Dists @ Fri Oct 30 20:41:36 CST 2020 ...
+  Elasped Time(ms): 0.011       Writing record 10 of 10
+End District Load @  Fri Oct 30 20:41:36 CST 2020
+
+Start Cust-Hist Load for 60000 Cust-Hists @ Fri Oct 30 20:41:36 CST 2020 ...
+  Elasped Time(ms): 0.486       Writing record 10000 of 60000
+  Elasped Time(ms): 0.85        Writing record 20000 of 60000
+  Elasped Time(ms): 0.725       Writing record 30000 of 60000
+  Elasped Time(ms): 0.766       Writing record 40000 of 60000
+  Elasped Time(ms): 0.685       Writing record 50000 of 60000
+  Elasped Time(ms): 0.624       Writing record 60000 of 60000
+  Elasped Time(ms): 0.337       Writing record 60000 of 60000
+End Cust-Hist Data Load @  Fri Oct 30 20:41:41 CST 2020
+
+whse=1, dist=10, cust=3000
+Start Order-Line-New Load for approx 340000 rows @ Fri Oct 30 20:41:41 CST 2020 ...
+  Elasped Time(ms): 0.092       Writing record 20000 of 340000
+  Elasped Time(ms): 0.544       Writing record 30000 of 340000
+  Elasped Time(ms): 0.214       Writing record 40000 of 340000
+  Elasped Time(ms): 0.226       Writing record 50000 of 340000
+  Elasped Time(ms): 0.23        Writing record 60000 of 340000
+  Elasped Time(ms): 0.249       Writing record 70000 of 340000
+  Elasped Time(ms): 0.277       Writing record 80000 of 340000
+  Elasped Time(ms): 0.242       Writing record 90000 of 340000
+  Elasped Time(ms): 0.218       Writing record 100000 of 340000
+  Elasped Time(ms): 0.202       Writing record 110000 of 340000
+  Elasped Time(ms): 0.205       Writing record 120000 of 340000
+  Elasped Time(ms): 0.21        Writing record 130000 of 340000
+  Elasped Time(ms): 0.203       Writing record 140000 of 340000
+  Elasped Time(ms): 0.187       Writing record 150000 of 340000
+  Elasped Time(ms): 0.197       Writing record 160000 of 340000
+  Elasped Time(ms): 0.196       Writing record 170000 of 340000
+  Elasped Time(ms): 0.176       Writing record 180000 of 340000
+  Elasped Time(ms): 0.2         Writing record 190000 of 340000
+  Elasped Time(ms): 0.195       Writing record 200000 of 340000
+  Elasped Time(ms): 0.188       Writing record 210000 of 340000
+  Elasped Time(ms): 0.199       Writing record 220000 of 340000
+  Elasped Time(ms): 0.2         Writing record 230000 of 340000
+  Elasped Time(ms): 0.214       Writing record 240000 of 340000
+  Elasped Time(ms): 0.184       Writing record 250000 of 340000
+  Elasped Time(ms): 0.181       Writing record 260000 of 340000
+  Elasped Time(ms): 0.187       Writing record 270000 of 340000
+  Elasped Time(ms): 0.18        Writing record 280000 of 340000
+  Elasped Time(ms): 0.218       Writing record 290000 of 340000
+  Elasped Time(ms): 0.223       Writing record 310000 of 340000
+  Elasped Time(ms): 0.309       Writing record 320000 of 340000
+  Elasped Time(ms): 0.191       Writing record 330000 of 340000
+  Writing final records 339470 of 340000
+End Orders Load @  Fri Oct 30 20:41:48 CST 2020
+
+------------- LoadJDBC Statistics --------------------
+     Start Time = Fri Oct 30 20:41:28 CST 2020
+       End Time = Fri Oct 30 20:41:48 CST 2020
+       Run Time = 20 Seconds
+    Rows Loaded = 599481 Rows
+Rows Per Second = 29974 Rows/Sec
+------------------------------------------------------
+
+D:>java -cp lib/* -Dprop=examples/tpcc/pg12wh1/tpcc-pg12wh1.properties tpcc.jTPCC
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,      BenchmarkSQL v4.1.1
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2003, Raul Barbosa
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2004-2016, Denis Lussier
+[main] INFO tpcc.jTPCC - Term-00,  (c) 2016, Jan Wieck
+[main] INFO tpcc.jTPCC - Term-00, +-------------------------------------------------------------+
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, driver=org.postgresql.Driver
+[main] INFO tpcc.jTPCC - Term-00, conn=jdbc:postgresql://localhost:5432/tpccdb?reWriteBatchedInserts=true
+[main] INFO tpcc.jTPCC - Term-00, user=postgres
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, warehouses=1
+[main] INFO tpcc.jTPCC - Term-00, terminals=10
+[main] INFO tpcc.jTPCC - Term-00, runMins=1
+[main] INFO tpcc.jTPCC - Term-00, limitTxnsPerMin=0
+[main] INFO tpcc.jTPCC - Term-00,
+[main] INFO tpcc.jTPCC - Term-00, newOrderWeight=45
+[main] INFO tpcc.jTPCC - Term-00, paymentWeight=43
+[main] INFO tpcc.jTPCC - Term-00, orderStatusWeight=4
+[main] INFO tpcc.jTPCC - Term-00, deliveryWeight=4
+[main] INFO tpcc.jTPCC - Term-00, stockLevelWeight=4
+[main] INFO tpcc.jTPCC - Term-00,
+Term-00, Running Average tpmTOTAL: 8961.15    Current tpmTOTAL: 59904    Memory Usage: 30MB / 230MB
+[Thread-3] INFO tpcc.jTPCC - Term-00,
+[Thread-3] INFO tpcc.jTPCC - Term-00,
+[Thread-3] INFO tpcc.jTPCC - Term-00, Measured tpmC (NewOrders) = 4002.05
+[Thread-3] INFO tpcc.jTPCC - Term-00, Measured tpmTOTAL = 8961.34
+[Thread-3] INFO tpcc.jTPCC - Term-00, Session Start     = 2020-10-30 20:41:49
+[Thread-3] INFO tpcc.jTPCC - Term-00, Session End       = 2020-10-30 20:42:49
+[Thread-3] INFO tpcc.jTPCC - Term-00, Transaction Count = 9005
+
+
+
